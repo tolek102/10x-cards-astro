@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { z } from "zod";
 import type { GenerateFlashcardsCommand } from "../../../types";
 import { createFlashcardService } from "../../../lib/services/flashcardService";
+import { logger } from "../../../lib/services/loggerService";
 
 // Validation schema for the request body
 const generateFlashcardsSchema = z.object({
@@ -41,7 +42,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Error generating flashcards:", error);
+    logger.error("Error generating flashcards", { error });
     return new Response(
       JSON.stringify({
         error: "Internal server error",
