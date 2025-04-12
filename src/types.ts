@@ -24,24 +24,51 @@ export interface LoginUserResponseDto {
   token: string;
   user: UserDto;
 }
+/**
+ * Generic Pagination DTO
+ */
+
+export interface PaginationDto {
+  page: number;
+  limit: number;
+  total: number;
+}
 
 /**
  * Flashcard DTOs and Commands
  */
 
 // Flashcard DTO mirroring the flashcards table
-export type FlashcardDto = FlashcardRow;
+export type FlashcardDto = Pick<
+  FlashcardRow,
+  "id" | "front" | "back" | "source" | "candidate" | "created_at" | "updated_at"
+>;
 
-// Command for creating a manual flashcard. Excludes auto-generated fields from the DB.
-export type CreateFlashcardCommand = Omit<FlashcardDto, "id" | "user_id" | "created_at" | "updated_at"> & {
-  source: "MANUAL";
-  candidate: false;
-};
+export interface FlashcardsListResponseDto {
+  data: FlashcardDto[];
+  pagination: PaginationDto;
+}
 
-// Command for updating an existing flashcard. The id is required to identify the flashcard.
-export type UpdateFlashcardCommand = Pick<FlashcardDto, "id" | "front" | "back"> & {
-  candidate: false;
-};
+export type Source = "MANUAL" | "AI" | "AI_EDITED";
+
+export interface FlashcardCreateDto {
+  front: string;
+  back: string;
+  source: Source;
+  candidate: boolean;
+}
+
+// Command for creating multiple flashcards at once
+export interface FlashcardsCreateCommand {
+  flashcards: FlashcardCreateDto[];
+}
+
+export type FlashcardUpdateDto = Partial<{
+  front: string;
+  back: string;
+  source: Source;
+  candidate: boolean;
+}>;
 
 // Command for generating flashcards via AI by providing a long text input
 export interface GenerateFlashcardsCommand {
@@ -49,18 +76,7 @@ export interface GenerateFlashcardsCommand {
 }
 
 // Alias for generated flashcards DTO, identical to FlashcardDto
-export type GeneratedFlashcardDto = FlashcardDto;
-
-/**
- * Generic Pagination DTO
- */
-
-export interface PaginatedResult<T> {
-  data: T[];
-  currentPage: number;
-  totalPages: number;
-  totalRecords: number;
-}
+export type GeneratedFlashcardDto = FlashcardDto[];
 
 /**
  * Statistics DTO

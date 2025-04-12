@@ -59,16 +59,28 @@
 
 ### B. Flashcards Management
 
-1. **List Flashcards**
+1. **List Accepted Flashcards**
    - **Method:** GET
    - **URL:** `/api/flashcards`
-   - **Description:** Retrieves a paginated list of flashcards for the authenticated user.
+   - **Description:** Retrieves a paginated list of accepted flashcards (candidate = false) for the authenticated user.
    - **Query Parameters:**
      - `page` (default: 1)
      - `limit` (default: 20)
      - `sort` (e.g., `created_at_desc` or `created_at_asc`)
    - **Response:**
-     - **200 OK:** Returns an array of flashcards and pagination metadata.
+     - **200 OK:** Returns an array of accepted flashcards and pagination metadata.
+     - **Error Codes:** 401 (Unauthorized).
+
+2. **List Candidate Flashcards**
+   - **Method:** GET
+   - **URL:** `/api/flashcards/candidates`
+   - **Description:** Retrieves a paginated list of candidate flashcards (candidate = true) for the authenticated user.
+   - **Query Parameters:**
+     - `page` (default: 1)
+     - `limit` (default: 20)
+     - `sort` (e.g., `created_at_desc` or `created_at_asc`)
+   - **Response:**
+     - **200 OK:** Returns an array of candidate flashcards and pagination metadata.
      - **Error Codes:** 401 (Unauthorized).
 
 2. **Get Flashcard by ID**
@@ -88,7 +100,8 @@
      {
        "front": "Short question or prompt (max 200 chars)",
        "back": "Answer text (max 500 chars)",
-       "source": "MANUAL"
+       "source": "MANUAL",
+       "candidate": false
      }
      ```
    - **Response:**
@@ -98,12 +111,13 @@
 4. **Update Flashcard**
    - **Method:** PUT
    - **URL:** `/api/flashcards/{id}`
-   - **Description:** Updates an existing flashcard.
+   - **Description:** Updates an existing flashcard. If a candidate flashcard is edited, it will be automatically marked as accepted (candidate = false). If a flashcard with source "AI" is edited, its source will be automatically changed to "AI_EDITED".
    - **Request Payload:**
      ```json
      {
        "front": "Updated front text (max 200 chars)",
-       "back": "Updated back text (max 500 chars)"
+       "back": "Updated back text (max 500 chars)",
+       "candidate": false
      }
      ```
    - **Response:**
@@ -129,7 +143,7 @@
      }
      ```
    - **Response:**
-     - **200 OK:** Returns a list of generated flashcards candidates (each with `source` set to "AI").
+     - **200 OK:** Returns a list of generated flashcards candidates (each with `source` set to "AI" and `candidate` set to 'true').
      - **Error Codes:** 400 (Input Validation Error), 401 (Unauthorized), 500 (Internal Server Error if AI service fails).
 
 ### C. Statistics
@@ -151,7 +165,7 @@
 
 - **Business Logic Mapping:**
   - **Manual Flashcard Creation & Updating:** Enforces character limits and returns appropriate error messages if violated.
-  - **Automatic Flashcard Generation:** Processes long text via an AI API. Generated flashcards candidates are generated with the `source` set to "AI" and must adhere to length restrictions - save to database only if accepted by user.
+  - **Automatic Flashcard Generation:** Processes long text via an AI API. Generated flashcards candidates are generated with the `source` set to "AI" and `candidate` set to 'true' and also must adhere to length restrictions.
   - **Pagination, Filtering, and Sorting:** Implemented in list endpoints to efficiently handle large datasets.
 
 - **Error Handling:**

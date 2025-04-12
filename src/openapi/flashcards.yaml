@@ -1,0 +1,138 @@
+openapi: 3.0.3
+info:
+  title: 10x Cards API
+  description: API for flashcard generation and management
+  version: 1.0.0
+
+servers:
+  - url: /api
+    description: API base path
+
+paths:
+  /flashcards/generate:
+    post:
+      summary: Generate flashcards from text using AI
+      description: |
+        Takes a long text input and generates a set of flashcards using AI processing.
+        The generated flashcards are stored in the database and marked as candidates
+        for user review.
+      operationId: generateFlashcards
+      tags:
+        - Flashcards
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateFlashcardsCommand'
+      responses:
+        '200':
+          description: Successfully generated flashcards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedFlashcardsResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    GenerateFlashcardsCommand:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: The text content to generate flashcards from
+          minLength: 1000
+          maxLength: 10000
+          example: "A long text about a specific topic that will be used to generate flashcards..."
+
+    FlashcardDto:
+      type: object
+      required:
+        - id
+        - front
+        - back
+        - source
+        - candidate
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        front:
+          type: string
+          description: The question or front side of the flashcard
+          example: "What is the capital of France?"
+        back:
+          type: string
+          description: The answer or back side of the flashcard
+          example: "Paris"
+        source:
+          type: string
+          enum: [MANUAL, AI, AI_EDITED]
+          description: The source of the flashcard
+          example: "AI"
+        candidate:
+          type: boolean
+          description: Whether this is a candidate flashcard pending user review
+          example: true
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-02-20T12:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-02-20T12:00:00Z"
+
+    GeneratedFlashcardsResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/FlashcardDto'
+      description: List of generated flashcards
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Validation failed"
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "invalid_string"
+              message:
+                type: string
+                example: "Text must be at least 1000 characters long"
+              path:
+                type: array
+                items:
+                  type: string
+                example: ["text"]
+          description: Detailed error information (optional)
+        message:
+          type: string
+          description: Additional error context (optional)
+          example: "Failed to process the request" 

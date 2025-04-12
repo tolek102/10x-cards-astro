@@ -35,12 +35,10 @@ Endpoint realizuje przetwarzanie długiego tekstu wejściowego poprzez zewnętrz
   - `updated_at`
 - **Błędy:**
   - **400 Bad Request:** Błąd walidacji danych wejściowych (np. tekst zbyt krótki lub zbyt długi).
-  - **401 Unauthorized:** Użytkownik nie jest autoryzowany.
   - **500 Internal Server Error:** Błąd serwera, np. związany z wywołaniem usługi AI.
 
 ## 5. Przepływ danych
 1. Nadchodzi żądanie HTTP zawierające długi tekst w ciele żądania.
-2. Middleware autoryzacyjne weryfikuje, czy użytkownik jest zalogowany (użycie `supabase` z `context.locals`).
 3. Żądanie jest walidowane przy użyciu `zod` – sprawdzany jest m.in. format oraz długość pola `text`.
 4. Logika biznesowa (w serwisie, np. `src/lib/services/flashcardService.ts`) wywołuje zewnętrzną usługę AI, przekazując otrzymany tekst.
 5. Odebrane dane z AI (flashcards candidate) są, w razie potrzeby, zapisywane w bazie danych (tabela `flashcards` z `source` ustawionym na "AI" oraz `candidate` na `true`).
@@ -48,14 +46,12 @@ Endpoint realizuje przetwarzanie długiego tekstu wejściowego poprzez zewnętrz
 7. Endpoint zwraca odpowiedź JSON zawierającą listę wygenerowanych fiszek.
 
 ## 6. Względy bezpieczeństwa
-- **Autoryzacja:** Dostęp do endpointu mają tylko uwierzytelnieni użytkownicy (sprawdzanie poprzez `context.locals` i Supabase).
 - **Walidacja:** Dane wejściowe są walidowane przy użyciu `zod` (np. walidacja długości tekstu).
 - **RLS:** Przy operacjach na tabeli `flashcards` stosowane są zasady Row-Level Security (RLS).
 - **Obsługa błędów:** Szczegółowe logowanie błędów bez ujawniania wrażliwych informacji użytkownikowi.
 
 ## 7. Obsługa błędów
 - **400 Bad Request:** W przypadku nieprawidłowych danych wejściowych (np. tekst nie spełnia ograniczeń długości).
-- **401 Unauthorized:** Jeżeli użytkownik nie jest uwierzytelniony.
 - **500 Internal Server Error:** Jeżeli wystąpi błąd podczas komunikacji z usługą AI lub inny błąd serwera.
 - Każdy błąd powinien być odpowiednio logowany celem analizy i debugowania.
 
@@ -66,7 +62,6 @@ Endpoint realizuje przetwarzanie długiego tekstu wejściowego poprzez zewnętrz
 
 ## 9. Etapy wdrożenia
 1. Utworzenie nowego endpointu `/api/flashcards/generate` w katalogu `src/pages/api/flashcards/`.
-2. Implementacja middleware autoryzacyjnego sprawdzającego sesję użytkownika.
 3. Stworzenie schematu walidacyjnego przy użyciu `zod` dla `GenerateFlashcardsCommand`.
 4. Implementacja logiki biznesowej w serwisie, np. w pliku `src/lib/services/flashcardService.ts`, do komunikacji z usługą AI. Na etapie developmentu skozystamy z mocków zamiast wywolania serwisu AI.
 5. Wywołanie zewnętrznej usługi AI i przetworzenie otrzymanych danych.
