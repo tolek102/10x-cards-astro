@@ -1,4 +1,4 @@
-import type { FlashcardCreateDto, GenerateFlashcardsCommand, GeneratedFlashcardDto } from "../../types";
+import type { FlashcardCreateDto, GenerateFlashcardsCommand, GeneratedFlashcardDto, FlashcardDto } from "../../types";
 import type { SupabaseClient } from "../../db/supabase.client";
 import { DEFAULT_USER_ID } from "../../db/supabase.client";
 import { logger } from "./loggerService";
@@ -53,6 +53,39 @@ export class FlashcardService {
       return generatedFlashcards;
     } catch (error) {
       logger.error("Error in generateFlashcards", { error });
+      throw error;
+    }
+  }
+
+  async createManualFlashcard(userId: string, command: FlashcardCreateDto): Promise<FlashcardDto> {
+    try {
+      logger.info("Creating manual flashcard", { userId });
+
+      const flashcardData = {
+        ...command,
+        user_id: userId,
+      };
+
+      const { data: flashcard, error } = await this.supabase.from("flashcards").insert(flashcardData).select().single();
+
+      if (error) {
+        logger.error("Error creating flashcard", { error });
+        throw new Error("Failed to create flashcard");
+      }
+
+      if (!flashcard) {
+        throw new Error("Flashcard was not created");
+      }
+
+      // Update statistics
+      const statisticsService = createStatisticsService(this.supabase);
+      await statisticsService.trackFlashcardsGeneration(userId, 1);
+
+      logger.info("Successfully created manual flashcard", { flashcardId: flashcard.id });
+
+      return flashcard;
+    } catch (error) {
+      logger.error("Error in createManualFlashcard", { error });
       throw error;
     }
   }

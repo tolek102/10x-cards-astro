@@ -9,6 +9,41 @@ servers:
     description: API base path
 
 paths:
+  /flashcards:
+    post:
+      summary: Create a manual flashcard
+      description: |
+        Creates a single flashcard manually. The created flashcard is automatically
+        marked as verified (candidate=false) and has source set to "MANUAL".
+      operationId: createManualFlashcard
+      tags:
+        - Flashcards
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateManualFlashcardCommand'
+      responses:
+        '201':
+          description: Successfully created flashcard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlashcardDto'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /flashcards/generate:
     post:
       summary: Generate flashcards from text using AI
@@ -135,4 +170,35 @@ components:
         message:
           type: string
           description: Additional error context (optional)
-          example: "Failed to process the request" 
+          example: "Failed to process the request"
+
+    CreateManualFlashcardCommand:
+      type: object
+      required:
+        - front
+        - back
+        - source
+        - candidate
+      properties:
+        front:
+          type: string
+          description: The question or front side of the flashcard
+          minLength: 1
+          maxLength: 200
+          example: "What is the capital of France?"
+        back:
+          type: string
+          description: The answer or back side of the flashcard
+          minLength: 1
+          maxLength: 500
+          example: "Paris"
+        source:
+          type: string
+          enum: ["MANUAL"]
+          description: The source of the flashcard (must be "MANUAL")
+          example: "MANUAL"
+        candidate:
+          type: boolean
+          enum: [false]
+          description: Whether this is a candidate flashcard (must be false)
+          example: false 
