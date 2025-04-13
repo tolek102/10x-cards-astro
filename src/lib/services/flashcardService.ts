@@ -4,6 +4,7 @@ import type {
   GeneratedFlashcardDto,
   FlashcardDto,
   FlashcardsListResponseDto,
+  FlashcardUpdateDto,
 } from "../../types";
 import type { SupabaseClient } from "../../db/supabase.client";
 import { DEFAULT_USER_ID } from "../../db/supabase.client";
@@ -259,6 +260,65 @@ export class FlashcardService {
       };
     } catch (error) {
       logger.error("Error in listCandidateFlashcards", { error });
+      throw error;
+    }
+  }
+
+  async updateFlashcard(userId: string, flashcardId: string, command: FlashcardUpdateDto): Promise<FlashcardDto> {
+    try {
+      logger.info("Updating flashcard", { userId, flashcardId });
+
+      // First, get the existing flashcard to check ownership and current state
+      const { data: existingFlashcard, error: fetchError } = await this.supabase
+        .from("flashcards")
+        .select()
+        .eq("id", flashcardId)
+        .eq("user_id", userId)
+        .single();
+
+      if (fetchError) {
+        logger.error("Error fetching flashcard for update", { error: fetchError });
+        throw new Error("Failed to fetch flashcard");
+      }
+
+      if (!existingFlashcard) {
+        logger.warn("Flashcard not found or unauthorized", { flashcardId });
+        throw new Error("Flashcard not found");
+      }
+
+      // Prepare update data with business logic
+      const updateData = {
+        ...command,
+        // If flashcard was a candidate, set it to false
+        candidate: command.candidate === false ? false : existingFlashcard.candidate,
+        // If source was AI, change to AI_EDITED
+        source: existingFlashcard.source === "AI" ? "AI_EDITED" : existingFlashcard.source,
+        updated_at: new Date().toISOString(),
+      };
+
+      // Update the flashcard
+      const { data: updatedFlashcard, error: updateError } = await this.supabase
+        .from("flashcards")
+        .update(updateData)
+        .eq("id", flashcardId)
+        .eq("user_id", userId)
+        .select()
+        .single();
+
+      if (updateError) {
+        logger.error("Error updating flashcard", { error: updateError });
+        throw new Error("Failed to update flashcard");
+      }
+
+      if (!updatedFlashcard) {
+        throw new Error("Flashcard update failed");
+      }
+
+      logger.info("Successfully updated flashcard", { flashcardId });
+
+      return updatedFlashcard;
+    } catch (error) {
+      logger.error("Error in updateFlashcard", { error });
       throw error;
     }
   }

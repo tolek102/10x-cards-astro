@@ -7,10 +7,20 @@ import type { PostgrestError } from "@supabase/supabase-js";
 // Type for our minimal mock implementation
 type MinimalSupabaseClient = Pick<SupabaseClient, "from">;
 
+// Type for mock Supabase chain
+interface MockSupabaseChain {
+  data: FlashcardDto[] | FlashcardDto | null;
+  error: PostgrestError | null;
+  select: ReturnType<typeof vi.fn>;
+  eq: ReturnType<typeof vi.fn>;
+  single: ReturnType<typeof vi.fn>;
+  update?: ReturnType<typeof vi.fn>;
+}
+
 describe("FlashcardService", () => {
-  const mockSupabaseChain = {
-    data: null as FlashcardDto[] | FlashcardDto | null,
-    error: null as PostgrestError | null,
+  const mockSupabaseChain: MockSupabaseChain = {
+    data: null,
+    error: null,
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     single: vi.fn().mockImplementation(function (this: typeof mockSupabaseChain) {
@@ -334,6 +344,208 @@ describe("FlashcardService", () => {
       expect(mockSupabaseChain.order).toHaveBeenCalledWith("created_at", {
         ascending: false,
       });
+    });
+  });
+
+  describe("updateFlashcard", () => {
+    const mockUserId = "test-user-id";
+    const mockFlashcardId = "123e4567-e89b-12d3-a456-426614174000";
+    const mockExistingFlashcard: FlashcardDto = {
+      id: mockFlashcardId,
+      front: "Original front",
+      back: "Original back",
+      source: "AI",
+      candidate: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      mockSupabaseChain.data = null;
+      mockSupabaseChain.error = null;
+    });
+
+    it("should update a flashcard successfully", async () => {
+      // Setup mock for fetching existing flashcard
+      mockSupabaseChain.data = mockExistingFlashcard;
+      mockSupabaseChain.error = null;
+
+      const updateCommand = {
+        front: "Updated front",
+        back: "Updated back",
+        candidate: false,
+      };
+
+      const expectedUpdate = {
+        ...mockExistingFlashcard,
+        ...updateCommand,
+        source: "AI_EDITED", // Should change from AI to AI_EDITED
+        updated_at: expect.any(String),
+      };
+
+      // Setup mock for update operation
+      const mockUpdateChain = {
+        ...mockSupabaseChain,
+        data: expectedUpdate,
+        error: null,
+      };
+
+      mockSupabaseChain.update = vi.fn().mockReturnValue(mockUpdateChain);
+
+      const result = await service.updateFlashcard(mockUserId, mockFlashcardId, updateCommand);
+
+      expect(result).toEqual(expectedUpdate);
+      expect(mockFrom).toHaveBeenCalledWith("flashcards");
+      expect(mockSupabaseChain.select).toHaveBeenCalled();
+      expect(mockSupabaseChain.eq).toHaveBeenCalledWith("id", mockFlashcardId);
+      expect(mockSupabaseChain.eq).toHaveBeenCalledWith("user_id", mockUserId);
+      expect(mockSupabaseChain.update).toHaveBeenCalledWith({
+        ...updateCommand,
+        source: "AI_EDITED",
+        updated_at: expect.any(String),
+      });
+    });
+
+    it("should preserve source if not AI", async () => {
+      const manualFlashcard = {
+        ...mockExistingFlashcard,
+        source: "MANUAL",
+      };
+      mockSupabaseChain.data = manualFlashcard;
+      mockSupabaseChain.error = null;
+
+      const updateCommand = {
+        front: "Updated front",
+        back: "Updated back",
+        candidate: false,
+      };
+
+      const expectedUpdate = {
+        ...manualFlashcard,
+        ...updateCommand,
+        source: "MANUAL", // Should remain MANUAL
+        updated_at: expect.any(String),
+      };
+
+      const mockUpdateChain = {
+        ...mockSupabaseChain,
+        data: expectedUpdate,
+        error: null,
+      };
+
+      mockSupabaseChain.update = vi.fn().mockReturnValue(mockUpdateChain);
+
+      const result = await service.updateFlashcard(mockUserId, mockFlashcardId, updateCommand);
+
+      expect(result).toEqual(expectedUpdate);
+      expect(mockSupabaseChain.update).toHaveBeenCalledWith({
+        ...updateCommand,
+        source: "MANUAL",
+        updated_at: expect.any(String),
+      });
+    });
+
+    it("should preserve candidate status if not explicitly set to false", async () => {
+      mockSupabaseChain.data = mockExistingFlashcard;
+      mockSupabaseChain.error = null;
+
+      const updateCommand = {
+        front: "Updated front",
+        back: "Updated back",
+        // candidate not specified
+      };
+
+      const expectedUpdate = {
+        ...mockExistingFlashcard,
+        ...updateCommand,
+        candidate: true, // Should remain true
+        source: "AI_EDITED",
+        updated_at: expect.any(String),
+      };
+
+      const mockUpdateChain = {
+        ...mockSupabaseChain,
+        data: expectedUpdate,
+        error: null,
+      };
+
+      mockSupabaseChain.update = vi.fn().mockReturnValue(mockUpdateChain);
+
+      const result = await service.updateFlashcard(mockUserId, mockFlashcardId, updateCommand);
+
+      expect(result).toEqual(expectedUpdate);
+      expect(mockSupabaseChain.update).toHaveBeenCalledWith({
+        ...updateCommand,
+        candidate: true,
+        source: "AI_EDITED",
+        updated_at: expect.any(String),
+      });
+    });
+
+    it("should throw error when flashcard is not found", async () => {
+      mockSupabaseChain.data = null;
+      mockSupabaseChain.error = null;
+
+      const updateCommand = {
+        front: "Updated front",
+        back: "Updated back",
+      };
+
+      await expect(service.updateFlashcard(mockUserId, mockFlashcardId, updateCommand)).rejects.toThrow(
+        "Flashcard not found"
+      );
+    });
+
+    it("should throw error when fetch operation fails", async () => {
+      const mockError: PostgrestError = {
+        message: "Database error",
+        details: "",
+        hint: "",
+        code: "23505",
+        name: "PostgrestError",
+      };
+      mockSupabaseChain.data = null;
+      mockSupabaseChain.error = mockError;
+
+      const updateCommand = {
+        front: "Updated front",
+        back: "Updated back",
+      };
+
+      await expect(service.updateFlashcard(mockUserId, mockFlashcardId, updateCommand)).rejects.toThrow(
+        "Failed to fetch flashcard"
+      );
+    });
+
+    it("should throw error when update operation fails", async () => {
+      mockSupabaseChain.data = mockExistingFlashcard;
+      mockSupabaseChain.error = null;
+
+      const updateCommand = {
+        front: "Updated front",
+        back: "Updated back",
+      };
+
+      const mockError: PostgrestError = {
+        message: "Database error",
+        details: "",
+        hint: "",
+        code: "23505",
+        name: "PostgrestError",
+      };
+
+      const mockUpdateChain = {
+        ...mockSupabaseChain,
+        data: null,
+        error: mockError,
+      };
+
+      mockSupabaseChain.update = vi.fn().mockReturnValue(mockUpdateChain);
+
+      await expect(service.updateFlashcard(mockUserId, mockFlashcardId, updateCommand)).rejects.toThrow(
+        "Failed to update flashcard"
+      );
     });
   });
 });
