@@ -149,8 +149,16 @@ export class FlashcardService {
 
       // Apply sorting if specified
       if (params.sort) {
-        const [column, order] = params.sort.split("_");
-        query = query.order(column, { ascending: order === "asc" });
+        const [field, direction] = params.sort.split("_").reduce(
+          ([acc, dir], part) => {
+            if (part === "asc" || part === "desc") {
+              return [acc, part];
+            }
+            return [acc ? `${acc}_${part}` : part, dir];
+          },
+          ["", ""] as [string, string]
+        );
+        query = query.order(field, { ascending: direction === "asc" });
       } else {
         // Default sorting
         query = query.order("created_at", { ascending: false });
@@ -184,6 +192,73 @@ export class FlashcardService {
       };
     } catch (error) {
       logger.error("Error in listAcceptedFlashcards", { error });
+      throw error;
+    }
+  }
+
+  async listCandidateFlashcards(
+    userId: string,
+    params: { page: number; limit: number; sort?: "created_at_desc" | "created_at_asc" }
+  ): Promise<FlashcardsListResponseDto> {
+    try {
+      logger.info("Fetching candidate flashcards", { userId, ...params });
+
+      // Calculate offset for pagination
+      const offset = (params.page - 1) * params.limit;
+
+      // Build query
+      let query = this.supabase
+        .from("flashcards")
+        .select("*", { count: "exact" })
+        .eq("user_id", userId)
+        .eq("candidate", true)
+        .range(offset, offset + params.limit - 1);
+
+      // Apply sorting if specified
+      if (params.sort) {
+        const [field, direction] = params.sort.split("_").reduce(
+          ([acc, dir], part) => {
+            if (part === "asc" || part === "desc") {
+              return [acc, part];
+            }
+            return [acc ? `${acc}_${part}` : part, dir];
+          },
+          ["", ""] as [string, string]
+        );
+        query = query.order(field, { ascending: direction === "asc" });
+      } else {
+        // Default sorting
+        query = query.order("created_at", { ascending: false });
+      }
+
+      // Execute query
+      const { data: flashcards, error, count } = await query;
+
+      if (error) {
+        logger.error("Error fetching candidate flashcards", { error });
+        throw new Error("Failed to fetch candidate flashcards");
+      }
+
+      if (!count) {
+        logger.warn("No candidate flashcards found or count not available");
+        throw new Error("Failed to get candidate flashcards count");
+      }
+
+      logger.info("Successfully fetched candidate flashcards", {
+        count: flashcards?.length,
+        total: count,
+      });
+
+      return {
+        data: flashcards || [],
+        pagination: {
+          page: params.page,
+          limit: params.limit,
+          total: count,
+        },
+      };
+    } catch (error) {
+      logger.error("Error in listCandidateFlashcards", { error });
       throw error;
     }
   }

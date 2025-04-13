@@ -208,4 +208,132 @@ describe("FlashcardService", () => {
       await expect(service.getFlashcardById(mockUserId, "")).rejects.toThrow("Missing required parameters");
     });
   });
+
+  describe("listCandidateFlashcards", () => {
+    const mockFlashcards = [
+      {
+        id: "1",
+        front: "Test front 1",
+        back: "Test back 1",
+        source: "AI",
+        candidate: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: "2",
+        front: "Test front 2",
+        back: "Test back 2",
+        source: "AI",
+        candidate: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ];
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("should return paginated candidate flashcards", async () => {
+      const mockSupabaseChain = {
+        data: mockFlashcards,
+        error: null,
+        count: mockFlashcards.length,
+        range: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+      };
+
+      const mockSelect = vi.fn().mockReturnValue(mockSupabaseChain);
+
+      const mockSupabase = {
+        from: vi.fn().mockReturnValue({
+          select: mockSelect,
+        }),
+      } as unknown as SupabaseClient;
+
+      const service = new FlashcardService(mockSupabase);
+      const result = await service.listCandidateFlashcards("test-user", {
+        page: 1,
+        limit: 20,
+      });
+
+      expect(result.data).toEqual(mockFlashcards);
+      expect(result.pagination).toEqual({
+        page: 1,
+        limit: 20,
+        total: mockFlashcards.length,
+      });
+
+      expect(mockSupabase.from).toHaveBeenCalledWith("flashcards");
+      expect(mockSelect).toHaveBeenCalledWith("*", { count: "exact" });
+      expect(mockSupabaseChain.eq).toHaveBeenCalledWith("user_id", "test-user");
+      expect(mockSupabaseChain.eq).toHaveBeenCalledWith("candidate", true);
+    });
+
+    it("should handle database errors", async () => {
+      const mockSupabaseChain = {
+        data: null,
+        error: {
+          message: "Database error",
+          details: "",
+          hint: "",
+          code: "23505",
+          name: "PostgrestError",
+        },
+        count: 0,
+        range: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+      };
+
+      const mockSelect = vi.fn().mockReturnValue(mockSupabaseChain);
+
+      const mockSupabase = {
+        from: vi.fn().mockReturnValue({
+          select: mockSelect,
+        }),
+      } as unknown as SupabaseClient;
+
+      const service = new FlashcardService(mockSupabase);
+
+      await expect(
+        service.listCandidateFlashcards("test-user", {
+          page: 1,
+          limit: 20,
+        })
+      ).rejects.toThrow("Failed to fetch candidate flashcards");
+    });
+
+    it("should apply sorting when specified", async () => {
+      const mockSupabaseChain = {
+        data: mockFlashcards,
+        error: null,
+        count: mockFlashcards.length,
+        range: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+      };
+
+      const mockSelect = vi.fn().mockReturnValue(mockSupabaseChain);
+
+      const mockSupabase = {
+        from: vi.fn().mockReturnValue({
+          select: mockSelect,
+        }),
+      } as unknown as SupabaseClient;
+
+      const service = new FlashcardService(mockSupabase);
+      await service.listCandidateFlashcards("test-user", {
+        page: 1,
+        limit: 20,
+        sort: "created_at_desc",
+      });
+
+      expect(mockSupabaseChain.order).toHaveBeenCalledWith("created_at", {
+        ascending: false,
+      });
+    });
+  });
 });
