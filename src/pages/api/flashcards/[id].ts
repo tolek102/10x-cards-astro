@@ -192,3 +192,69 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
     );
   }
 };
+
+export const DELETE: APIRoute = async ({ params, locals }) => {
+  try {
+    // Validate flashcard ID
+    const validationResult = flashcardIdSchema.safeParse(params.id);
+
+    if (!validationResult.success) {
+      logger.warn("Validation failed for flashcard ID", {
+        errors: validationResult.error.errors,
+        providedId: params.id,
+      });
+
+      return new Response(
+        JSON.stringify({
+          error: "Validation failed",
+          details: validationResult.error.errors,
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const flashcardId = validationResult.data;
+
+    // Create service instance and delete flashcard
+    const flashcardService = createFlashcardService(locals.supabase);
+    await flashcardService.deleteFlashcard(DEFAULT_USER_ID, flashcardId);
+
+    // Return 204 No Content on successful deletion
+    return new Response(null, { status: 204 });
+  } catch (error) {
+    logger.error("Error deleting flashcard", { error });
+
+    // Handle specific error types
+    if (error instanceof Error && error.message === "Flashcard not found") {
+      logger.warn("Flashcard not found", {
+        flashcardId: params.id,
+        userId: DEFAULT_USER_ID,
+      });
+
+      return new Response(
+        JSON.stringify({
+          error: "Not found",
+          message: "Flashcard not found or you don't have access to it",
+        }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({
+        error: "Internal server error",
+        message: "Failed to process the request",
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+};

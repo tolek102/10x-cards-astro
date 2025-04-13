@@ -322,6 +322,47 @@ export class FlashcardService {
       throw error;
     }
   }
+
+  async deleteFlashcard(userId: string, flashcardId: string): Promise<void> {
+    try {
+      logger.info("Deleting flashcard", { userId, flashcardId });
+
+      // First, get the existing flashcard to check ownership
+      const { data: existingFlashcard, error: fetchError } = await this.supabase
+        .from("flashcards")
+        .select()
+        .eq("id", flashcardId)
+        .eq("user_id", userId)
+        .single();
+
+      if (fetchError) {
+        logger.error("Error fetching flashcard for deletion", { error: fetchError });
+        throw new Error("Failed to fetch flashcard");
+      }
+
+      if (!existingFlashcard) {
+        logger.warn("Flashcard not found or unauthorized", { flashcardId });
+        throw new Error("Flashcard not found");
+      }
+
+      // Delete the flashcard
+      const { error: deleteError } = await this.supabase
+        .from("flashcards")
+        .delete()
+        .eq("id", flashcardId)
+        .eq("user_id", userId);
+
+      if (deleteError) {
+        logger.error("Error deleting flashcard", { error: deleteError });
+        throw new Error("Failed to delete flashcard");
+      }
+
+      logger.info("Successfully deleted flashcard", { flashcardId });
+    } catch (error) {
+      logger.error("Error in deleteFlashcard", { error });
+      throw error;
+    }
+  }
 }
 
 // Factory function to create FlashcardService instance

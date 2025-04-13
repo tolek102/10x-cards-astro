@@ -269,6 +269,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+    delete:
+      summary: Delete flashcard by ID
+      description: |
+        Deletes a specific flashcard by its ID.
+        Only deletes flashcards that belong to the authenticated user.
+        Returns 204 No Content on successful deletion.
+      operationId: deleteFlashcard
+      tags:
+        - Flashcards
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the flashcard
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Flashcard successfully deleted
+        '400':
+          description: Invalid flashcard ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Flashcard not found or belongs to another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   schemas:
     GenerateFlashcardsCommand:

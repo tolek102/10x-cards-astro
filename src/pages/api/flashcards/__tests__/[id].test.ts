@@ -2,9 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { APIContext } from "astro";
 import type { AstroCookies } from "astro";
 import type { SupabaseClient } from "../../../../db/supabase.client";
-import { GET, PATCH } from "../[id]";
+import { GET, PATCH, DELETE } from "../[id]";
 import type { FlashcardDto } from "../../../../types";
 import { createFlashcardService } from "../../../../lib/services/flashcardService";
+import { logger } from "../../../../lib/services/loggerService";
 
 vi.mock("../../../../lib/services/loggerService", () => ({
   logger: {
@@ -376,5 +377,136 @@ describe("PATCH /api/flashcards/[id]", () => {
     expect(response.status).toBe(500);
     expect(data.error).toBe("Internal server error");
     expect(data.message).toBe("Failed to process the request");
+  });
+});
+
+describe("DELETE /api/flashcards/[id]", () => {
+  const mockFlashcardId = "123e4567-e89b-12d3-a456-426614174000";
+  const mockInvalidId = "invalid-uuid";
+
+  const createMockAPIContext = (params: Record<string, string>, requestInit?: RequestInit): APIContext => ({
+    request: new Request("http://localhost/api/flashcards/" + params.id, requestInit),
+    locals: { supabase: {} as SupabaseClient },
+    cookies: {
+      get: vi.fn(),
+      has: vi.fn(),
+      set: vi.fn(),
+      delete: vi.fn(),
+      headers: () => new Headers(),
+    } as unknown as AstroCookies,
+    url: new URL("http://localhost/api/flashcards/" + params.id),
+    site: new URL("http://localhost"),
+    generator: "test",
+    params,
+    props: {},
+    redirect: () => new Response(null, { status: 302 }),
+    currentLocale: "en",
+    preferredLocale: "en",
+    preferredLocaleList: ["en"],
+    rewrite: vi.fn(),
+    clientAddress: "127.0.0.1",
+    routePattern: "/api/flashcards/[id]",
+    originPathname: "/api/flashcards/" + params.id,
+    getActionResult: vi.fn(),
+    callAction: vi.fn(),
+    isPrerendered: false,
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should return 204 when flashcard is successfully deleted", async () => {
+    const mockDeleteFlashcard = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(createFlashcardService).mockReturnValue({
+      deleteFlashcard: mockDeleteFlashcard,
+      generateFlashcards: vi.fn(),
+      createManualFlashcard: vi.fn(),
+      getFlashcardById: vi.fn(),
+      listAcceptedFlashcards: vi.fn(),
+      listCandidateFlashcards: vi.fn(),
+      updateFlashcard: vi.fn(),
+    } as unknown as ReturnType<typeof createFlashcardService>);
+
+    const response = await DELETE(createMockAPIContext({ id: mockFlashcardId }, { method: "DELETE" }));
+
+    expect(response.status).toBe(204);
+    expect(response.body).toBeNull();
+    expect(mockDeleteFlashcard).toHaveBeenCalledTimes(1);
+    expect(mockDeleteFlashcard).toHaveBeenCalledWith(expect.any(String), mockFlashcardId);
+  });
+
+  it("should return 400 when flashcard ID is invalid", async () => {
+    const response = await DELETE(createMockAPIContext({ id: mockInvalidId }, { method: "DELETE" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({
+      error: "Validation failed",
+      details: expect.any(Array),
+    });
+    expect(vi.mocked(logger).warn).toHaveBeenCalledWith(
+      "Validation failed for flashcard ID",
+      expect.objectContaining({
+        providedId: mockInvalidId,
+      })
+    );
+  });
+
+  it("should return 404 when flashcard is not found", async () => {
+    const mockDeleteFlashcard = vi.fn().mockRejectedValue(new Error("Flashcard not found"));
+    vi.mocked(createFlashcardService).mockReturnValue({
+      deleteFlashcard: mockDeleteFlashcard,
+      generateFlashcards: vi.fn(),
+      createManualFlashcard: vi.fn(),
+      getFlashcardById: vi.fn(),
+      listAcceptedFlashcards: vi.fn(),
+      listCandidateFlashcards: vi.fn(),
+      updateFlashcard: vi.fn(),
+    } as unknown as ReturnType<typeof createFlashcardService>);
+
+    const response = await DELETE(createMockAPIContext({ id: mockFlashcardId }, { method: "DELETE" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(404);
+    expect(body).toEqual({
+      error: "Not found",
+      message: "Flashcard not found or you don't have access to it",
+    });
+    expect(vi.mocked(logger).warn).toHaveBeenCalledWith(
+      "Flashcard not found",
+      expect.objectContaining({
+        flashcardId: mockFlashcardId,
+      })
+    );
+  });
+
+  it("should return 500 when an unexpected error occurs", async () => {
+    const mockError = new Error("Database connection failed");
+    const mockDeleteFlashcard = vi.fn().mockRejectedValue(mockError);
+    vi.mocked(createFlashcardService).mockReturnValue({
+      deleteFlashcard: mockDeleteFlashcard,
+      generateFlashcards: vi.fn(),
+      createManualFlashcard: vi.fn(),
+      getFlashcardById: vi.fn(),
+      listAcceptedFlashcards: vi.fn(),
+      listCandidateFlashcards: vi.fn(),
+      updateFlashcard: vi.fn(),
+    } as unknown as ReturnType<typeof createFlashcardService>);
+
+    const response = await DELETE(createMockAPIContext({ id: mockFlashcardId }, { method: "DELETE" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body).toEqual({
+      error: "Internal server error",
+      message: "Failed to process the request",
+    });
+    expect(vi.mocked(logger).error).toHaveBeenCalledWith(
+      "Error deleting flashcard",
+      expect.objectContaining({
+        error: mockError,
+      })
+    );
   });
 });
