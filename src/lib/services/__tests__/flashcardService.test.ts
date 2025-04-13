@@ -548,4 +548,93 @@ describe("FlashcardService", () => {
       );
     });
   });
+
+  describe("acceptGeneratedFlashcard", () => {
+    const userId = "test-user-id";
+    const flashcardId = "test-flashcard-id";
+
+    it("should accept a candidate flashcard successfully", async () => {
+      const mockFlashcard = {
+        id: flashcardId,
+        user_id: userId,
+        front: "Test front",
+        back: "Test back",
+        source: "AI",
+        candidate: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      const mockUpdatedFlashcard = {
+        ...mockFlashcard,
+        candidate: false,
+        updated_at: new Date().toISOString(),
+      };
+
+      const mockSupabase = {
+        from: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        update: vi.fn().mockReturnThis(),
+        single: vi.fn().mockImplementation(() => ({
+          data: mockFlashcard,
+          error: null,
+        })),
+      };
+
+      mockSupabase.update.mockImplementation(() => ({
+        ...mockSupabase,
+        single: vi.fn().mockImplementation(() => ({
+          data: mockUpdatedFlashcard,
+          error: null,
+        })),
+      }));
+
+      const service = new FlashcardService(mockSupabase as unknown as SupabaseClient);
+      const result = await service.acceptGeneratedFlashcard(userId, flashcardId);
+
+      expect(result).toEqual(mockUpdatedFlashcard);
+      expect(mockSupabase.from).toHaveBeenCalledWith("flashcards");
+      expect(mockSupabase.select).toHaveBeenCalled();
+      expect(mockSupabase.eq).toHaveBeenCalledWith("id", flashcardId);
+      expect(mockSupabase.eq).toHaveBeenCalledWith("user_id", userId);
+      expect(mockSupabase.eq).toHaveBeenCalledWith("candidate", true);
+      expect(mockSupabase.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          candidate: false,
+          updated_at: expect.any(String),
+        })
+      );
+    });
+
+    it("should throw error when flashcard is not found", async () => {
+      const mockSupabase = {
+        from: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockImplementation(() => ({
+          data: null,
+          error: null,
+        })),
+      };
+
+      const service = new FlashcardService(mockSupabase as unknown as SupabaseClient);
+      await expect(service.acceptGeneratedFlashcard(userId, flashcardId)).rejects.toThrow("Flashcard not found");
+    });
+
+    it("should throw error when database operation fails", async () => {
+      const mockSupabase = {
+        from: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockImplementation(() => ({
+          data: null,
+          error: new Error("Database error"),
+        })),
+      };
+
+      const service = new FlashcardService(mockSupabase as unknown as SupabaseClient);
+      await expect(service.acceptGeneratedFlashcard(userId, flashcardId)).rejects.toThrow("Failed to fetch flashcard");
+    });
+  });
 });

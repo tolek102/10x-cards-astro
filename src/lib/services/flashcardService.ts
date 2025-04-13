@@ -363,6 +363,56 @@ export class FlashcardService {
       throw error;
     }
   }
+
+  async acceptGeneratedFlashcard(userId: string, flashcardId: string): Promise<FlashcardDto> {
+    try {
+      logger.info("Accepting generated flashcard", { userId, flashcardId });
+
+      // First, get the existing flashcard to check ownership and candidate status
+      const { data: existingFlashcard, error: fetchError } = await this.supabase
+        .from("flashcards")
+        .select()
+        .eq("id", flashcardId)
+        .eq("user_id", userId)
+        .eq("candidate", true)
+        .single();
+
+      if (fetchError) {
+        logger.error("Error fetching flashcard for acceptance", { error: fetchError });
+        throw new Error("Failed to fetch flashcard");
+      }
+
+      if (!existingFlashcard) {
+        logger.warn("Flashcard not found or not a candidate", { flashcardId });
+        throw new Error("Flashcard not found");
+      }
+
+      // Update the flashcard to mark it as accepted
+      const { data: updatedFlashcard, error: updateError } = await this.supabase
+        .from("flashcards")
+        .update({ candidate: false, updated_at: new Date().toISOString() })
+        .eq("id", flashcardId)
+        .eq("user_id", userId)
+        .select()
+        .single();
+
+      if (updateError) {
+        logger.error("Error accepting flashcard", { error: updateError });
+        throw new Error("Failed to accept flashcard");
+      }
+
+      if (!updatedFlashcard) {
+        throw new Error("Flashcard update failed");
+      }
+
+      logger.info("Successfully accepted flashcard", { flashcardId });
+
+      return updatedFlashcard;
+    } catch (error) {
+      logger.error("Error in acceptGeneratedFlashcard", { error });
+      throw error;
+    }
+  }
 }
 
 // Factory function to create FlashcardService instance

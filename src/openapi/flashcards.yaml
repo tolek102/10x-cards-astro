@@ -308,6 +308,50 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /flashcards/{id}/accept:
+    patch:
+      summary: Accept AI-generated flashcard
+      description: |
+        Accepts a candidate flashcard by changing its candidate flag from true to false.
+        Only works for flashcards that belong to the authenticated user and are marked as candidates (candidate=true).
+        This endpoint is typically used to approve AI-generated flashcards after user review.
+      operationId: acceptGeneratedFlashcard
+      tags:
+        - Flashcards
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the flashcard to accept
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successfully accepted flashcard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlashcardDto'
+        '400':
+          description: Invalid flashcard ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Flashcard not found, belongs to another user, or is not a candidate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   schemas:
     GenerateFlashcardsCommand:
