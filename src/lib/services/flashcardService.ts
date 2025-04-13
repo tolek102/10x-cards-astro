@@ -89,6 +89,39 @@ export class FlashcardService {
       throw error;
     }
   }
+
+  async getFlashcardById(userId: string, flashcardId: string): Promise<FlashcardDto> {
+    try {
+      logger.info("Fetching flashcard by id", { userId, flashcardId });
+
+      if (!userId || !flashcardId) {
+        logger.error("Missing required parameters", { userId, flashcardId });
+        throw new Error("Missing required parameters");
+      }
+
+      const { data: flashcard, error } = await this.supabase
+        .from("flashcards")
+        .select()
+        .eq("id", flashcardId)
+        .eq("user_id", userId)
+        .single();
+
+      if (error) {
+        logger.error("Error fetching flashcard", { error });
+        throw new Error("Failed to fetch flashcard");
+      }
+
+      if (!flashcard) {
+        logger.warn("Flashcard not found", { flashcardId });
+        throw new Error("Flashcard not found");
+      }
+
+      return flashcard;
+    } catch (error) {
+      logger.error("Error in getFlashcardById", { error });
+      throw error;
+    }
+  }
 }
 
 // Factory function to create FlashcardService instance

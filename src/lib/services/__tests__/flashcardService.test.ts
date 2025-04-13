@@ -12,17 +12,21 @@ describe("FlashcardService", () => {
     data: null as FlashcardDto[] | FlashcardDto | null,
     error: null as PostgrestError | null,
     select: vi.fn().mockReturnThis(),
-    single: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockImplementation(function (this: typeof mockSupabaseChain) {
+      return { data: this.data, error: this.error };
+    }),
   };
 
   const mockSelect = vi.fn().mockReturnValue(mockSupabaseChain);
   const mockInsert = vi.fn().mockReturnValue({ select: mockSelect });
   const mockUpsert = vi.fn().mockReturnValue(mockSupabaseChain);
 
-  const mockFrom = vi.fn().mockReturnValue({
+  const mockFrom = vi.fn().mockImplementation(() => ({
     insert: mockInsert,
     upsert: mockUpsert,
-  });
+    ...mockSupabaseChain,
+  }));
 
   const mockSupabase: MinimalSupabaseClient = {
     from: mockFrom,
@@ -144,6 +148,64 @@ describe("FlashcardService", () => {
       mockSupabaseChain.error = null;
 
       await expect(service.createManualFlashcard(mockUserId, mockCommand)).rejects.toThrow("Flashcard was not created");
+    });
+  });
+
+  describe("getFlashcardById", () => {
+    const mockUserId = "test-user-id";
+    const mockFlashcardId = "123e4567-e89b-12d3-a456-426614174000";
+
+    it("should fetch a flashcard successfully", async () => {
+      const mockFlashcard: FlashcardDto = {
+        id: mockFlashcardId,
+        front: "Test front",
+        back: "Test back",
+        source: "MANUAL",
+        candidate: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      mockSupabaseChain.data = mockFlashcard;
+      mockSupabaseChain.error = null;
+
+      const result = await service.getFlashcardById(mockUserId, mockFlashcardId);
+
+      expect(result).toEqual(mockFlashcard);
+      expect(mockFrom).toHaveBeenCalledWith("flashcards");
+      expect(mockSupabaseChain.select).toHaveBeenCalled();
+      expect(mockSupabaseChain.eq).toHaveBeenCalledWith("id", mockFlashcardId);
+      expect(mockSupabaseChain.eq).toHaveBeenCalledWith("user_id", mockUserId);
+      expect(mockSupabaseChain.single).toHaveBeenCalled();
+    });
+
+    it("should throw error when database operation fails", async () => {
+      const mockError: PostgrestError = {
+        message: "Database error",
+        details: "",
+        hint: "",
+        code: "23505",
+        name: "PostgrestError",
+      };
+      mockSupabaseChain.data = null;
+      mockSupabaseChain.error = mockError;
+
+      await expect(service.getFlashcardById(mockUserId, mockFlashcardId)).rejects.toThrow("Failed to fetch flashcard");
+    });
+
+    it("should throw error when flashcard is not found", async () => {
+      mockSupabaseChain.data = null;
+      mockSupabaseChain.error = null;
+
+      await expect(service.getFlashcardById(mockUserId, mockFlashcardId)).rejects.toThrow("Flashcard not found");
+    });
+
+    it("should throw error when userId is empty", async () => {
+      await expect(service.getFlashcardById("", mockFlashcardId)).rejects.toThrow("Missing required parameters");
+    });
+
+    it("should throw error when flashcardId is empty", async () => {
+      await expect(service.getFlashcardById(mockUserId, "")).rejects.toThrow("Missing required parameters");
     });
   });
 });
