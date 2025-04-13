@@ -101,7 +101,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
   }
 };
 
-export const PUT: APIRoute = async ({ params, request, locals }) => {
+export const PATCH: APIRoute = async ({ params, request, locals }) => {
   try {
     // Validate flashcard ID
     const validationResult = flashcardIdSchema.safeParse(params.id);

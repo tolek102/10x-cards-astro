@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { APIContext } from "astro";
 import type { AstroCookies } from "astro";
 import type { SupabaseClient } from "../../../../db/supabase.client";
-import { GET, PUT } from "../[id]";
+import { GET, PATCH } from "../[id]";
 import type { FlashcardDto } from "../../../../types";
 import { createFlashcardService } from "../../../../lib/services/flashcardService";
 
@@ -129,7 +129,7 @@ describe("GET /api/flashcards/[id]", () => {
   });
 });
 
-describe("PUT /api/flashcards/[id]", () => {
+describe("PATCH /api/flashcards/[id]", () => {
   const mockFlashcard = {
     id: "123e4567-e89b-12d3-a456-426614174000",
     front: "Test Question",
@@ -194,11 +194,11 @@ describe("PUT /api/flashcards/[id]", () => {
       listCandidateFlashcards: vi.fn(),
     } as unknown as ReturnType<typeof createFlashcardService>);
 
-    const response = await PUT(
+    const response = await PATCH(
       createMockAPIContext(
         { id: mockFlashcard.id },
         {
-          method: "PUT",
+          method: "PATCH",
           body: JSON.stringify(validUpdateCommand),
         }
       )
@@ -230,11 +230,11 @@ describe("PUT /api/flashcards/[id]", () => {
       listCandidateFlashcards: vi.fn(),
     } as unknown as ReturnType<typeof createFlashcardService>);
 
-    const response = await PUT(
+    const response = await PATCH(
       createMockAPIContext(
         { id: mockFlashcard.id },
         {
-          method: "PUT",
+          method: "PATCH",
           body: JSON.stringify(partialUpdate),
         }
       )
@@ -266,11 +266,11 @@ describe("PUT /api/flashcards/[id]", () => {
       listCandidateFlashcards: vi.fn(),
     } as unknown as ReturnType<typeof createFlashcardService>);
 
-    const response = await PUT(
+    const response = await PATCH(
       createMockAPIContext(
         { id: mockFlashcard.id },
         {
-          method: "PUT",
+          method: "PATCH",
           body: JSON.stringify(partialUpdate),
         }
       )
@@ -286,11 +286,11 @@ describe("PUT /api/flashcards/[id]", () => {
   });
 
   it("should return 400 when no fields are provided for update", async () => {
-    const response = await PUT(
+    const response = await PATCH(
       createMockAPIContext(
         { id: mockFlashcard.id },
         {
-          method: "PUT",
+          method: "PATCH",
           body: JSON.stringify({}),
         }
       )
@@ -303,7 +303,16 @@ describe("PUT /api/flashcards/[id]", () => {
   });
 
   it("should return 400 for invalid UUID format", async () => {
-    const response = await PUT(createMockAPIContext({ id: "invalid-uuid" }));
+    const response = await PATCH(
+      createMockAPIContext(
+        { id: "invalid-uuid" },
+        {
+          method: "PATCH",
+          body: JSON.stringify({ front: "Updated front" }),
+        }
+      )
+    );
+
     const data = await response.json();
 
     expect(response.status).toBe(400);
@@ -323,11 +332,11 @@ describe("PUT /api/flashcards/[id]", () => {
       listCandidateFlashcards: vi.fn(),
     } as unknown as ReturnType<typeof createFlashcardService>);
 
-    const response = await PUT(
+    const response = await PATCH(
       createMockAPIContext(
         { id: "123e4567-e89b-12d3-a456-426614174001" },
         {
-          method: "PUT",
+          method: "PATCH",
           body: JSON.stringify({ front: "Updated front" }),
         }
       )
@@ -352,7 +361,16 @@ describe("PUT /api/flashcards/[id]", () => {
       listCandidateFlashcards: vi.fn(),
     } as unknown as ReturnType<typeof createFlashcardService>);
 
-    const response = await PUT(createMockAPIContext({ id: mockFlashcard.id }));
+    const response = await PATCH(
+      createMockAPIContext(
+        { id: mockFlashcard.id },
+        {
+          method: "PATCH",
+          body: JSON.stringify({ front: "Updated front" }),
+        }
+      )
+    );
+
     const data = await response.json();
 
     expect(response.status).toBe(500);
