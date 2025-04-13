@@ -1,4 +1,10 @@
-import type { FlashcardCreateDto, GenerateFlashcardsCommand, GeneratedFlashcardDto, FlashcardDto } from "../../types";
+import type {
+  FlashcardCreateDto,
+  GenerateFlashcardsCommand,
+  GeneratedFlashcardDto,
+  FlashcardDto,
+  FlashcardsListResponseDto,
+} from "../../types";
 import type { SupabaseClient } from "../../db/supabase.client";
 import { DEFAULT_USER_ID } from "../../db/supabase.client";
 import { logger } from "./loggerService";
@@ -119,6 +125,65 @@ export class FlashcardService {
       return flashcard;
     } catch (error) {
       logger.error("Error in getFlashcardById", { error });
+      throw error;
+    }
+  }
+
+  async listAcceptedFlashcards(
+    userId: string,
+    params: { page: number; limit: number; sort?: "created_at_desc" | "created_at_asc" }
+  ): Promise<FlashcardsListResponseDto> {
+    try {
+      logger.info("Fetching accepted flashcards", { userId, ...params });
+
+      // Calculate offset for pagination
+      const offset = (params.page - 1) * params.limit;
+
+      // Build query
+      let query = this.supabase
+        .from("flashcards")
+        .select("*", { count: "exact" })
+        .eq("user_id", userId)
+        .eq("candidate", false)
+        .range(offset, offset + params.limit - 1);
+
+      // Apply sorting if specified
+      if (params.sort) {
+        const [column, order] = params.sort.split("_");
+        query = query.order(column, { ascending: order === "asc" });
+      } else {
+        // Default sorting
+        query = query.order("created_at", { ascending: false });
+      }
+
+      // Execute query
+      const { data: flashcards, error, count } = await query;
+
+      if (error) {
+        logger.error("Error fetching flashcards", { error });
+        throw new Error("Failed to fetch flashcards");
+      }
+
+      if (!count) {
+        logger.warn("No flashcards found or count not available");
+        throw new Error("Failed to get flashcards count");
+      }
+
+      logger.info("Successfully fetched flashcards", {
+        count: flashcards?.length,
+        total: count,
+      });
+
+      return {
+        data: flashcards || [],
+        pagination: {
+          page: params.page,
+          limit: params.limit,
+          total: count,
+        },
+      };
+    } catch (error) {
+      logger.error("Error in listAcceptedFlashcards", { error });
       throw error;
     }
   }
