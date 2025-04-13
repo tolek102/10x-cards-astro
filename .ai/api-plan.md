@@ -146,6 +146,17 @@
      - **200 OK:** Returns a list of generated flashcards candidates (each with `source` set to "AI" and `candidate` set to 'true').
      - **Error Codes:** 400 (Input Validation Error), 401 (Unauthorized), 500 (Internal Server Error if AI service fails).
 
+7. **Accept AI-Generated Flashcard**
+   - **Method:** PUT
+   - **URL:** `/api/flashcards/:id/accept`
+   - **Description:** Accepts an AI-generated flashcard by updating its `candidate` flag to `false`, marking it as accepted.
+   - **Response:**
+     - **200 OK:** Returns the updated flashcard details.
+     - **Error Codes:** 
+         - **404 Not Found:** If the flashcard with the given id does not exist.
+         - **401 Unauthorized:** If the user is not authenticated.
+         - **400 Bad Request:** In case of validation errors.
+
 ### C. Statistics
 
 1. **Get User Statistics**
