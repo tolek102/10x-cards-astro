@@ -1,0 +1,27 @@
+---
+// FlashcardsDisplay.astro
+// This component contains the flashcards container, flashcards count, export button, and a message when there are no flashcards.
+---
+
+<div id="results-section" class="hidden">
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-xl font-semibold text-gray-800">Your Flashcards</h2>
+    <div class="flex items-center space-x-3">
+      <div class="text-sm text-gray-500">
+        <span id="flashcard-count">0</span> flashcards
+      </div>
+      <button id="export-btn" class="text-sm text-indigo-600 hover:text-indigo-800 flex items-center">
+        <i class="fas fa-file-export mr-1"></i> Export
+      </button>
+    </div>
+  </div>
+
+  <div id="flashcards-container" class="grid gap-4 md:grid-cols-2">
+    <!-- Flashcards will be inserted here -->
+  </div>
+
+  <div id="no-flashcards" class="text-center py-12 bg-gray-50 rounded-lg">
+    <i class="fas fa-lightbulb text-4xl text-yellow-400 mb-4"></i>
+    <p class="text-gray-500">No flashcards created yet. Use the AI generator or manual creator above.</p>
+  </div>
+</div> 

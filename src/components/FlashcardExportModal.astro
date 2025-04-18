@@ -1,0 +1,31 @@
+---
+// FlashcardExportModal.astro
+// This component displays a modal for exporting flashcards in JSON or CSV format.
+---
+
+<div id="export-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-semibold text-gray-800">Export Flashcards</h3>
+      <button id="close-export-modal" class="text-gray-500 hover:text-gray-700">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700 mb-2">Select Format</label>
+      <div class="grid grid-cols-2 gap-3">
+        <button id="export-json" class="px-4 py-3 border border-gray-300 rounded-md hover:bg-gray-50 flex flex-col items-center">
+          <i class="fas fa-file-code text-2xl text-indigo-600 mb-2"></i>
+          <span>JSON</span>
+        </button>
+        <button id="export-csv" class="px-4 py-3 border border-gray-300 rounded-md hover:bg-gray-50 flex flex-col items-center">
+          <i class="fas fa-file-csv text-2xl text-indigo-600 mb-2"></i>
+          <span>CSV</span>
+        </button>
+      </div>
+    </div>
+    <div class="text-xs text-gray-500 mt-4">
+      <i class="fas fa-info-circle mr-1"></i> You can import these files back later
+    </div>
+  </div>
+</div> 

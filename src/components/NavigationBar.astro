@@ -1,0 +1,24 @@
+---
+// NavigationBar.astro
+// This component contains the navigation bar with the app branding, user profile, and logout button.
+---
+
+<nav class="bg-white shadow-sm">
+  <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+    <div class="flex items-center space-x-2">
+      <i class="fas fa-lightbulb text-indigo-600 text-xl"></i>
+      <span class="text-xl font-semibold text-gray-800">Flashcard Master</span>
+    </div>
+    <div class="flex items-center space-x-4">
+      <button id="profile-btn" class="flex items-center space-x-2 text-gray-700 hover:text-indigo-600">
+        <span id="user-name" class="hidden md:inline">John Doe</span>
+        <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+          <i class="fas fa-user"></i>
+        </div>
+      </button>
+      <button id="logout-btn" class="text-gray-700 hover:text-indigo-600">
+        <i class="fas fa-sign-out-alt"></i>
+      </button>
+    </div>
+  </div>
+</nav> 
