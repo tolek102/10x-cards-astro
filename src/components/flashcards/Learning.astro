@@ -1,0 +1,155 @@
+---
+import type { FlashcardDto } from "../../types";
+
+interface Props {
+  isVisible: boolean;
+  flashcards: FlashcardDto[];
+}
+
+const { isVisible, flashcards = [] } = Astro.props;
+---
+
+<div id="learning-section" class:list={["w-full max-w-4xl mx-auto p-6", { hidden: !isVisible }]}>
+  <div class="bg-white rounded-lg shadow-md p-6">
+    {
+      flashcards.length === 0 ? (
+        <div class="text-center py-12">
+          <p class="text-gray-500">No flashcards available for learning</p>
+          <p class="text-sm text-gray-400 mt-2">Add some flashcards first to start learning</p>
+        </div>
+      ) : (
+        <div class="space-y-6">
+          <div class="flex items-center justify-between">
+            <div class="text-sm text-gray-500">
+              Card <span id="current-card-index">1</span> of <span id="total-cards">{flashcards.length}</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button
+                id="prev-card-btn"
+                disabled
+                class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <i class="fas fa-chevron-left mr-2" />
+                Previous
+              </button>
+              <button
+                id="next-card-btn"
+                class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+                <i class="fas fa-chevron-right ml-2" />
+              </button>
+            </div>
+          </div>
+
+          <div
+            id="learning-flashcard"
+            class="flashcard bg-white rounded-xl shadow-md overflow-hidden h-64 relative cursor-pointer"
+          >
+            <div class="absolute inset-0">
+              <div class="front absolute inset-0 p-6 flex flex-col">
+                <div class="flex-1 overflow-auto">
+                  <p id="learning-front" class="text-gray-900 text-lg">
+                    {flashcards[0].front}
+                  </p>
+                </div>
+              </div>
+              <div class="back absolute inset-0 p-6 flex flex-col [transform:rotateY(180deg)]">
+                <div class="flex-1 overflow-auto">
+                  <p id="learning-back" class="text-gray-900 text-lg">
+                    {flashcards[0].back}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-center">
+            <button
+              id="flip-card-btn"
+              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              <i class="fas fa-sync-alt mr-2" />
+              Flip Card
+            </button>
+          </div>
+        </div>
+      )
+    }
+  </div>
+</div>
+
+<script>
+  let currentIndex = 0;
+  const flashcards = JSON.parse(document.getElementById("learning-section")?.dataset.flashcards || "[]");
+
+  const learningFlashcard = document.getElementById("learning-flashcard");
+  const learningFront = document.getElementById("learning-front");
+  const learningBack = document.getElementById("learning-back");
+  const currentCardIndex = document.getElementById("current-card-index");
+  const totalCards = document.getElementById("total-cards");
+  const prevCardBtn = document.getElementById("prev-card-btn");
+  const nextCardBtn = document.getElementById("next-card-btn");
+  const flipCardBtn = document.getElementById("flip-card-btn");
+
+  function updateCard() {
+    if (!flashcards.length) return;
+
+    const card = flashcards[currentIndex];
+    if (learningFront) learningFront.textContent = card.front;
+    if (learningBack) learningBack.textContent = card.back;
+    if (currentCardIndex) currentCardIndex.textContent = (currentIndex + 1).toString();
+    if (totalCards) totalCards.textContent = flashcards.length.toString();
+
+    if (prevCardBtn) prevCardBtn.disabled = currentIndex === 0;
+    if (nextCardBtn) nextCardBtn.disabled = currentIndex === flashcards.length - 1;
+
+    // Reset to front side when changing cards
+    learningFlashcard?.classList.remove("flipped");
+  }
+
+  // Navigation
+  prevCardBtn?.addEventListener("click", () => {
+    if (currentIndex > 0) {
+      currentIndex--;
+      updateCard();
+    }
+  });
+
+  nextCardBtn?.addEventListener("click", () => {
+    if (currentIndex < flashcards.length - 1) {
+      currentIndex++;
+      updateCard();
+    }
+  });
+
+  // Flip functionality
+  flipCardBtn?.addEventListener("click", () => {
+    learningFlashcard?.classList.toggle("flipped");
+  });
+
+  // Initialize
+  updateCard();
+</script>
+
+<style>
+  .flashcard {
+    perspective: 1000px;
+    transform-style: preserve-3d;
+    transition: transform 0.6s;
+  }
+
+  .flashcard.flipped {
+    transform: rotateY(180deg);
+  }
+
+  .front,
+  .back {
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+  }
+
+  .back {
+    transform: rotateY(180deg);
+  }
+</style>

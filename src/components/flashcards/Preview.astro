@@ -1,0 +1,215 @@
+import type { FlashcardDto } from '../../types';
+import FlashcardList from './FlashcardList.astro';
+
+interface Props {
+  isVisible: boolean;
+  acceptedFlashcards: FlashcardDto[];
+  candidateFlashcards: FlashcardDto[];
+}
+
+const {
+  isVisible,
+  acceptedFlashcards = [],
+  candidateFlashcards = []
+} = Astro.props;
+
+<div
+  id="preview-section"
+  class:list={['w-full max-w-7xl mx-auto p-6', { hidden: !isVisible }]}
+>
+  <div class="bg-white rounded-lg shadow-md p-6">
+    <div class="border-b border-gray-200">
+      <nav class="-mb-px flex space-x-8">
+        <button
+          id="approved-tab"
+          class="border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm active"
+        >
+          Approved Flashcards ({acceptedFlashcards.length})
+        </button>
+        <button
+          id="candidate-tab"
+          class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+        >
+          Candidate Flashcards ({candidateFlashcards.length})
+        </button>
+      </nav>
+    </div>
+
+    <div id="approved-section" class="mt-6">
+      <FlashcardList
+        flashcards={acceptedFlashcards}
+        showActions={true}
+        emptyMessage="No approved flashcards yet"
+      />
+    </div>
+
+    <div id="candidate-section" class="mt-6 hidden">
+      <div class="space-y-4">
+        {candidateFlashcards.length === 0 ? (
+          <div class="text-center py-12">
+            <p class="text-gray-500">No candidate flashcards to review</p>
+          </div>
+        ) : (
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {candidateFlashcards.map((card) => (
+              <div
+                class="flashcard bg-white rounded-xl shadow-md overflow-hidden h-48 relative group"
+                data-id={card.id}
+              >
+                <div class="absolute inset-0">
+                  <div class="front absolute inset-0 p-4 flex flex-col">
+                    <div class="flex-1 overflow-auto">
+                      <p class="text-gray-900">{card.front}</p>
+                    </div>
+                    <div class="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        class="flip-btn text-gray-400 hover:text-gray-600"
+                      >
+                        <i class="fas fa-sync-alt"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="edit-btn text-gray-400 hover:text-gray-600"
+                      >
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="accept-btn text-gray-400 hover:text-green-600"
+                      >
+                        <i class="fas fa-check"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="discard-btn text-gray-400 hover:text-red-600"
+                      >
+                        <i class="fas fa-times"></i>
+                      </button>
+                    </div>
+                    <div class="mt-2 flex items-center text-xs text-gray-500">
+                      <i class="fas fa-clock mr-1"></i>
+                      <time datetime={card.created_at}>
+                        {new Date(card.created_at).toLocaleDateString()}
+                      </time>
+                      {card.source && (
+                        <span class="ml-2">
+                          <i class="fas fa-tag mr-1"></i>
+                          {card.source}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div class="back absolute inset-0 p-4 flex flex-col [transform:rotateY(180deg)]">
+                    <div class="flex-1 overflow-auto">
+                      <p class="text-gray-900">{card.back}</p>
+                    </div>
+                    <div class="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        class="flip-btn text-gray-400 hover:text-gray-600"
+                      >
+                        <i class="fas fa-sync-alt"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { showNotification } from '../../lib/utils/notifications';
+  import { acceptGeneratedFlashcard, deleteFlashcard } from '../../lib/services/flashcardService';
+
+  // Tab switching
+  const approvedTab = document.getElementById('approved-tab');
+  const candidateTab = document.getElementById('candidate-tab');
+  const approvedSection = document.getElementById('approved-section');
+  const candidateSection = document.getElementById('candidate-section');
+
+  function switchTab(tab: 'approved' | 'candidate') {
+    if (tab === 'approved') {
+      approvedTab?.classList.add('active', 'border-indigo-500', 'text-indigo-600');
+      candidateTab?.classList.remove('active', 'border-indigo-500', 'text-indigo-600');
+      approvedSection?.classList.remove('hidden');
+      candidateSection?.classList.add('hidden');
+    } else {
+      candidateTab?.classList.add('active', 'border-indigo-500', 'text-indigo-600');
+      approvedTab?.classList.remove('active', 'border-indigo-500', 'text-indigo-600');
+      candidateSection?.classList.remove('hidden');
+      approvedSection?.classList.add('hidden');
+    }
+  }
+
+  approvedTab?.addEventListener('click', () => switchTab('approved'));
+  candidateTab?.addEventListener('click', () => switchTab('candidate'));
+
+  // Candidate flashcard actions
+  document.querySelectorAll('.accept-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const flashcard = (e.currentTarget as HTMLElement).closest('.flashcard');
+      const id = flashcard?.dataset.id;
+      
+      if (id) {
+        try {
+          await acceptGeneratedFlashcard(id);
+          flashcard?.remove();
+          showNotification('Flashcard accepted successfully', 'success');
+          // Update counters and refresh lists
+          window.dispatchEvent(new CustomEvent('flashcards:updated'));
+        } catch (error) {
+          showNotification(error instanceof Error ? error.message : 'Failed to accept flashcard', 'error');
+        }
+      }
+    });
+  });
+
+  document.querySelectorAll('.discard-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const flashcard = (e.currentTarget as HTMLElement).closest('.flashcard');
+      const id = flashcard?.dataset.id;
+      
+      if (id && confirm('Are you sure you want to discard this flashcard?')) {
+        try {
+          await deleteFlashcard(id);
+          flashcard?.remove();
+          showNotification('Flashcard discarded successfully', 'success');
+          // Update counters
+          window.dispatchEvent(new CustomEvent('flashcards:updated'));
+        } catch (error) {
+          showNotification(error instanceof Error ? error.message : 'Failed to discard flashcard', 'error');
+        }
+      }
+    });
+  });
+</script>
+
+<style>
+  .flashcard {
+    perspective: 1000px;
+    transform-style: preserve-3d;
+    transition: transform 0.6s;
+  }
+
+  .flashcard.flipped {
+    transform: rotateY(180deg);
+  }
+
+  .front,
+  .back {
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+  }
+
+  .back {
+    transform: rotateY(180deg);
+  }
+</style> 

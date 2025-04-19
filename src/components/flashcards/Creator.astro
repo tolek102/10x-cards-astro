@@ -1,0 +1,239 @@
+---
+import type { FlashcardCreateDto } from "../../types";
+
+interface Props {
+  isVisible: boolean;
+}
+
+const { isVisible } = Astro.props;
+---
+
+<div id="creator-section" class:list={["w-full max-w-4xl mx-auto p-6", { hidden: !isVisible }]}>
+  <div class="bg-white rounded-lg shadow-md p-6">
+    <div class="border-b border-gray-200">
+      <nav class="-mb-px flex space-x-8">
+        <button
+          id="manual-tab"
+          class="border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm active"
+        >
+          Manual Creation
+        </button>
+        <button
+          id="ai-tab"
+          class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+        >
+          AI-Assisted
+        </button>
+      </nav>
+    </div>
+
+    <!-- Manual Creation Section -->
+    <div id="manual-section" class="mt-6">
+      <form id="manual-form" class="space-y-6">
+        <div>
+          <label for="manual-front" class="block text-sm font-medium text-gray-700">Front Side</label>
+          <div class="mt-1">
+            <textarea
+              id="manual-front"
+              name="front"
+              rows="3"
+              class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+              required></textarea>
+            <p class="mt-1 text-sm text-gray-500">
+              Characters: <span id="manual-front-counter">0</span>
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <label for="manual-back" class="block text-sm font-medium text-gray-700">Back Side</label>
+          <div class="mt-1">
+            <textarea
+              id="manual-back"
+              name="back"
+              rows="3"
+              class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+              required></textarea>
+            <p class="mt-1 text-sm text-gray-500">
+              Characters: <span id="manual-back-counter">0</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex justify-end space-x-3">
+          <button
+            type="button"
+            id="clear-manual-btn"
+            class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Clear
+          </button>
+          <button
+            type="submit"
+            id="add-manual-btn"
+            disabled
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Add Flashcard
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- AI-Assisted Section -->
+    <div id="ai-section" class="mt-6 hidden">
+      <form id="ai-form" class="space-y-6">
+        <div>
+          <label for="input-text" class="block text-sm font-medium text-gray-700">Input Text</label>
+          <div class="mt-1">
+            <textarea
+              id="input-text"
+              name="text"
+              rows="6"
+              class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+              required></textarea>
+            <p class="mt-1 text-sm text-gray-500">
+              Characters: <span id="char-counter">0</span>/1000
+            </p>
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <button
+            type="submit"
+            id="generate-btn"
+            disabled
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Generate Flashcards
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { showNotification } from "../../lib/utils/notifications";
+  import { generateFlashcards, createFlashcard } from "../../lib/services/flashcardService";
+
+  // Tab switching
+  const manualTab = document.getElementById("manual-tab");
+  const aiTab = document.getElementById("ai-tab");
+  const manualSection = document.getElementById("manual-section");
+  const aiSection = document.getElementById("ai-section");
+
+  function switchTab(tab: "manual" | "ai") {
+    if (tab === "manual") {
+      manualTab?.classList.add("active", "border-indigo-500", "text-indigo-600");
+      aiTab?.classList.remove("active", "border-indigo-500", "text-indigo-600");
+      manualSection?.classList.remove("hidden");
+      aiSection?.classList.add("hidden");
+    } else {
+      aiTab?.classList.add("active", "border-indigo-500", "text-indigo-600");
+      manualTab?.classList.remove("active", "border-indigo-500", "text-indigo-600");
+      aiSection?.classList.remove("hidden");
+      manualSection?.classList.add("hidden");
+    }
+  }
+
+  manualTab?.addEventListener("click", () => switchTab("manual"));
+  aiTab?.addEventListener("click", () => switchTab("ai"));
+
+  // Manual creation
+  const manualForm = document.getElementById("manual-form") as HTMLFormElement;
+  const manualFront = document.getElementById("manual-front") as HTMLTextAreaElement;
+  const manualBack = document.getElementById("manual-back") as HTMLTextAreaElement;
+  const manualFrontCounter = document.getElementById("manual-front-counter");
+  const manualBackCounter = document.getElementById("manual-back-counter");
+  const addManualBtn = document.getElementById("add-manual-btn");
+  const clearManualBtn = document.getElementById("clear-manual-btn");
+
+  function updateManualCounters() {
+    if (manualFrontCounter) {
+      manualFrontCounter.textContent = manualFront.value.length.toString();
+    }
+    if (manualBackCounter) {
+      manualBackCounter.textContent = manualBack.value.length.toString();
+    }
+    if (addManualBtn) {
+      addManualBtn.disabled = !manualFront.value.trim() || !manualBack.value.trim();
+    }
+  }
+
+  manualFront?.addEventListener("input", updateManualCounters);
+  manualBack?.addEventListener("input", updateManualCounters);
+
+  clearManualBtn?.addEventListener("click", () => {
+    manualFront.value = "";
+    manualBack.value = "";
+    updateManualCounters();
+  });
+
+  manualForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const flashcard: FlashcardCreateDto = {
+      front: manualFront.value.trim(),
+      back: manualBack.value.trim(),
+      source: "MANUAL",
+      candidate: false,
+    };
+
+    try {
+      await createFlashcard(flashcard);
+      showNotification("Flashcard created successfully!", "success");
+      manualForm.reset();
+      updateManualCounters();
+    } catch (error) {
+      showNotification(error instanceof Error ? error.message : "Failed to create flashcard", "error");
+    }
+  });
+
+  // AI-assisted creation
+  const aiForm = document.getElementById("ai-form") as HTMLFormElement;
+  const inputText = document.getElementById("input-text") as HTMLTextAreaElement;
+  const charCounter = document.getElementById("char-counter");
+  const generateBtn = document.getElementById("generate-btn");
+
+  inputText?.addEventListener("input", () => {
+    const length = inputText.value.length;
+    if (charCounter) {
+      charCounter.textContent = length.toString();
+    }
+    if (generateBtn) {
+      generateBtn.disabled = length < 100 || length > 1000;
+    }
+  });
+
+  aiForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    try {
+      const text = inputText.value.trim();
+      if (generateBtn) {
+        generateBtn.disabled = true;
+        generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Generating...';
+      }
+
+      const flashcards = await generateFlashcards({ text });
+      showNotification(`Generated ${flashcards.length} flashcards!`, "success");
+      aiForm.reset();
+      if (charCounter) charCounter.textContent = "0";
+
+      // Dispatch event to update flashcards list
+      window.dispatchEvent(
+        new CustomEvent("flashcards:created", {
+          detail: { flashcards },
+        })
+      );
+    } catch (error) {
+      showNotification(error instanceof Error ? error.message : "Failed to generate flashcards", "error");
+    } finally {
+      if (generateBtn) {
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = "Generate Flashcards";
+      }
+    }
+  });
+</script>

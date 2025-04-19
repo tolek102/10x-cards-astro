@@ -1,0 +1,141 @@
+---
+import type { FlashcardDto } from "../../types";
+
+interface Props {
+  flashcards: FlashcardDto[];
+  showActions?: boolean;
+  emptyMessage?: string;
+}
+
+const { flashcards, showActions = true, emptyMessage = "No flashcards available" } = Astro.props;
+---
+
+<div class="space-y-4">
+  {
+    flashcards.length === 0 ? (
+      <div class="text-center py-12">
+        <p class="text-gray-500">{emptyMessage}</p>
+      </div>
+    ) : (
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {flashcards.map((card) => (
+          <div class="flashcard bg-white rounded-xl shadow-md overflow-hidden h-48 relative group" data-id={card.id}>
+            <div class="absolute inset-0">
+              <div class="front absolute inset-0 p-4 flex flex-col">
+                <div class="flex-1 overflow-auto">
+                  <p class="text-gray-900">{card.front}</p>
+                </div>
+                {showActions && (
+                  <div class="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button type="button" class="flip-btn text-gray-400 hover:text-gray-600">
+                      <i class="fas fa-sync-alt" />
+                    </button>
+                    <button type="button" class="edit-btn text-gray-400 hover:text-gray-600">
+                      <i class="fas fa-edit" />
+                    </button>
+                    <button type="button" class="delete-btn text-gray-400 hover:text-red-600">
+                      <i class="fas fa-trash" />
+                    </button>
+                  </div>
+                )}
+                <div class="mt-2 flex items-center text-xs text-gray-500">
+                  <i class="fas fa-clock mr-1" />
+                  <time datetime={card.created_at}>{new Date(card.created_at).toLocaleDateString()}</time>
+                  {card.source && (
+                    <span class="ml-2">
+                      <i class="fas fa-tag mr-1" />
+                      {card.source}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div class="back absolute inset-0 p-4 flex flex-col [transform:rotateY(180deg)]">
+                <div class="flex-1 overflow-auto">
+                  <p class="text-gray-900">{card.back}</p>
+                </div>
+                {showActions && (
+                  <div class="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button type="button" class="flip-btn text-gray-400 hover:text-gray-600">
+                      <i class="fas fa-sync-alt" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+</div>
+
+<script>
+  import { showNotification } from "../../lib/utils/notifications";
+  import { deleteFlashcard } from "../../lib/services/flashcardService";
+
+  // Flip functionality
+  document.querySelectorAll(".flip-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const flashcard = (e.currentTarget as HTMLElement).closest(".flashcard");
+      flashcard?.classList.toggle("flipped");
+    });
+  });
+
+  // Edit functionality
+  document.querySelectorAll(".edit-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const flashcard = (e.currentTarget as HTMLElement).closest(".flashcard");
+      const id = flashcard?.dataset.id;
+      if (id) {
+        window.dispatchEvent(
+          new CustomEvent("flashcard:edit", {
+            detail: { id },
+          })
+        );
+      }
+    });
+  });
+
+  // Delete functionality
+  document.querySelectorAll(".delete-btn").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const flashcard = (e.currentTarget as HTMLElement).closest(".flashcard");
+      const id = flashcard?.dataset.id;
+
+      if (id && confirm("Are you sure you want to delete this flashcard?")) {
+        try {
+          await deleteFlashcard(id);
+          flashcard?.remove();
+          showNotification("Flashcard deleted successfully", "success");
+        } catch (error) {
+          showNotification(error instanceof Error ? error.message : "Failed to delete flashcard", "error");
+        }
+      }
+    });
+  });
+</script>
+
+<style>
+  .flashcard {
+    perspective: 1000px;
+    transform-style: preserve-3d;
+    transition: transform 0.6s;
+  }
+
+  .flashcard.flipped {
+    transform: rotateY(180deg);
+  }
+
+  .front,
+  .back {
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+  }
+
+  .back {
+    transform: rotateY(180deg);
+  }
+</style>
