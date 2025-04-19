@@ -4,7 +4,7 @@
 Endpoint umożliwia zatwierdzenie fiszki wygenerowanej przez AI poprzez zmianę flagi `candidate` z wartości `true` na `false`. Operacja ta potwierdza, że użytkownik zaakceptował propozycję fiszki. Endpoint działa tylko wtedy, gdy żądana fiszka istnieje i należy do aktualnie uwierzytelnionego użytkownika.
 
 ## 2. Szczegóły żądania
-- **Metoda HTTP:** PUT
+- **Metoda HTTP:** PATCH
 - **Struktura URL:** `/api/flashcards/:id/accept`
 - **Nagłówki:**
   - `Authorization: Bearer {token}` (wymagany dla weryfikacji użytkownika)
@@ -13,7 +13,7 @@ Endpoint umożliwia zatwierdzenie fiszki wygenerowanej przez AI poprzez zmianę 
   - **Wymagane:**
     - `:id` – identyfikator fiszki, która ma zostać zatwierdzona.
   - **Opcjonalne:** Brak
-- **Request Body:** Brak – operacja odbywa się wyłącznie na podstawie parametru URL oraz uwierzytelnienia.
+- **Request Body:** pole `candidate` zostanie zmienione na `false`
 
 ## 3. Wykorzystywane typy
 - **FlashcardDto:** Zawiera właściwości: `id`, `front`, `back`, `source`, `candidate`, `created_at`, `updated_at`.

@@ -1,8 +1,1696 @@
 ---
-import Welcome from "../components/Welcome.astro";
 import Layout from "../layouts/Layout.astro";
 ---
 
 <Layout>
-  <Welcome />
+  <div>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Flashcard Master - Learn Smarter</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <style>
+            .flashcard {
+                perspective: 1000px;
+                transition: all 0.3s ease;
+            }
+            .flashcard-inner {
+                transition: transform 0.6s;
+                transform-style: preserve-3d;
+            }
+            .flashcard.flipped .flashcard-inner {
+                transform: rotateY(180deg);
+            }
+            .flashcard-front, .flashcard-back {
+                backface-visibility: hidden;
+                position: absolute;
+                width: 100%;
+                height: 100%;
+            }
+            .flashcard-back {
+                transform: rotateY(180deg);
+            }
+            .textarea-container {
+                position: relative;
+            }
+            .char-counter {
+                position: absolute;
+                right: 10px;
+                bottom: 10px;
+                background: rgba(255, 255, 255, 0.7);
+                padding: 2px 6px;
+                border-radius: 10px;
+                font-size: 0.8rem;
+            }
+            .error-char-counter {
+                color: #ef4444;
+            }
+            .loading-dots {
+                display: inline-flex;
+                align-items: center;
+                height: 1rem;
+            }
+            .loading-dots span {
+                width: 6px;
+                height: 6px;
+                margin: 0 2px;
+                background-color: currentColor;
+                border-radius: 50%;
+                display: inline-block;
+                animation: bounce 1.4s infinite ease-in-out both;
+            }
+            .loading-dots span:nth-child(1) {
+                animation-delay: -0.32s;
+            }
+            .loading-dots span:nth-child(2) {
+                animation-delay: -0.16s;
+            }
+            @keyframes bounce {
+                0%, 80%, 100% { 
+                    transform: scale(0);
+                } 40% { 
+                    transform: scale(1);
+                }
+            }
+            .edit-textarea {
+                min-height: 80px;
+                resize: vertical;
+            }
+            .tab-button {
+                transition: all 0.2s ease;
+            }
+            .tab-button.active {
+                border-bottom: 3px solid #6366f1;
+                color: #6366f1;
+                font-weight: 600;
+            }
+            .slide-in {
+                animation: slideIn 0.3s ease-out forwards;
+            }
+            @keyframes slideIn {
+                from {
+                    transform: translateY(20px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+            .auth-section {
+                transition: all 0.3s ease;
+            }
+            .password-toggle {
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                cursor: pointer;
+                color: #6b7280;
+            }
+            .auth-container {
+                max-width: 28rem;
+                margin: 0 auto;
+            }
+            .auth-card {
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+            .nav-button {
+                transition: all 0.2s ease;
+                position: relative;
+            }
+            .nav-button.active {
+                color: #6366f1;
+                font-weight: 600;
+            }
+            .nav-button.active:after {
+                content: '';
+                position: absolute;
+                bottom: -4px;
+                left: 0;
+                right: 0;
+                height: 3px;
+                background-color: #6366f1;
+                border-radius: 3px;
+            }
+            .candidate-badge {
+                position: absolute;
+                top: 8px;
+                left: 8px;
+                background-color: #f59e0b;
+                color: white;
+                font-size: 0.7rem;
+                padding: 2px 6px;
+                border-radius: 4px;
+            }
+        </style>
+    </head>
+    <body class="bg-gray-50 min-h-screen">
+        <!-- Auth Modals -->
+        <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="auth-container">
+                <div class="auth-card bg-white rounded-xl p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Welcome Back</h2>
+                        <button id="close-login-modal" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="login-form" class="space-y-4">
+                        <div>
+                            <label for="login-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="login-email" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" required>
+                        </div>
+                        <div class="relative">
+                            <label for="login-password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                            <input type="password" id="login-password" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 pr-10" required>
+                            <span class="password-toggle" onclick="togglePassword('login-password')">
+                                <i class="far fa-eye"></i>
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <input id="remember-me" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                <label for="remember-me" class="ml-2 block text-sm text-gray-700">Remember me</label>
+                            </div>
+                            <button type="button" id="forgot-password-btn" class="text-sm text-indigo-600 hover:text-indigo-800">Forgot password?</button>
+                        </div>
+                        <button type="submit" class="w-full py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                            Sign In
+                        </button>
+                        <div class="text-center text-sm text-gray-600">
+                            Don't have an account? <button type="button" id="show-register-from-login" class="text-indigo-600 hover:text-indigo-800">Sign up</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div id="register-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="auth-container">
+                <div class="auth-card bg-white rounded-xl p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Create Account</h2>
+                        <button id="close-register-modal" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="register-form" class="space-y-4">
+                        <div>
+                            <label for="register-name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                            <input type="text" id="register-name" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" required>
+                        </div>
+                        <div>
+                            <label for="register-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="register-email" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" required>
+                        </div>
+                        <div class="relative">
+                            <label for="register-password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                            <input type="password" id="register-password" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 pr-10" required>
+                            <span class="password-toggle" onclick="togglePassword('register-password')">
+                                <i class="far fa-eye"></i>
+                            </span>
+                            <p class="mt-1 text-xs text-gray-500">Password must be at least 8 characters</p>
+                        </div>
+                        <div class="relative">
+                            <label for="register-confirm-password" class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                            <input type="password" id="register-confirm-password" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 pr-10" required>
+                            <span class="password-toggle" onclick="togglePassword('register-confirm-password')">
+                                <i class="far fa-eye"></i>
+                            </span>
+                        </div>
+                        <button type="submit" class="w-full py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                            Create Account
+                        </button>
+                        <div class="text-center text-sm text-gray-600">
+                            Already have an account? <button type="button" id="show-login-from-register" class="text-indigo-600 hover:text-indigo-800">Sign in</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div id="forgot-password-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="auth-container">
+                <div class="auth-card bg-white rounded-xl p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Reset Password</h2>
+                        <button id="close-forgot-modal" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="forgot-password-form" class="space-y-4">
+                        <p class="text-sm text-gray-600 mb-4">Enter your email and we'll send you a link to reset your password.</p>
+                        <div>
+                            <label for="forgot-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="forgot-email" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" required>
+                        </div>
+                        <button type="submit" class="w-full py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                            Send Reset Link
+                        </button>
+                        <div class="text-center text-sm text-gray-600">
+                            Remember your password? <button type="button" id="show-login-from-forgot" class="text-indigo-600 hover:text-indigo-800">Sign in</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App Container -->
+        <div id="app-container" class="hidden">
+            <!-- Navigation Bar -->
+            <nav class="bg-white shadow-sm">
+                <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-lightbulb text-indigo-600 text-xl"></i>
+                        <span class="text-xl font-semibold text-gray-800">Flashcard Master</span>
+                    </div>
+                    <div class="flex items-center space-x-6">
+                        <div class="flex space-x-4">
+                            <button id="creator-nav" class="nav-button active text-gray-700 hover:text-indigo-600">
+                                Flashcard Creator
+                            </button>
+                            <button id="preview-nav" class="nav-button text-gray-700 hover:text-indigo-600">
+                                Flashcard Preview
+                            </button>
+                            <button id="learning-nav" class="nav-button text-gray-700 hover:text-indigo-600">
+                                Learning Session
+                            </button>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <button id="profile-btn" class="flex items-center space-x-2 text-gray-700 hover:text-indigo-600">
+                                <span id="user-name" class="hidden md:inline">John Doe</span>
+                                <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            </button>
+                            <button id="logout-btn" class="text-gray-700 hover:text-indigo-600">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <div class="container mx-auto px-4 py-8 max-w-4xl">
+                <!-- Flashcard Creator Section (default view) -->
+                <div id="creator-section">
+                    <header class="mb-8 text-center">
+                        <h1 class="text-3xl font-bold text-indigo-700 mb-2">Flashcard Creator</h1>
+                        <p class="text-gray-600">Create and study flashcards with ease</p>
+                    </header>
+
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
+                        <div class="flex border-b">
+                            <button id="ai-tab" class="tab-button active flex-1 py-4 px-6 text-center">
+                                <i class="fas fa-robot mr-2"></i> AI Generator
+                            </button>
+                            <button id="manual-tab" class="tab-button flex-1 py-4 px-6 text-center">
+                                <i class="fas fa-pen-fancy mr-2"></i> Manual Creator
+                            </button>
+                        </div>
+
+                        <!-- AI Generator Section -->
+                        <div id="ai-section" class="p-6">
+                            <div class="textarea-container mb-4">
+                                <label for="input-text" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Paste your text (1000-10000 characters)
+                                </label>
+                                <textarea 
+                                    id="input-text" 
+                                    rows="10" 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                                    placeholder="Paste your study material here (e.g., textbook chapter, article, notes)..."></textarea>
+                                <div id="char-counter" class="char-counter text-gray-500">0/10000</div>
+                            </div>
+
+                            <div class="flex justify-center">
+                                <button 
+                                    id="generate-btn" 
+                                    class="px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled>
+                                    Generate Flashcards
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Manual Creator Section -->
+                        <div id="manual-section" class="p-6 hidden">
+                            <div class="mb-6">
+                                <h3 class="text-lg font-medium text-gray-800 mb-4">Create New Flashcard</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label for="manual-front" class="block text-sm font-medium text-gray-700 mb-1">Front (Question/Term)</label>
+                                        <textarea 
+                                            id="manual-front" 
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md edit-textarea" 
+                                            maxlength="200"
+                                            placeholder="Enter the question or term..."></textarea>
+                                        <div class="text-xs text-gray-500 text-right mt-1">
+                                            <span id="manual-front-counter">0</span>/200 characters
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="manual-back" class="block text-sm font-medium text-gray-700 mb-1">Back (Answer/Definition)</label>
+                                        <textarea 
+                                            id="manual-back" 
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md edit-textarea" 
+                                            maxlength="500"
+                                            placeholder="Enter the answer or definition..."></textarea>
+                                        <div class="text-xs text-gray-500 text-right mt-1">
+                                            <span id="manual-back-counter">0</span>/500 characters
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex justify-end space-x-3">
+                                <button id="clear-manual" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                                    Clear
+                                </button>
+                                <button id="add-manual" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                    Add Flashcard
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="results-section" class="hidden">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-semibold text-gray-800">Your Flashcards</h2>
+                            <div class="flex items-center space-x-3">
+                                <div class="text-sm text-gray-500">
+                                    <span id="flashcard-count">0</span> flashcards
+                                </div>
+                                <button id="export-btn" class="text-sm text-indigo-600 hover:text-indigo-800 flex items-center">
+                                    <i class="fas fa-file-export mr-1"></i> Export
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="flashcards-container" class="grid gap-4 md:grid-cols-2">
+                            <!-- Flashcards will be inserted here -->
+                        </div>
+
+                        <div id="no-flashcards" class="text-center py-12 bg-gray-50 rounded-lg">
+                            <i class="fas fa-lightbulb text-4xl text-yellow-400 mb-4"></i>
+                            <p class="text-gray-500">No flashcards created yet. Use the AI generator or manual creator above.</p>
+                        </div>
+                    </div>
+
+                    <div id="loading-section" class="hidden text-center py-12">
+                        <div class="loading-dots text-indigo-600 text-2xl mb-4">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <p class="text-gray-600">AI is generating your flashcards...</p>
+                    </div>
+                </div>
+
+                <!-- Flashcard Preview Section -->
+                <div id="preview-section" class="hidden">
+                    <header class="mb-8 text-center">
+                        <h1 class="text-3xl font-bold text-indigo-700 mb-2">Flashcard Preview</h1>
+                        <p class="text-gray-600">Review and manage your flashcards</p>
+                    </header>
+
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
+                        <div class="flex border-b">
+                            <button id="approved-tab" class="tab-button active flex-1 py-4 px-6 text-center">
+                                <i class="fas fa-check-circle mr-2"></i> Flashcards
+                            </button>
+                            <button id="candidate-tab" class="tab-button flex-1 py-4 px-6 text-center">
+                                <i class="fas fa-lightbulb mr-2"></i> Candidates
+                            </button>
+                        </div>
+
+                        <!-- Approved Flashcards Section -->
+                        <div id="approved-section" class="p-6">
+                            <div id="approved-flashcards-container" class="grid gap-4 md:grid-cols-2">
+                                <!-- Approved flashcards will be inserted here -->
+                            </div>
+                            <div id="no-approved-flashcards" class="text-center py-12 bg-gray-50 rounded-lg">
+                                <i class="fas fa-lightbulb text-4xl text-yellow-400 mb-4"></i>
+                                <p class="text-gray-500">No approved flashcards yet.</p>
+                            </div>
+                        </div>
+
+                        <!-- Candidate Flashcards Section -->
+                        <div id="candidate-section" class="p-6 hidden">
+                            <div id="candidate-flashcards-container" class="grid gap-4 md:grid-cols-2">
+                                <!-- Candidate flashcards will be inserted here -->
+                            </div>
+                            <div id="no-candidate-flashcards" class="text-center py-12 bg-gray-50 rounded-lg">
+                                <i class="fas fa-lightbulb text-4xl text-yellow-400 mb-4"></i>
+                                <p class="text-gray-500">No candidate flashcards available.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Learning Session Section -->
+                <div id="learning-section" class="hidden">
+                    <header class="mb-8 text-center">
+                        <h1 class="text-3xl font-bold text-indigo-700 mb-2">Learning Session</h1>
+                        <p class="text-gray-600">Practice with your flashcards</p>
+                    </header>
+
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
+                        <div id="learning-flashcard" class="flashcard h-64 relative">
+                            <div class="flashcard-inner h-full">
+                                <div class="flashcard-front p-4 flex flex-col h-full">
+                                    <div class="flex-grow flex items-center justify-center">
+                                        <p id="learning-front" class="text-xl font-medium text-gray-800 w-full text-center">No flashcards available</p>
+                                    </div>
+                                </div>
+                                <div class="flashcard-back p-4 bg-indigo-50 flex flex-col h-full">
+                                    <div class="flex-grow flex items-center justify-center">
+                                        <p id="learning-back" class="text-gray-700 w-full">Add some flashcards first</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center mt-6">
+                            <button id="prev-card" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <i class="fas fa-arrow-left mr-2"></i> Previous
+                            </button>
+                            <div class="text-sm text-gray-500">
+                                <span id="current-card-index">0</span> / <span id="total-cards">0</span>
+                            </div>
+                            <button id="next-card" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                Next <i class="fas fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
+
+                        <div class="flex justify-center mt-6">
+                            <button id="flip-card" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                                <i class="fas fa-redo mr-2"></i> Flip Card
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Modal -->
+            <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">Edit Flashcard</h3>
+                        <button id="close-edit-modal" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Front</label>
+                        <textarea id="edit-front" class="w-full px-3 py-2 border border-gray-300 rounded-md edit-textarea" maxlength="200"></textarea>
+                        <div class="text-xs text-gray-500 text-right mt-1">
+                            <span id="edit-front-counter">0</span>/200 characters
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Back</label>
+                        <textarea id="edit-back" class="w-full px-3 py-2 border border-gray-300 rounded-md edit-textarea" maxlength="500"></textarea>
+                        <div class="text-xs text-gray-500 text-right mt-1">
+                            <span id="edit-back-counter">0</span>/500 characters
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button id="cancel-edit" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button id="save-edit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Modal -->
+            <div id="export-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">Export Flashcards</h3>
+                        <button id="close-export-modal" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Format</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button id="export-json" class="px-4 py-3 border border-gray-300 rounded-md hover:bg-gray-50 flex flex-col items-center">
+                                <i class="fas fa-file-code text-2xl text-indigo-600 mb-2"></i>
+                                <span>JSON</span>
+                            </button>
+                            <button id="export-csv" class="px-4 py-3 border border-gray-300 rounded-md hover:bg-gray-50 flex flex-col items-center">
+                                <i class="fas fa-file-csv text-2xl text-indigo-600 mb-2"></i>
+                                <span>CSV</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-4">
+                        <i class="fas fa-info-circle mr-1"></i> You can import these files back later
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Welcome Screen (shown when not logged in) -->
+        <div id="welcome-screen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-50">
+            <div class="text-center px-4 py-12 max-w-2xl">
+                <div class="mb-8">
+                    <i class="fas fa-lightbulb text-6xl text-indigo-600 mb-4"></i>
+                    <h1 class="text-4xl font-bold text-gray-800 mb-4">Flashcard Master</h1>
+                    <p class="text-xl text-gray-600 mb-8">The smart way to create, study, and master flashcards for any subject</p>
+                </div>
+                <div class="flex flex-col sm:flex-row justify-center gap-4 mb-8">
+                    <button id="show-login" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
+                        Sign In
+                    </button>
+                    <button id="show-register" class="px-6 py-3 bg-white text-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
+                        Create Account
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                    <div class="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition">
+                        <div class="text-indigo-600 text-3xl mb-4">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">AI-Powered</h3>
+                        <p class="text-gray-600">Generate flashcards automatically from your study materials</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition">
+                        <div class="text-indigo-600 text-3xl mb-4">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">Organized</h3>
+                        <p class="text-gray-600">Categorize and manage your flashcards with ease</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition">
+                        <div class="text-indigo-600 text-3xl mb-4">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">Accessible</h3>
+                        <p class="text-gray-600">Study anytime, anywhere on any device</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Utility functions
+            function togglePassword(inputId) {
+                const input = document.getElementById(inputId);
+                const icon = input.nextElementSibling.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            }
+
+            function showNotification(message, type = 'success') {
+                const notification = document.createElement('div');
+                notification.className = `fixed top-4 right-4 px-4 py-2 rounded-md shadow-md text-white ${
+                    type === 'success' ? 'bg-green-500' : 'bg-red-500'
+                } z-50`;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+
+            function generateId() {
+                return Date.now().toString(36) + Math.random().toString(36).substr(2);
+            }
+
+            function formatDate(date) {
+                return new Date(date).toISOString();
+            }
+
+            // Simulated database for demo purposes
+            const users = [
+                {
+                    id: 1,
+                    name: "Demo User",
+                    email: "demo@example.com",
+                    password: "password123",
+                    flashcards: [
+                        { 
+                            id: generateId(),
+                            created_at: formatDate(Date.now() - 86400000),
+                            updated_at: formatDate(Date.now() - 86400000),
+                            front: "What is the capital of France?", 
+                            back: "Paris is the capital of France, known for its art, fashion, and culture.",
+                            source: "manual",
+                            candidate: false
+                        },
+                        { 
+                            id: generateId(),
+                            created_at: formatDate(Date.now() - 43200000),
+                            updated_at: formatDate(Date.now() - 43200000),
+                            front: "What is the main function of mitochondria?", 
+                            back: "Mitochondria are known as the powerhouse of the cell, producing ATP through cellular respiration.",
+                            source: "manual",
+                            candidate: false
+                        },
+                        { 
+                            id: generateId(),
+                            created_at: formatDate(Date.now()),
+                            updated_at: formatDate(Date.now()),
+                            front: "What is photosynthesis?", 
+                            back: "Photosynthesis is the process by which green plants use sunlight to synthesize foods with the help of chlorophyll.",
+                            source: "ai",
+                            candidate: true
+                        }
+                    ]
+                }
+            ];
+
+            // Current user state
+            let currentUser = null;
+            let flashcards = [];
+            let currentEditIndex = -1;
+            let currentLearningIndex = 0;
+
+            document.addEventListener('DOMContentLoaded', function() {
+                // Auth elements
+                const welcomeScreen = document.getElementById('welcome-screen');
+                const appContainer = document.getElementById('app-container');
+                const showLoginBtn = document.getElementById('show-login');
+                const showRegisterBtn = document.getElementById('show-register');
+                const loginModal = document.getElementById('login-modal');
+                const registerModal = document.getElementById('register-modal');
+                const forgotPasswordModal = document.getElementById('forgot-password-modal');
+                const closeLoginModal = document.getElementById('close-login-modal');
+                const closeRegisterModal = document.getElementById('close-register-modal');
+                const closeForgotModal = document.getElementById('close-forgot-modal');
+                const loginForm = document.getElementById('login-form');
+                const registerForm = document.getElementById('register-form');
+                const forgotPasswordForm = document.getElementById('forgot-password-form');
+                const showRegisterFromLogin = document.getElementById('show-register-from-login');
+                const showLoginFromRegister = document.getElementById('show-login-from-register');
+                const showLoginFromForgot = document.getElementById('show-login-from-forgot');
+                const forgotPasswordBtn = document.getElementById('forgot-password-btn');
+                const logoutBtn = document.getElementById('logout-btn');
+                const userNameElement = document.getElementById('user-name');
+
+                // Navigation elements
+                const creatorNav = document.getElementById('creator-nav');
+                const previewNav = document.getElementById('preview-nav');
+                const learningNav = document.getElementById('learning-nav');
+                const creatorSection = document.getElementById('creator-section');
+                const previewSection = document.getElementById('preview-section');
+                const learningSection = document.getElementById('learning-section');
+
+                // Main elements
+                const inputText = document.getElementById('input-text');
+                const generateBtn = document.getElementById('generate-btn');
+                const charCounter = document.getElementById('char-counter');
+                const resultsSection = document.getElementById('results-section');
+                const loadingSection = document.getElementById('loading-section');
+                const flashcardsContainer = document.getElementById('flashcards-container');
+                const noFlashcards = document.getElementById('no-flashcards');
+                const flashcardCount = document.getElementById('flashcard-count');
+                
+                // Tab switching
+                const aiTab = document.getElementById('ai-tab');
+                const manualTab = document.getElementById('manual-tab');
+                const aiSection = document.getElementById('ai-section');
+                const manualSection = document.getElementById('manual-section');
+                
+                // Manual creation elements
+                const manualFront = document.getElementById('manual-front');
+                const manualBack = document.getElementById('manual-back');
+                const manualFrontCounter = document.getElementById('manual-front-counter');
+                const manualBackCounter = document.getElementById('manual-back-counter');
+                const clearManualBtn = document.getElementById('clear-manual');
+                const addManualBtn = document.getElementById('add-manual');
+                
+                // Edit modal elements
+                const editModal = document.getElementById('edit-modal');
+                const closeEditModal = document.getElementById('close-edit-modal');
+                const cancelEdit = document.getElementById('cancel-edit');
+                const editFront = document.getElementById('edit-front');
+                const editBack = document.getElementById('edit-back');
+                const editFrontCounter = document.getElementById('edit-front-counter');
+                const editBackCounter = document.getElementById('edit-back-counter');
+                const saveEdit = document.getElementById('save-edit');
+                
+                // Export elements
+                const exportBtn = document.getElementById('export-btn');
+                const exportModal = document.getElementById('export-modal');
+                const closeExportModal = document.getElementById('close-export-modal');
+                const exportJsonBtn = document.getElementById('export-json');
+                const exportCsvBtn = document.getElementById('export-csv');
+
+                // Preview elements
+                const approvedFlashcardsContainer = document.getElementById('approved-flashcards-container');
+                const candidateFlashcardsContainer = document.getElementById('candidate-flashcards-container');
+                const noApprovedFlashcards = document.getElementById('no-approved-flashcards');
+                const noCandidateFlashcards = document.getElementById('no-candidate-flashcards');
+
+                // Learning session elements
+                const learningFlashcard = document.getElementById('learning-flashcard');
+                const learningFront = document.getElementById('learning-front');
+                const learningBack = document.getElementById('learning-back');
+                const prevCardBtn = document.getElementById('prev-card');
+                const nextCardBtn = document.getElementById('next-card');
+                const flipCardBtn = document.getElementById('flip-card');
+                const currentCardIndex = document.getElementById('current-card-index');
+                const totalCards = document.getElementById('total-cards');
+
+                // Sample dummy data for demonstration
+                const dummyFlashcards = [
+                    { 
+                        id: generateId(),
+                        created_at: formatDate(Date.now()),
+                        updated_at: formatDate(Date.now()),
+                        front: "Who wrote 'To Kill a Mockingbird'?", 
+                        back: "Harper Lee wrote 'To Kill a Mockingbird', published in 1960, which deals with racial inequality in the American South.",
+                        source: "ai",
+                        candidate: true
+                    },
+                    { 
+                        id: generateId(),
+                        created_at: formatDate(Date.now()),
+                        updated_at: formatDate(Date.now()),
+                        front: "What is the Pythagorean theorem?", 
+                        back: "In a right-angled triangle, the square of the hypotenuse is equal to the sum of the squares of the other two sides (a² + b² = c²).",
+                        source: "ai",
+                        candidate: true
+                    }
+                ];
+
+                // Auth event listeners
+                showLoginBtn.addEventListener('click', () => {
+                    loginModal.classList.remove('hidden');
+                    registerModal.classList.add('hidden');
+                    forgotPasswordModal.classList.add('hidden');
+                });
+
+                showRegisterBtn.addEventListener('click', () => {
+                    registerModal.classList.remove('hidden');
+                    loginModal.classList.add('hidden');
+                    forgotPasswordModal.classList.add('hidden');
+                });
+
+                closeLoginModal.addEventListener('click', () => {
+                    loginModal.classList.add('hidden');
+                });
+
+                closeRegisterModal.addEventListener('click', () => {
+                    registerModal.classList.add('hidden');
+                });
+
+                closeForgotModal.addEventListener('click', () => {
+                    forgotPasswordModal.classList.add('hidden');
+                });
+
+                showRegisterFromLogin.addEventListener('click', () => {
+                    loginModal.classList.add('hidden');
+                    registerModal.classList.remove('hidden');
+                });
+
+                showLoginFromRegister.addEventListener('click', () => {
+                    registerModal.classList.add('hidden');
+                    loginModal.classList.remove('hidden');
+                });
+
+                showLoginFromForgot.addEventListener('click', () => {
+                    forgotPasswordModal.classList.add('hidden');
+                    loginModal.classList.remove('hidden');
+                });
+
+                forgotPasswordBtn.addEventListener('click', () => {
+                    loginModal.classList.add('hidden');
+                    forgotPasswordModal.classList.remove('hidden');
+                });
+
+                // Navigation event listeners
+                creatorNav.addEventListener('click', () => {
+                    showSection('creator');
+                });
+
+                previewNav.addEventListener('click', () => {
+                    showSection('preview');
+                });
+
+                learningNav.addEventListener('click', () => {
+                    showSection('learning');
+                });
+
+                // Login form submission
+                loginForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const email = document.getElementById('login-email').value;
+                    const password = document.getElementById('login-password').value;
+                    
+                    // Simulate API call
+                    setTimeout(() => {
+                        const user = users.find(u => u.email === email && u.password === password);
+                        if (user) {
+                            currentUser = user;
+                            flashcards = [...user.flashcards];
+                            
+                            // Update UI
+                            userNameElement.textContent = user.name;
+                            welcomeScreen.classList.add('hidden');
+                            appContainer.classList.remove('hidden');
+                            loginModal.classList.add('hidden');
+                            
+                            // Display flashcards
+                            displayFlashcards();
+                            displayPreviewFlashcards();
+                            updateLearningSession();
+                            
+                            showNotification('Login successful!', 'success');
+                        } else {
+                            showNotification('Invalid email or password', 'error');
+                        }
+                    }, 500);
+                });
+
+                // Register form submission
+                registerForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const name = document.getElementById('register-name').value;
+                    const email = document.getElementById('register-email').value;
+                    const password = document.getElementById('register-password').value;
+                    const confirmPassword = document.getElementById('register-confirm-password').value;
+                    
+                    if (password !== confirmPassword) {
+                        showNotification('Passwords do not match', 'error');
+                        return;
+                    }
+                    
+                    if (password.length < 8) {
+                        showNotification('Password must be at least 8 characters', 'error');
+                        return;
+                    }
+                    
+                    // Simulate API call
+                    setTimeout(() => {
+                        const emailExists = users.some(u => u.email === email);
+                        if (emailExists) {
+                            showNotification('Email already registered', 'error');
+                        } else {
+                            const newUser = {
+                                id: users.length + 1,
+                                name,
+                                email,
+                                password,
+                                flashcards: []
+                            };
+                            
+                            users.push(newUser);
+                            currentUser = newUser;
+                            flashcards = [];
+                            
+                            // Update UI
+                            userNameElement.textContent = name;
+                            welcomeScreen.classList.add('hidden');
+                            appContainer.classList.remove('hidden');
+                            registerModal.classList.add('hidden');
+                            
+                            // Clear form
+                            registerForm.reset();
+                            
+                            showNotification('Account created successfully!', 'success');
+                        }
+                    }, 500);
+                });
+
+                // Forgot password form submission
+                forgotPasswordForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const email = document.getElementById('forgot-email').value;
+                    
+                    // Simulate API call
+                    setTimeout(() => {
+                        const userExists = users.some(u => u.email === email);
+                        if (userExists) {
+                            showNotification('Password reset link sent to your email', 'success');
+                            forgotPasswordModal.classList.add('hidden');
+                        } else {
+                            showNotification('No account found with that email', 'error');
+                        }
+                    }, 500);
+                });
+
+                // Logout
+                logoutBtn.addEventListener('click', function() {
+                    currentUser = null;
+                    flashcards = [];
+                    appContainer.classList.add('hidden');
+                    welcomeScreen.classList.remove('hidden');
+                    showNotification('Logged out successfully', 'success');
+                });
+
+                // Check if user is logged in (for demo purposes, we'll use the demo user)
+                function checkAuth() {
+                    // For demo, we'll automatically log in as demo user
+                    // In a real app, you would check localStorage or cookies for a token
+                    const demoUser = users[0];
+                    if (demoUser) {
+                        currentUser = demoUser;
+                        flashcards = [...demoUser.flashcards];
+                        userNameElement.textContent = demoUser.name;
+                        welcomeScreen.classList.add('hidden');
+                        appContainer.classList.remove('hidden');
+                        displayFlashcards();
+                        displayPreviewFlashcards();
+                        updateLearningSession();
+                    }
+                }
+
+                // Initialize auth check
+                checkAuth();
+
+                // Show section function
+                function showSection(section) {
+                    // Update navigation buttons
+                    creatorNav.classList.remove('active');
+                    previewNav.classList.remove('active');
+                    learningNav.classList.remove('active');
+                    
+                    // Hide all sections
+                    creatorSection.classList.add('hidden');
+                    previewSection.classList.add('hidden');
+                    learningSection.classList.add('hidden');
+                    
+                    // Show selected section
+                    if (section === 'creator') {
+                        creatorNav.classList.add('active');
+                        creatorSection.classList.remove('hidden');
+                    } else if (section === 'preview') {
+                        previewNav.classList.add('active');
+                        previewSection.classList.remove('hidden');
+                        displayPreviewFlashcards();
+                    } else if (section === 'learning') {
+                        learningNav.classList.add('active');
+                        learningSection.classList.remove('hidden');
+                        updateLearningSession();
+                    }
+                }
+
+                // Tab switching
+                aiTab.addEventListener('click', function() {
+                    aiTab.classList.add('active');
+                    manualTab.classList.remove('active');
+                    aiSection.classList.remove('hidden');
+                    manualSection.classList.add('hidden');
+                });
+
+                manualTab.addEventListener('click', function() {
+                    manualTab.classList.add('active');
+                    aiTab.classList.remove('active');
+                    manualSection.classList.remove('hidden');
+                    aiSection.classList.add('hidden');
+                });
+
+                // Update character counter for AI input
+                inputText.addEventListener('input', function() {
+                    const length = this.value.length;
+                    charCounter.textContent = `${length}/1000`;
+                    
+                    if (length < 1000 || length > 10000) {
+                        charCounter.classList.add('error-char-counter');
+                        generateBtn.disabled = true;
+                    } else {
+                        charCounter.classList.remove('error-char-counter');
+                        generateBtn.disabled = false;
+                    }
+                });
+
+                // Update character counters for manual creation
+                manualFront.addEventListener('input', function() {
+                    const length = this.value.length;
+                    manualFrontCounter.textContent = length;
+                    updateManualAddButton();
+                });
+
+                manualBack.addEventListener('input', function() {
+                    const length = this.value.length;
+                    manualBackCounter.textContent = length;
+                    updateManualAddButton();
+                });
+
+                function updateManualAddButton() {
+                    addManualBtn.disabled = manualFront.value.trim() === '' || manualBack.value.trim() === '';
+                }
+
+                // Clear manual creation form
+                clearManualBtn.addEventListener('click', function() {
+                    manualFront.value = '';
+                    manualBack.value = '';
+                    manualFrontCounter.textContent = '0';
+                    manualBackCounter.textContent = '0';
+                    addManualBtn.disabled = true;
+                });
+
+                // Add manual flashcard
+                addManualBtn.addEventListener('click', function() {
+                    const newFlashcard = {
+                        id: generateId(),
+                        created_at: formatDate(Date.now()),
+                        updated_at: formatDate(Date.now()),
+                        front: manualFront.value.trim(),
+                        back: manualBack.value.trim(),
+                        source: "manual",
+                        candidate: false
+                    };
+                    
+                    flashcards.push(newFlashcard);
+                    
+                    // Update user's flashcards in our simulated database
+                    if (currentUser) {
+                        currentUser.flashcards = [...flashcards];
+                    }
+                    
+                    displayFlashcards();
+                    displayPreviewFlashcards();
+                    updateLearningSession();
+                    
+                    // Clear form and show success animation
+                    clearManualBtn.click();
+                    
+                    // Show success feedback
+                    const originalText = addManualBtn.innerHTML;
+                    addManualBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Added!';
+                    addManualBtn.classList.remove('bg-indigo-600');
+                    addManualBtn.classList.add('bg-green-500');
+                    
+                    setTimeout(() => {
+                        addManualBtn.innerHTML = originalText;
+                        addManualBtn.classList.add('bg-indigo-600');
+                        addManualBtn.classList.remove('bg-green-500');
+                    }, 1500);
+                    
+                    // Show results section if hidden
+                    resultsSection.classList.remove('hidden');
+                });
+
+                // Generate flashcards with AI
+                generateBtn.addEventListener('click', function() {
+                    // Show loading state
+                    generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Generating...';
+                    generateBtn.disabled = true;
+                    resultsSection.classList.add('hidden');
+                    loadingSection.classList.remove('hidden');
+
+                    // Simulate API call with timeout
+                    setTimeout(function() {
+                        // Hide loading
+                        loadingSection.classList.add('hidden');
+                        
+                        // Generate random number of flashcards (3-7)
+                        const count = Math.floor(Math.random() * 5) + 3;
+                        const generatedFlashcards = [];
+                        
+                        for (let i = 0; i < count; i++) {
+                            const randomIndex = Math.floor(Math.random() * dummyFlashcards.length);
+                            const newFlashcard = {
+                                ...dummyFlashcards[randomIndex],
+                                id: generateId(),
+                                created_at: formatDate(Date.now()),
+                                updated_at: formatDate(Date.now())
+                            };
+                            generatedFlashcards.push(newFlashcard);
+                        }
+
+                        // Update flashcards state
+                        flashcards = [...flashcards, ...generatedFlashcards];
+                        
+                        // Update user's flashcards in our simulated database
+                        if (currentUser) {
+                            currentUser.flashcards = [...flashcards];
+                        }
+                        
+                        // Display flashcards
+                        displayFlashcards();
+                        displayPreviewFlashcards();
+                        updateLearningSession();
+                        
+                        // Reset button
+                        generateBtn.innerHTML = 'Generate Flashcards';
+                        generateBtn.disabled = false;
+                    }, 2000);
+                });
+
+                // Display flashcards in creator section
+                function displayFlashcards() {
+                    if (flashcards.length === 0) {
+                        noFlashcards.classList.remove('hidden');
+                        flashcardsContainer.innerHTML = '';
+                    } else {
+                        noFlashcards.classList.add('hidden');
+                        flashcardsContainer.innerHTML = '';
+                        
+                        flashcards.forEach((card, index) => {
+                            const flashcardElement = document.createElement('div');
+                            flashcardElement.className = 'flashcard bg-white rounded-xl shadow-md overflow-hidden h-48 relative slide-in';
+                            flashcardElement.innerHTML = `
+                                <div class="flashcard-inner h-full">
+                                    <div class="flashcard-front p-4 flex flex-col h-full">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <span class="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded">Front</span>
+                                            <span class="text-xs text-gray-500">${index + 1}/${flashcards.length}</span>
+                                        </div>
+                                        <div class="flex-grow flex items-center">
+                                            <p class="text-lg font-medium text-gray-800 w-full text-center">${card.front}</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <button class="flip-btn text-xs text-indigo-600 hover:text-indigo-800">
+                                                <i class="fas fa-redo mr-1"></i> Flip
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="flashcard-back p-4 bg-indigo-50 flex flex-col h-full">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <span class="text-xs font-medium text-indigo-600 bg-white px-2 py-1 rounded">Back</span>
+                                            <span class="text-xs text-gray-500">${index + 1}/${flashcards.length}</span>
+                                        </div>
+                                        <div class="flex-grow flex items-center">
+                                            <p class="text-gray-700 w-full">${card.back}</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <button class="flip-btn text-xs text-indigo-600 hover:text-indigo-800">
+                                                <i class="fas fa-redo mr-1"></i> Flip
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="absolute top-2 right-2 flex space-x-1">
+                                    <button class="edit-btn p-1 text-gray-500 hover:text-indigo-600" data-index="${index}">
+                                        <i class="fas fa-pencil-alt text-xs"></i>
+                                    </button>
+                                    <button class="delete-btn p-1 text-gray-500 hover:text-red-600" data-index="${index}">
+                                        <i class="fas fa-trash-alt text-xs"></i>
+                                    </button>
+                                </div>
+                            `;
+                            flashcardsContainer.appendChild(flashcardElement);
+                        });
+
+                        // Add flip functionality
+                        document.querySelectorAll('.flip-btn').forEach(btn => {
+                            btn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                const flashcard = this.closest('.flashcard');
+                                flashcard.classList.toggle('flipped');
+                            });
+                        });
+
+                        // Add edit functionality
+                        document.querySelectorAll('.edit-btn').forEach(btn => {
+                            btn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                const index = parseInt(this.getAttribute('data-index'));
+                                openEditModal(index);
+                            });
+                        });
+
+                        // Add delete functionality
+                        document.querySelectorAll('.delete-btn').forEach(btn => {
+                            btn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                const index = parseInt(this.getAttribute('data-index'));
+                                deleteFlashcard(index);
+                            });
+                        });
+                    }
+
+                    // Update count
+                    flashcardCount.textContent = flashcards.length;
+                    resultsSection.classList.remove('hidden');
+                }
+
+                // Display flashcards in preview section
+                function displayPreviewFlashcards() {
+                    const approvedFlashcards = flashcards.filter(card => !card.candidate);
+                    const candidateFlashcards = flashcards.filter(card => card.candidate);
+
+                    // Display approved flashcards
+                    if (approvedFlashcards.length === 0) {
+                        noApprovedFlashcards.classList.remove('hidden');
+                        approvedFlashcardsContainer.innerHTML = '';
+                    } else {
+                        noApprovedFlashcards.classList.add('hidden');
+                        approvedFlashcardsContainer.innerHTML = '';
+                        
+                        approvedFlashcards.forEach((card, index) => {
+                            const flashcardElement = document.createElement('div');
+                            flashcardElement.className = 'flashcard bg-white rounded-xl shadow-md overflow-hidden h-48 relative slide-in';
+                            flashcardElement.innerHTML = `
+                                <div class="flashcard-inner h-full">
+                                    <div class="flashcard-front p-4 flex flex-col h-full">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <span class="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded">Front</span>
+                                            <span class="text-xs text-gray-500">${index + 1}/${approvedFlashcards.length}</span>
+                                        </div>
+                                        <div class="flex-grow flex items-center">
+                                            <p class="text-lg font-medium text-gray-800 w-full text-center">${card.front}</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <button class="flip-btn text-xs text-indigo-600 hover:text-indigo-800">
+                                                <i class="fas fa-redo mr-1"></i> Flip
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="flashcard-back p-4 bg-indigo-50 flex flex-col h-full">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <span class="text-xs font-medium text-indigo-600 bg-white px-2 py-1 rounded">Back</span>
+                                            <span class="text-xs text-gray-500">${index + 1}/${approvedFlashcards.length}</span>
+                                        </div>
+                                        <div class="flex-grow flex items-center">
+                                            <p class="text-gray-700 w-full">${card.back}</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <button class="flip-btn text-xs text-indigo-600 hover:text-indigo-800">
+                                                <i class="fas fa-redo mr-1"></i> Flip
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="absolute top-2 right-2 flex space-x-1">
+                                    <button class="edit-btn p-1 text-gray-500 hover:text-indigo-600" data-id="${card.id}">
+                                        <i class="fas fa-pencil-alt text-xs"></i>
+                                    </button>
+                                    <button class="delete-btn p-1 text-gray-500 hover:text-red-600" data-id="${card.id}">
+                                        <i class="fas fa-trash-alt text-xs"></i>
+                                    </button>
+                                </div>
+                            `;
+                            approvedFlashcardsContainer.appendChild(flashcardElement);
+                        });
+
+                        // Add flip functionality
+                        document.querySelectorAll('#approved-flashcards-container .flip-btn').forEach(btn => {
+                            btn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                const flashcard = this.closest('.flashcard');
+                                flashcard.classList.toggle('flipped');
+                            });
+                        });
+
+                        // Add edit functionality
+                        document.querySelectorAll('#approved-flashcards-container .edit-btn').forEach(btn => {
+                            btn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                const id = this.getAttribute('data-id');
+                                const index = flashcards.findIndex(card => card.id === id);
+                                if (index !== -1) {
+                                    openEditModal(index);
+                                }
+                            });
+                        });
+
+                        // Add delete functionality
+                        document.querySelectorAll('#approved-flashcards-container .delete-btn').forEach(btn => {
+                            btn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                const id = this.getAttribute('data-id');
+                                const index = flashcards.findIndex(card => card.id === id);
+                                if (index !== -1) {
+                                    deleteFlashcard(index);
+                                }
+                            });
+                        });
+                    }
+
+                    // Display candidate flashcards
+                    if (candidateFlashcards.length === 0) {
+                        noCandidateFlashcards.classList.remove('hidden');
+                        candidateFlashcardsContainer.innerHTML = '';
+                    } else {
+                        noCandidateFlashcards.classList.add('hidden');
+                        candidateFlashcardsContainer.innerHTML = '';
+                        
+                        candidateFlashcards.forEach((card, index) => {
+                            const flashcardElement = document.createElement('div');
+                            flashcardElement.className = 'flashcard bg-white rounded-xl shadow-md overflow-hidden h-48 relative slide-in';
+                            flashcardElement.innerHTML = `
+                                <div class="flashcard-inner h-full">
+                                    <div class="flashcard-front p-4 flex flex-col h-full">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <span class="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded">Front</span>
+                                            <span class="text-xs text-gray-500">${index + 1}/${candidateFlashcards.length}</span>
+                                        </div>
+                                        <div class="flex-grow flex items-center">
+                                            <p class="text-lg font-medium text-gray-800 w-full text-center">${card.front}</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <button class="flip-btn text-xs text-indigo-600 hover:text-indigo-800">
+                                                <i class="fas fa-redo mr-1"></i> Flip
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="flashcard-back p-4 bg-indigo-50 flex flex-col h-full">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <span class="text-xs font-medium text-indigo-600 bg-white px-2 py-1 rounded">Back</span>
+                                            <span class="text-xs text-gray-500">${index + 1}/${candidateFlashcards.length}</span>
+                                        </div>
+                                        <div class="flex-grow flex items-center">
+                                            <p class="text-gray-700 w-full">${card.back}</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <button class="flip-btn text-xs text-indigo-600 hover:text-indigo-800">
+                                                <i class="fas fa-redo mr-1"></i> Flip
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="candidate-badge">Candidate</div>
+                                <div class="absolute top-2 right-2 flex space-x-1">
+                                    <button class="edit-btn p-1 text-gray-500 hover:text-indigo-600" data-id="${card.id}">
+                                        <i class="fas fa-pencil-alt text-xs"></i>
+                                    </button>
+                                    <button class="accept-btn p-1 text-gray-500 hover:text-green-600" data-id="${card.id}">
+                                        <i class="fas fa-check text-xs"></i>
+                                    </button>
+                                    <button class="discard-btn p-1 text-gray-500 hover:text-red-600" data-id="${card.id}">
+                                        <i class="fas fa-times text-xs"></i>
+                                    </button>
+                                </div>
+                            `;
+                            candidateFlashcardsContainer.appendChild(flashcardElement);
+                        });
+
+                        // Add flip functionality
+                        document.querySelectorAll('#candidate-flashcards-container .flip-btn').forEach(btn => {
+                            btn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                const flashcard = this.closest('.flashcard');
+                                flashcard.classList.toggle('flipped');
+                            });
+                        });
+
+                        // Add edit functionality
+                        document.querySelectorAll('#candidate-flashcards-container .edit-btn').forEach(btn => {
+                            btn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                const id = this.getAttribute('data-id');
+                                const index = flashcards.findIndex(card => card.id === id);
+                                if (index !== -1) {
+                                    openEditModal(index);
+                                }
+                            });
+                        });
+
+                        // Add accept functionality
+                        document.querySelectorAll('#candidate-flashcards-container .accept-btn').forEach(btn => {
+                            btn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                const id = this.getAttribute('data-id');
+                                const index = flashcards.findIndex(card => card.id === id);
+                                if (index !== -1) {
+                                    acceptFlashcard(index);
+                                }
+                            });
+                        });
+
+                        // Add discard functionality
+                        document.querySelectorAll('#candidate-flashcards-container .discard-btn').forEach(btn => {
+                            btn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                const id = this.getAttribute('data-id');
+                                const index = flashcards.findIndex(card => card.id === id);
+                                if (index !== -1) {
+                                    discardFlashcard(index);
+                                }
+                            });
+                        });
+                    }
+                }
+
+                // Tab switching for preview section
+                document.getElementById('approved-tab').addEventListener('click', function() {
+                    document.getElementById('approved-tab').classList.add('active');
+                    document.getElementById('candidate-tab').classList.remove('active');
+                    document.getElementById('approved-section').classList.remove('hidden');
+                    document.getElementById('candidate-section').classList.add('hidden');
+                });
+
+                document.getElementById('candidate-tab').addEventListener('click', function() {
+                    document.getElementById('candidate-tab').classList.add('active');
+                    document.getElementById('approved-tab').classList.remove('active');
+                    document.getElementById('candidate-section').classList.remove('hidden');
+                    document.getElementById('approved-section').classList.add('hidden');
+                });
+
+                // Update learning session
+                function updateLearningSession() {
+                    const approvedFlashcards = flashcards.filter(card => !card.candidate);
+                    totalCards.textContent = approvedFlashcards.length;
+                    
+                    if (approvedFlashcards.length === 0) {
+                        learningFront.textContent = "No flashcards available";
+                        learningBack.textContent = "Add some flashcards first";
+                        prevCardBtn.disabled = true;
+                        nextCardBtn.disabled = true;
+                        flipCardBtn.disabled = true;
+                        learningFlashcard.classList.remove('flipped');
+                        currentLearningIndex = 0;
+                        return;
+                    }
+                    
+                    prevCardBtn.disabled = currentLearningIndex === 0;
+                    nextCardBtn.disabled = currentLearningIndex === approvedFlashcards.length - 1;
+                    flipCardBtn.disabled = false;
+                    
+                    currentCardIndex.textContent = currentLearningIndex + 1;
+                    learningFront.textContent = approvedFlashcards[currentLearningIndex].front;
+                    learningBack.textContent = approvedFlashcards[currentLearningIndex].back;
+                    
+                    // Reset to front view
+                    learningFlashcard.classList.remove('flipped');
+                }
+
+                // Previous card in learning session
+                prevCardBtn.addEventListener('click', function() {
+                    if (currentLearningIndex > 0) {
+                        currentLearningIndex--;
+                        updateLearningSession();
+                    }
+                });
+
+                // Next card in learning session
+                nextCardBtn.addEventListener('click', function() {
+                    const approvedFlashcards = flashcards.filter(card => !card.candidate);
+                    if (currentLearningIndex < approvedFlashcards.length - 1) {
+                        currentLearningIndex++;
+                        updateLearningSession();
+                    }
+                });
+
+                // Flip card in learning session
+                flipCardBtn.addEventListener('click', function() {
+                    learningFlashcard.classList.toggle('flipped');
+                });
+
+                // Open edit modal
+                function openEditModal(index) {
+                    currentEditIndex = index;
+                    const card = flashcards[index];
+                    editFront.value = card.front;
+                    editBack.value = card.back;
+                    editFrontCounter.textContent = card.front.length;
+                    editBackCounter.textContent = card.back.length;
+                    editModal.classList.remove('hidden');
+                }
+
+                // Close edit modal
+                function closeEditModalHandler() {
+                    editModal.classList.add('hidden');
+                    currentEditIndex = -1;
+                }
+
+                // Save edited flashcard
+                function saveEditedFlashcard() {
+                    if (currentEditIndex >= 0) {
+                        flashcards[currentEditIndex] = {
+                            ...flashcards[currentEditIndex],
+                            front: editFront.value,
+                            back: editBack.value,
+                            updated_at: formatDate(Date.now())
+                        };
+                        
+                        // Update user's flashcards in our simulated database
+                        if (currentUser) {
+                            currentUser.flashcards = [...flashcards];
+                        }
+                        
+                        displayFlashcards();
+                        displayPreviewFlashcards();
+                        updateLearningSession();
+                    }
+                    closeEditModalHandler();
+                }
+
+                // Delete flashcard
+                function deleteFlashcard(index) {
+                    if (confirm('Are you sure you want to delete this flashcard?')) {
+                        flashcards.splice(index, 1);
+                        
+                        // Update user's flashcards in our simulated database
+                        if (currentUser) {
+                            currentUser.flashcards = [...flashcards];
+                        }
+                        
+                        displayFlashcards();
+                        displayPreviewFlashcards();
+                        updateLearningSession();
+                        
+                        // Show notification if no flashcards left
+                        if (flashcards.length === 0) {
+                            noFlashcards.classList.remove('hidden');
+                        }
+                    }
+                }
+
+                // Accept candidate flashcard
+                function acceptFlashcard(index) {
+                    flashcards[index] = {
+                        ...flashcards[index],
+                        candidate: false,
+                        updated_at: formatDate(Date.now())
+                    };
+                    
+                    // Update user's flashcards in our simulated database
+                    if (currentUser) {
+                        currentUser.flashcards = [...flashcards];
+                    }
+                    
+                    displayFlashcards();
+                    displayPreviewFlashcards();
+                    updateLearningSession();
+                    
+                    showNotification('Flashcard accepted!', 'success');
+                }
+
+                // Discard candidate flashcard
+                function discardFlashcard(index) {
+                    if (confirm('Are you sure you want to discard this flashcard?')) {
+                        flashcards.splice(index, 1);
+                        
+                        // Update user's flashcards in our simulated database
+                        if (currentUser) {
+                            currentUser.flashcards = [...flashcards];
+                        }
+                        
+                        displayFlashcards();
+                        displayPreviewFlashcards();
+                        updateLearningSession();
+                        
+                        showNotification('Flashcard discarded', 'success');
+                    }
+                }
+
+                // Export functionality
+                exportBtn.addEventListener('click', function() {
+                    if (flashcards.length > 0) {
+                        exportModal.classList.remove('hidden');
+                    } else {
+                        alert('No flashcards to export!');
+                    }
+                });
+
+                closeExportModal.addEventListener('click', function() {
+                    exportModal.classList.add('hidden');
+                });
+
+                exportJsonBtn.addEventListener('click', function() {
+                    const dataStr = JSON.stringify(flashcards, null, 2);
+                    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                    
+                    const exportFileDefaultName = 'flashcards.json';
+                    
+                    const linkElement = document.createElement('a');
+                    linkElement.setAttribute('href', dataUri);
+                    linkElement.setAttribute('download', exportFileDefaultName);
+                    linkElement.click();
+                    
+                    exportModal.classList.add('hidden');
+                });
+
+                exportCsvBtn.addEventListener('click', function() {
+                    let csvContent = "Front,Back,Source,Candidate,Created At,Updated At\n";
+                    
+                    flashcards.forEach(card => {
+                        csvContent += `"${card.front.replace(/"/g, '""')}","${card.back.replace(/"/g, '""')}","${card.source}","${card.candidate}","${card.created_at}","${card.updated_at}"\n`;
+                    });
+                    
+                    const dataUri = 'data:text/csv;charset=utf-8,'+ encodeURIComponent(csvContent);
+                    
+                    const exportFileDefaultName = 'flashcards.csv';
+                    
+                    const linkElement = document.createElement('a');
+                    linkElement.setAttribute('href', dataUri);
+                    linkElement.setAttribute('download', exportFileDefaultName);
+                    linkElement.click();
+                    
+                    exportModal.classList.add('hidden');
+                });
+
+                // Edit modal character counters
+                editFront.addEventListener('input', function() {
+                    editFrontCounter.textContent = this.value.length;
+                });
+
+                editBack.addEventListener('input', function() {
+                    editBackCounter.textContent = this.value.length;
+                });
+
+                // Modal event listeners
+                closeEditModal.addEventListener('click', closeEditModalHandler);
+                cancelEdit.addEventListener('click', closeEditModalHandler);
+                saveEdit.addEventListener('click', saveEditedFlashcard);
+
+                // Close modal when clicking outside
+                editModal.addEventListener('click', function(e) {
+                    if (e.target === editModal) {
+                        closeEditModalHandler();
+                    }
+                });
+
+                exportModal.addEventListener('click', function(e) {
+                    if (e.target === exportModal) {
+                        exportModal.classList.add('hidden');
+                    }
+                });
+
+                loginModal.addEventListener('click', function(e) {
+                    if (e.target === loginModal) {
+                        loginModal.classList.add('hidden');
+                    }
+                });
+
+                registerModal.addEventListener('click', function(e) {
+                    if (e.target === registerModal) {
+                        registerModal.classList.add('hidden');
+                    }
+                });
+
+                forgotPasswordModal.addEventListener('click', function(e) {
+                    if (e.target === forgotPasswordModal) {
+                        forgotPasswordModal.classList.add('hidden');
+                    }
+                });
+            });
+        </script>
+    </body>
+    </html>
+  </div>
 </Layout>

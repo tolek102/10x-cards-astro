@@ -109,7 +109,7 @@
      - **Error Codes:** 400 (Validation Error), 401 (Unauthorized).
 
 4. **Update Flashcard**
-   - **Method:** PUT
+   - **Method:** PATCH
    - **URL:** `/api/flashcards/{id}`
    - **Description:** Updates an existing flashcard. If a candidate flashcard is edited, it will be automatically marked as accepted (candidate = false). If a flashcard with source "AI" is edited, its source will be automatically changed to "AI_EDITED".
    - **Request Payload:**
@@ -147,7 +147,7 @@
      - **Error Codes:** 400 (Input Validation Error), 401 (Unauthorized), 500 (Internal Server Error if AI service fails).
 
 7. **Accept AI-Generated Flashcard**
-   - **Method:** PUT
+   - **Method:** PATCH
    - **URL:** `/api/flashcards/:id/accept`
    - **Description:** Accepts an AI-generated flashcard by updating its `candidate` flag to `false`, marking it as accepted.
    - **Response:**

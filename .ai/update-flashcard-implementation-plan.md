@@ -6,12 +6,12 @@ Celem punktu końcowego jest umożliwienie zaktualizowania istniejącej fiszki p
 - Jeśli źródłem fiszki jest "AI", po edycji zostanie zmienione na "AI_EDITED".
 
 ## 2. Szczegóły żądania
-- **Metoda HTTP:** PUT
+- **Metoda HTTP:** PATCH
 - **Struktura URL:** /api/flashcards/{id}
 - **Parametry:**
   - **Wymagane:**
     - Path parameter: id (identyfikator fiszki do aktualizacji)
-    - Request Body (JSON):
+    - Request Body (JSON)- conajmniej jedno z pól:
       - `front`: string (maksymalnie 200 znaków)
       - `back`: string (maksymalnie 500 znaków)
       - `candidate`: boolean (zazwyczaj przekazywane jako false, aby potwierdzić akceptację)
