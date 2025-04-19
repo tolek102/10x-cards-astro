@@ -5,7 +5,7 @@ interface Props {
   title?: string;
 }
 
-const { title = "10x Astro Starter" } = Astro.props;
+const { title = "Flashcard Master - Learn Smarter" } = Astro.props;
 ---
 
 <!doctype html>
@@ -13,8 +13,10 @@ const { title = "10x Astro Starter" } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
+    <meta name="description" content="Create and study flashcards with AI assistance" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="generator" content={Astro.generator} />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <title>{title}</title>
   </head>
   <body>
@@ -22,11 +24,48 @@ const { title = "10x Astro Starter" } = Astro.props;
   </body>
 </html>
 
-<style>
-  html,
-  body {
-    margin: 0;
+<style is:global>
+  @import "tailwindcss/preflight";
+  @tailwind utilities;
+
+  .flashcard {
+    perspective: 1000px;
+    transition: all 0.3s ease;
+  }
+
+  .flashcard-inner {
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+  }
+
+  .flashcard.flipped .flashcard-inner {
+    transform: rotateY(180deg);
+  }
+
+  .flashcard-front,
+  .flashcard-back {
+    backface-visibility: hidden;
+    position: absolute;
     width: 100%;
     height: 100%;
+  }
+
+  .flashcard-back {
+    transform: rotateY(180deg);
+  }
+
+  .slide-in {
+    animation: slideIn 0.3s ease-out forwards;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 </style>
