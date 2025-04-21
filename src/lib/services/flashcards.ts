@@ -31,14 +31,15 @@ export class FlashcardsService {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(command),
+      body: JSON.stringify(command.flashcards[0]),
     });
 
     if (!response.ok) {
       throw new Error("Failed to create flashcards");
     }
 
-    return response.json();
+    const flashcard = await response.json();
+    return [flashcard];
   }
 
   static async getFlashcards(page = 1, limit = 10): Promise<FlashcardsListResponseDto> {

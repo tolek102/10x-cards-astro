@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AIGeneratorTab } from "./AIGeneratorTab";
 import { ManualCreatorTab } from "./ManualCreatorTab";
@@ -26,6 +26,30 @@ export const CreatorSection = () => {
     setActiveTab(value as "ai" | "manual");
   };
 
+  // Filter flashcards created within the last hour and sort by creation date
+  const filteredFlashcards = useMemo(() => {
+    const oneHourAgo = new Date();
+    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+
+    return flashcards
+      .filter((flashcard) => {
+        const createdAt = new Date(flashcard.created_at);
+        return createdAt > oneHourAgo;
+      })
+      .sort((a, b) => {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+  }, [flashcards]);
+
+  // Adjust pagination for filtered results
+  const adjustedPagination = useMemo(
+    () => ({
+      ...pagination,
+      total: filteredFlashcards.length,
+    }),
+    [filteredFlashcards.length, pagination]
+  );
+
   return (
     <div className="container mx-auto px-4 py-8">
       <Tabs value={activeTab} onValueChange={handleTabChange}>
@@ -50,13 +74,14 @@ export const CreatorSection = () => {
 
         <div className="mt-8">
           <ResultsList
-            flashcards={flashcards}
-            pagination={pagination}
+            flashcards={filteredFlashcards}
+            pagination={adjustedPagination}
             onEdit={updateFlashcard}
             onDelete={deleteFlashcard}
             onAccept={acceptFlashcard}
             onDiscard={discardFlashcard}
             onPageChange={loadPage}
+            showTimeFilter={true}
           />
         </div>
       </Tabs>

@@ -10,6 +10,7 @@ interface ResultsListProps {
   onAccept?: (id: string) => Promise<void>;
   onDiscard?: (id: string) => Promise<void>;
   onPageChange: (page: number) => Promise<void>;
+  showTimeFilter?: boolean;
 }
 
 export const ResultsList = ({
@@ -20,6 +21,7 @@ export const ResultsList = ({
   onAccept,
   onDiscard,
   onPageChange,
+  showTimeFilter = false,
 }: ResultsListProps) => {
   if (flashcards.length === 0) {
     return (
@@ -44,8 +46,15 @@ export const ResultsList = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium text-gray-900">Utworzone fiszki ({pagination.total})</h3>
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-medium text-gray-900">Utworzone fiszki ({pagination.total})</h3>
+        </div>
+        {showTimeFilter && (
+          <p className="text-sm text-gray-500">
+            Wyświetlane są fiszki utworzone w ciągu ostatniej godziny, posortowane od najnowszych
+          </p>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
