@@ -13,6 +13,8 @@ interface CreatorSectionProps {
   deleteFlashcard: (id: string) => Promise<void>;
   acceptFlashcard: (id: string) => Promise<void>;
   discardFlashcard: (id: string) => Promise<void>;
+  onLoadPage?: (page: number, limit?: number) => Promise<void>;
+  onLoadCandidatesPage?: (page: number, limit?: number) => Promise<void>;
 }
 
 export const CreatorSection = ({
@@ -22,6 +24,8 @@ export const CreatorSection = ({
   deleteFlashcard,
   acceptFlashcard,
   discardFlashcard,
+  onLoadPage,
+  onLoadCandidatesPage,
 }: CreatorSectionProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -61,31 +65,24 @@ export const CreatorSection = ({
     }
   };
 
-  const handleAcceptFlashcard = async (id: string) => {
+  const handleEditFlashcard = async (id: string, flashcard: Partial<FlashcardDto>) => {
     setIsLoading(true);
     setError(null);
     try {
-      await acceptFlashcard(id);
-      // Remove the accepted flashcard from the list
-      setLastGeneratedFlashcards((prev) => prev.filter((card) => card.id !== id));
+      await updateFlashcard(id, flashcard);
+      // Remove the edited flashcard from the list since it's no longer a candidate
+      if (activeTab === "ai") {
+        setLastGeneratedFlashcards((prev) => prev.filter((card) => card.id !== id));
+      } else {
+        setLastCreatedFlashcard((prev) => prev.filter((card) => card.id !== id));
+      }
+      // Refresh both lists in PreviewSection
+      if (onLoadPage && onLoadCandidatesPage) {
+        await Promise.all([onLoadPage(1), onLoadCandidatesPage(1)]);
+      }
     } catch (err) {
-      console.error("Failed to accept flashcard:", err);
-      setError(err instanceof Error ? err : new Error("Failed to accept flashcard"));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDiscardFlashcard = async (id: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await discardFlashcard(id);
-      // Remove the discarded flashcard from the list
-      setLastGeneratedFlashcards((prev) => prev.filter((card) => card.id !== id));
-    } catch (err) {
-      console.error("Failed to discard flashcard:", err);
-      setError(err instanceof Error ? err : new Error("Failed to discard flashcard"));
+      console.error("Failed to update flashcard:", err);
+      setError(err instanceof Error ? err : new Error("Failed to update flashcard"));
     } finally {
       setIsLoading(false);
     }
@@ -105,6 +102,40 @@ export const CreatorSection = ({
     } catch (err) {
       console.error("Failed to delete flashcard:", err);
       setError(err instanceof Error ? err : new Error("Failed to delete flashcard"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAcceptFlashcard = async (id: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await acceptFlashcard(id);
+      // Remove the accepted flashcard from the list
+      setLastGeneratedFlashcards((prev) => prev.filter((card) => card.id !== id));
+      // Refresh both lists in PreviewSection
+      if (onLoadPage && onLoadCandidatesPage) {
+        await Promise.all([onLoadPage(1), onLoadCandidatesPage(1)]);
+      }
+    } catch (err) {
+      console.error("Failed to accept flashcard:", err);
+      setError(err instanceof Error ? err : new Error("Failed to accept flashcard"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDiscardFlashcard = async (id: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await discardFlashcard(id);
+      // Remove the discarded flashcard from the list
+      setLastGeneratedFlashcards((prev) => prev.filter((card) => card.id !== id));
+    } catch (err) {
+      console.error("Failed to discard flashcard:", err);
+      setError(err instanceof Error ? err : new Error("Failed to discard flashcard"));
     } finally {
       setIsLoading(false);
     }
@@ -144,7 +175,7 @@ export const CreatorSection = ({
           <ResultsList
             flashcards={displayedFlashcards}
             pagination={displayedPagination}
-            onEdit={updateFlashcard}
+            onEdit={handleEditFlashcard}
             onDelete={handleDeleteFlashcard}
             onAccept={handleAcceptFlashcard}
             onDiscard={handleDiscardFlashcard}

@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { FlashcardDto, PaginationDto } from "@/types";
 import { FlashcardCard } from "../preview/FlashcardCard";
+import { EditModal } from "../preview/EditModal";
 
 interface ResultsListProps {
   flashcards: FlashcardDto[];
@@ -23,6 +25,8 @@ export const ResultsList = ({
   onPageChange,
   showTimeFilter = false,
 }: ResultsListProps) => {
+  const [editingFlashcard, setEditingFlashcard] = useState<FlashcardDto | null>(null);
+
   if (flashcards.length === 0) {
     return (
       <div className="text-center py-12">
@@ -34,11 +38,12 @@ export const ResultsList = ({
   const handleEdit = (id: string) => {
     const flashcard = flashcards.find((f) => f.id === id);
     if (flashcard) {
-      onEdit(id, {
-        front: flashcard.front,
-        back: flashcard.back,
-      });
+      setEditingFlashcard(flashcard);
     }
+  };
+
+  const handleCloseEdit = () => {
+    setEditingFlashcard(null);
   };
 
   const totalPages = Math.ceil(pagination.total / pagination.limit);
@@ -69,6 +74,13 @@ export const ResultsList = ({
           />
         ))}
       </div>
+
+      <EditModal
+        isOpen={editingFlashcard !== null}
+        onClose={handleCloseEdit}
+        onSave={onEdit}
+        flashcard={editingFlashcard}
+      />
 
       {totalPages > 1 && (
         <div className="flex justify-center space-x-2 mt-4">

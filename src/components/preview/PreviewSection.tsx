@@ -62,9 +62,19 @@ export const PreviewSection = ({
   };
 
   const handleEditSave = async (id: string, update: FlashcardUpdateDto) => {
-    await onEdit(id, update);
-    setIsEditModalOpen(false);
-    setSelectedFlashcard(null);
+    try {
+      await onEdit(id, update);
+      // Refresh both lists since editing a candidate moves it to accepted
+      await Promise.all([
+        onLoadPage(pagination.page, pagination.limit),
+        onLoadCandidatesPage(candidatesPagination.page, candidatesPagination.limit),
+      ]);
+    } catch (err) {
+      console.error("Failed to update flashcard:", err);
+    } finally {
+      setIsEditModalOpen(false);
+      setSelectedFlashcard(null);
+    }
   };
 
   const handleDelete = async (id: string) => {

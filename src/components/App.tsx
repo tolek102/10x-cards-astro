@@ -74,6 +74,8 @@ const App = () => {
             deleteFlashcard={deleteFlashcard}
             acceptFlashcard={handleAcceptFlashcard}
             discardFlashcard={discardFlashcard}
+            onLoadPage={loadPage}
+            onLoadCandidatesPage={loadCandidatesPage}
           />
         );
       case "preview":
