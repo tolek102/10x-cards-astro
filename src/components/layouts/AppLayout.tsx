@@ -1,17 +1,13 @@
 import { useAuth } from "../providers/AuthProvider";
-import { useState } from "react";
 
 interface AppLayoutProps {
   children: React.ReactNode;
+  activeSection: "creator" | "preview" | "learning";
+  onSectionChange: (section: "creator" | "preview" | "learning") => void;
 }
 
-const AppLayout = ({ children }: AppLayoutProps) => {
+const AppLayout = ({ children, activeSection, onSectionChange }: AppLayoutProps) => {
   const { user, logout } = useAuth();
-  const [activeSection, setActiveSection] = useState<"creator" | "preview" | "learning">("creator");
-
-  const handleNavigation = (section: "creator" | "preview" | "learning") => {
-    setActiveSection(section);
-  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -25,7 +21,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                 <button
-                  onClick={() => handleNavigation("creator")}
+                  onClick={() => onSectionChange("creator")}
                   className={`${
                     activeSection === "creator"
                       ? "border-indigo-500 text-gray-900"
@@ -36,7 +32,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                   Creator
                 </button>
                 <button
-                  onClick={() => handleNavigation("preview")}
+                  onClick={() => onSectionChange("preview")}
                   className={`${
                     activeSection === "preview"
                       ? "border-indigo-500 text-gray-900"
@@ -47,7 +43,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                   Preview
                 </button>
                 <button
-                  onClick={() => handleNavigation("learning")}
+                  onClick={() => onSectionChange("learning")}
                   className={`${
                     activeSection === "learning"
                       ? "border-indigo-500 text-gray-900"

@@ -6,7 +6,7 @@ import { logger } from "../../../lib/services/loggerService";
 import { DEFAULT_USER_ID } from "../../../db/supabase.client";
 
 // Validation schema for query parameters
-const listCandidateFlashcardsQuerySchema = z.object({
+const listCandidatesQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
   sort: z.enum(["created_at_desc", "created_at_asc"]).optional(),
@@ -16,7 +16,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
   try {
     // Parse and validate query parameters
     const queryParams = Object.fromEntries(url.searchParams.entries());
-    const validationResult = listCandidateFlashcardsQuerySchema.safeParse(queryParams);
+    const validationResult = listCandidatesQuerySchema.safeParse(queryParams);
 
     if (!validationResult.success) {
       return new Response(

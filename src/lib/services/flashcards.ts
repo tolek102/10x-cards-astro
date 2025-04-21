@@ -51,6 +51,16 @@ export class FlashcardsService {
     return response.json();
   }
 
+  static async getCandidates(page = 1, limit = 10): Promise<FlashcardsListResponseDto> {
+    const response = await fetch(`${API_BASE_URL}/flashcards/candidates?page=${page}&limit=${limit}`);
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch candidate flashcards");
+    }
+
+    return response.json();
+  }
+
   static async updateFlashcard(id: string, flashcard: Partial<FlashcardDto>): Promise<FlashcardDto> {
     const response = await fetch(`${API_BASE_URL}/flashcards/${id}`, {
       method: "PATCH",
@@ -74,6 +84,28 @@ export class FlashcardsService {
 
     if (!response.ok) {
       throw new Error("Failed to delete flashcard");
+    }
+  }
+
+  static async acceptFlashcard(id: string): Promise<FlashcardDto> {
+    const response = await fetch(`${API_BASE_URL}/flashcards/${id}/accept`, {
+      method: "PATCH",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to accept flashcard");
+    }
+
+    return response.json();
+  }
+
+  static async discardFlashcard(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/flashcards/${id}/discard`, {
+      method: "PATCH",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to discard flashcard");
     }
   }
 }

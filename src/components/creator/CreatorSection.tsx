@@ -16,6 +16,8 @@ export const CreatorSection = () => {
     createFlashcard,
     updateFlashcard,
     deleteFlashcard,
+    acceptFlashcard,
+    discardFlashcard,
     loadPage,
   } = useFlashcards();
   const [activeTab, setActiveTab] = useState<"ai" | "manual">("ai");
@@ -52,6 +54,8 @@ export const CreatorSection = () => {
             pagination={pagination}
             onEdit={updateFlashcard}
             onDelete={deleteFlashcard}
+            onAccept={acceptFlashcard}
+            onDiscard={discardFlashcard}
             onPageChange={loadPage}
           />
         </div>

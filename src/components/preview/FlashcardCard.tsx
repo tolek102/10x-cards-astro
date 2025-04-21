@@ -4,14 +4,18 @@ import type { FlashcardDto } from "@/types";
 
 interface FlashcardCardProps {
   flashcard: FlashcardDto;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
   onAccept?: (id: string) => void;
   onDiscard?: (id: string) => void;
 }
 
 export const FlashcardCard = ({ flashcard, onEdit, onDelete, onAccept, onDiscard }: FlashcardCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
+
+  const handleClick = () => {
+    setIsFlipped(!isFlipped);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -22,50 +26,50 @@ export const FlashcardCard = ({ flashcard, onEdit, onDelete, onAccept, onDiscard
 
   return (
     <div
-      className="relative h-64 cursor-pointer group perspective-1000"
-      onClick={() => setIsFlipped(!isFlipped)}
+      className="w-full h-[400px] cursor-pointer perspective-1000"
+      onClick={handleClick}
       onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
-      aria-label="Kliknij aby odwrócić fiszkę"
+      aria-label="Click to flip the card"
     >
-      <div className={`absolute inset-0 duration-500 preserve-3d ${isFlipped ? "rotate-y-180" : ""}`}>
-        {/* Front */}
-        <div className="absolute inset-0 backface-hidden bg-white rounded-xl border border-gray-200 p-6">
-          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-            <div className="flex space-x-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(flashcard.id);
-                }}
-                className="text-gray-500 hover:text-indigo-600"
-                aria-label="Edytuj fiszkę"
-              >
-                ✏️
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(flashcard.id);
-                }}
-                className="text-gray-500 hover:text-red-600"
-                aria-label="Usuń fiszkę"
-              >
-                🗑️
-              </Button>
-            </div>
+      <div className={`relative w-full h-full preserve-3d duration-500 ${isFlipped ? "rotate-y-180" : ""}`}>
+        {/* Front side */}
+        <div className="absolute w-full h-full backface-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <div className="flex flex-col items-center justify-center h-full">
+            {onEdit && onDelete && (
+              <div className="absolute top-4 right-4">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(flashcard.id);
+                  }}
+                  className="mr-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                  aria-label="Edit flashcard"
+                >
+                  ✏️
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(flashcard.id);
+                  }}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                  aria-label="Delete flashcard"
+                >
+                  🗑️
+                </button>
+              </div>
+            )}
+            <h2 className="text-2xl font-bold text-center">{flashcard.front}</h2>
           </div>
-          <p className="text-lg text-center text-gray-900">{flashcard.front}</p>
         </div>
 
-        {/* Back */}
-        <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white rounded-xl border border-gray-200 p-6">
-          <p className="text-lg text-center text-gray-900">{flashcard.back}</p>
+        {/* Back side */}
+        <div className="absolute w-full h-full backface-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 rotate-y-180">
+          <div className="flex flex-col items-center justify-center h-full">
+            <p className="text-xl text-center">{flashcard.back}</p>
+          </div>
         </div>
       </div>
 

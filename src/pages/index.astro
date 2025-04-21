@@ -1,11 +1,8 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import App from "../components/App";
-import { AuthProvider } from "../components/providers/AuthProvider";
+import { AppRoot } from "../components/AppRoot";
 ---
 
 <Layout>
-  <AuthProvider client:load>
-    <App client:load />
-  </AuthProvider>
+  <AppRoot client:load />
 </Layout>
