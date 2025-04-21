@@ -6,6 +6,7 @@ import { PreviewSection } from "./preview/PreviewSection";
 import { LearningSession as LearningSection } from "./learning/LearningSession";
 import { useState } from "react";
 import { useFlashcards } from "./hooks/useFlashcards";
+import type { FlashcardCreateDto } from "@/types";
 
 const App = () => {
   const { user, isLoading } = useAuth();
@@ -23,7 +24,29 @@ const App = () => {
     isCandidatesLoading,
     pagination,
     candidatesPagination,
+    generateFlashcards: originalGenerateFlashcards,
+    createFlashcard: originalCreateFlashcard,
   } = useFlashcards();
+
+  const handleGenerateFlashcards = async (text: string) => {
+    const generatedFlashcards = await originalGenerateFlashcards(text);
+    // Reload candidates list after generation
+    await loadCandidatesPage(1);
+    return generatedFlashcards;
+  };
+
+  const handleCreateFlashcard = async (flashcard: FlashcardCreateDto) => {
+    const createdFlashcard = await originalCreateFlashcard(flashcard);
+    // Reload accepted flashcards list after manual creation
+    await loadPage(1);
+    return createdFlashcard;
+  };
+
+  const handleAcceptFlashcard = async (id: string) => {
+    await acceptFlashcard(id);
+    // Reload both lists after accepting a flashcard
+    await Promise.all([loadPage(pagination.page), loadCandidatesPage(candidatesPagination.page)]);
+  };
 
   if (isLoading) {
     return (
@@ -40,7 +63,16 @@ const App = () => {
   const renderActiveSection = () => {
     switch (activeSection) {
       case "creator":
-        return <CreatorSection />;
+        return (
+          <CreatorSection
+            generateFlashcards={handleGenerateFlashcards}
+            createFlashcard={handleCreateFlashcard}
+            updateFlashcard={updateFlashcard}
+            deleteFlashcard={deleteFlashcard}
+            acceptFlashcard={handleAcceptFlashcard}
+            discardFlashcard={discardFlashcard}
+          />
+        );
       case "preview":
         return (
           <PreviewSection
@@ -48,7 +80,7 @@ const App = () => {
             candidates={candidates}
             onEdit={updateFlashcard}
             onDelete={deleteFlashcard}
-            onAccept={acceptFlashcard}
+            onAccept={handleAcceptFlashcard}
             onDiscard={discardFlashcard}
             onLoadPage={loadPage}
             onLoadCandidatesPage={loadCandidatesPage}
@@ -59,9 +91,9 @@ const App = () => {
           />
         );
       case "learning":
-        return <LearningSection flashcards={flashcards.filter((f) => !f.candidate)} />;
+        return <LearningSection flashcards={flashcards} />;
       default:
-        return <CreatorSection />;
+        return null;
     }
   };
 

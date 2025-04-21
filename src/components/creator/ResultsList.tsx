@@ -60,7 +60,7 @@ export const ResultsList = ({
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {flashcards.map((flashcard) => (
           <FlashcardCard
-            key={flashcard.id}
+            key={flashcard.id || `${flashcard.front}-${flashcard.back}`}
             flashcard={flashcard}
             onEdit={handleEdit}
             onDelete={onDelete}

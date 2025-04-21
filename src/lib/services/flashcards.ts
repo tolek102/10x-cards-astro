@@ -101,8 +101,8 @@ export class FlashcardsService {
   }
 
   static async discardFlashcard(id: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/flashcards/${id}/discard`, {
-      method: "PATCH",
+    const response = await fetch(`${API_BASE_URL}/flashcards/${id}`, {
+      method: "DELETE",
     });
 
     if (!response.ok) {

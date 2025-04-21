@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import type { FlashcardDto } from "@/types";
 
@@ -12,6 +12,8 @@ interface FlashcardCardProps {
 
 export const FlashcardCard = ({ flashcard, onEdit, onDelete, onAccept, onDiscard }: FlashcardCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [backTextSize, setBackTextSize] = useState(20); // Changed initial font size to 20px
+  const backContentRef = useRef<HTMLParagraphElement>(null);
 
   const handleClick = () => {
     setIsFlipped(!isFlipped);
@@ -23,6 +25,32 @@ export const FlashcardCard = ({ flashcard, onEdit, onDelete, onAccept, onDiscard
       setIsFlipped(!isFlipped);
     }
   };
+
+  useEffect(() => {
+    const adjustTextSize = () => {
+      const content = backContentRef.current;
+      if (!content) return;
+
+      const container = content.parentElement;
+      if (!container) return;
+
+      let fontSize = 20; // Start with 20px size
+      content.style.fontSize = `${fontSize}px`;
+
+      // Reduce font size until content fits or reaches 14px minimum
+      while (content.scrollHeight > container.clientHeight && fontSize > 14) {
+        fontSize -= 0.5;
+        content.style.fontSize = `${fontSize}px`;
+      }
+
+      setBackTextSize(fontSize);
+    };
+
+    adjustTextSize();
+    // Re-run when content changes or on window resize
+    window.addEventListener("resize", adjustTextSize);
+    return () => window.removeEventListener("resize", adjustTextSize);
+  }, [flashcard.back]);
 
   return (
     <div
@@ -61,14 +89,24 @@ export const FlashcardCard = ({ flashcard, onEdit, onDelete, onAccept, onDiscard
                 </button>
               </div>
             )}
-            <h2 className="text-2xl font-bold text-center">{flashcard.front}</h2>
+            <div className="max-h-[320px] overflow-y-auto">
+              <h2 className="text-[20px] leading-[1.4] font-bold text-center">{flashcard.front}</h2>
+            </div>
           </div>
         </div>
 
         {/* Back side */}
         <div className="absolute w-full h-full backface-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 rotate-y-180">
           <div className="flex flex-col items-center justify-center h-full">
-            <p className="text-xl text-center">{flashcard.back}</p>
+            <div className="max-h-[320px] overflow-y-auto">
+              <p
+                ref={backContentRef}
+                className="text-center"
+                style={{ fontSize: `${backTextSize}px`, lineHeight: "1.4" }}
+              >
+                {flashcard.back}
+              </p>
+            </div>
           </div>
         </div>
       </div>

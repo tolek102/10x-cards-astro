@@ -10,8 +10,8 @@ interface UseFlashcardsReturn {
   error: Error | null;
   pagination: PaginationDto;
   candidatesPagination: PaginationDto;
-  generateFlashcards: (text: string) => Promise<void>;
-  createFlashcard: (flashcard: FlashcardCreateDto) => Promise<void>;
+  generateFlashcards: (text: string) => Promise<FlashcardDto[]>;
+  createFlashcard: (flashcard: FlashcardCreateDto) => Promise<FlashcardDto>;
   updateFlashcard: (id: string, flashcard: Partial<FlashcardDto>) => Promise<void>;
   deleteFlashcard: (id: string) => Promise<void>;
   acceptFlashcard: (id: string) => Promise<void>;
@@ -81,8 +81,10 @@ export const useFlashcards = (initialPage = 1, pageSize = 10): UseFlashcardsRetu
         ...prev,
         total: prev.total + generatedFlashcards.length,
       }));
+      return generatedFlashcards;
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to generate flashcards"));
+      return [];
     } finally {
       setIsLoading(false);
     }
@@ -92,16 +94,18 @@ export const useFlashcards = (initialPage = 1, pageSize = 10): UseFlashcardsRetu
     setIsLoading(true);
     setError(null);
     try {
-      const newFlashcards = await FlashcardsService.createFlashcards({
+      const [newFlashcard] = await FlashcardsService.createFlashcards({
         flashcards: [flashcard],
       });
-      setCandidates((prev) => [...prev, ...newFlashcards]);
+      setCandidates((prev) => [...prev, newFlashcard]);
       setCandidatesPagination((prev) => ({
         ...prev,
         total: prev.total + 1,
       }));
+      return newFlashcard;
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to create flashcard"));
+      throw err;
     } finally {
       setIsLoading(false);
     }

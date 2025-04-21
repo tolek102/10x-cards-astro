@@ -57,6 +57,32 @@ export const PreviewSection = ({
   const handleDelete = async (id: string) => {
     if (window.confirm("Czy na pewno chcesz usunąć tę fiszkę?")) {
       await onDelete(id);
+      // Reload the appropriate list after deletion
+      if (activeTab === "accepted") {
+        await onLoadPage(pagination.page);
+      } else {
+        await onLoadCandidatesPage(candidatesPagination.page);
+      }
+    }
+  };
+
+  const handleAccept = async (id: string) => {
+    try {
+      await onAccept(id);
+      // Reload both lists after accepting a flashcard
+      await Promise.all([onLoadPage(pagination.page), onLoadCandidatesPage(candidatesPagination.page)]);
+    } catch (err) {
+      console.error("Failed to accept flashcard:", err);
+    }
+  };
+
+  const handleDiscard = async (id: string) => {
+    try {
+      await onDiscard(id);
+      // Reload candidates list after discarding
+      await onLoadCandidatesPage(candidatesPagination.page);
+    } catch (err) {
+      console.error("Failed to discard flashcard:", err);
     }
   };
 
@@ -85,8 +111,8 @@ export const PreviewSection = ({
             flashcards={candidates}
             onEdit={handleEditClick}
             onDelete={handleDelete}
-            onAccept={onAccept}
-            onDiscard={onDiscard}
+            onAccept={handleAccept}
+            onDiscard={handleDiscard}
             isLoading={isCandidatesLoading}
             pagination={candidatesPagination}
             onPageChange={onLoadCandidatesPage}
