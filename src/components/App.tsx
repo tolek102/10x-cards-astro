@@ -31,21 +31,24 @@ const App = () => {
   const handleGenerateFlashcards = async (text: string) => {
     const generatedFlashcards = await originalGenerateFlashcards(text);
     // Reload candidates list after generation
-    await loadCandidatesPage(1);
+    await loadCandidatesPage(1, candidatesPagination.limit);
     return generatedFlashcards;
   };
 
   const handleCreateFlashcard = async (flashcard: FlashcardCreateDto) => {
     const createdFlashcard = await originalCreateFlashcard(flashcard);
     // Reload accepted flashcards list after manual creation
-    await loadPage(1);
+    await loadPage(1, pagination.limit);
     return createdFlashcard;
   };
 
   const handleAcceptFlashcard = async (id: string) => {
     await acceptFlashcard(id);
     // Reload both lists after accepting a flashcard
-    await Promise.all([loadPage(pagination.page), loadCandidatesPage(candidatesPagination.page)]);
+    await Promise.all([
+      loadPage(pagination.page, pagination.limit),
+      loadCandidatesPage(candidatesPagination.page, candidatesPagination.limit),
+    ]);
   };
 
   if (isLoading) {

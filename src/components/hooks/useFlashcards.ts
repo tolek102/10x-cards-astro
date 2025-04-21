@@ -16,8 +16,8 @@ interface UseFlashcardsReturn {
   deleteFlashcard: (id: string) => Promise<void>;
   acceptFlashcard: (id: string) => Promise<void>;
   discardFlashcard: (id: string) => Promise<void>;
-  loadPage: (page: number) => Promise<void>;
-  loadCandidatesPage: (page: number) => Promise<void>;
+  loadPage: (page: number, limit?: number) => Promise<void>;
+  loadCandidatesPage: (page: number, limit?: number) => Promise<void>;
 }
 
 export const useFlashcards = (initialPage = 1, pageSize = 10): UseFlashcardsReturn => {
@@ -37,11 +37,11 @@ export const useFlashcards = (initialPage = 1, pageSize = 10): UseFlashcardsRetu
     total: 0,
   });
 
-  const loadPage = async (page: number) => {
+  const loadPage = async (page: number, limit?: number) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await FlashcardsService.getFlashcards(page, pagination.limit);
+      const response = await FlashcardsService.getFlashcards(page, limit ?? pagination.limit);
       setFlashcards(response.data);
       setPagination(response.pagination);
     } catch (err) {
@@ -51,11 +51,11 @@ export const useFlashcards = (initialPage = 1, pageSize = 10): UseFlashcardsRetu
     }
   };
 
-  const loadCandidatesPage = async (page: number) => {
+  const loadCandidatesPage = async (page: number, limit?: number) => {
     setIsCandidatesLoading(true);
     setError(null);
     try {
-      const response = await FlashcardsService.getCandidates(page, candidatesPagination.limit);
+      const response = await FlashcardsService.getCandidates(page, limit ?? candidatesPagination.limit);
       setCandidates(response.data);
       setCandidatesPagination(response.pagination);
     } catch (err) {
