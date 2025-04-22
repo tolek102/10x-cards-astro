@@ -1,6 +1,5 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import type { UserDto } from "../../types";
-import { DEFAULT_USER_ID } from "../../db/supabase.client";
 
 interface AuthContextType {
   user: UserDto | null;
@@ -23,66 +22,81 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<UserDto | null>({
-    id: DEFAULT_USER_ID,
-    email: "demo@example.com",
-    created_at: new Date().toISOString(),
-  });
-  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<UserDto | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Commented out authentication check - will be restored later with Supabase Auth
-  // useEffect(() => {
-  //   const checkAuth = async () => {
-  //     try {
-  //       const response = await fetch("/api/me");
-  //       if (response.ok) {
-  //         const userData = await response.json();
-  //         setUser(userData);
-  //       }
-  //     } catch (err) {
-  //       setError("Failed to check authentication status");
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   };
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch("/api/me");
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+        }
+      } catch (err) {
+        console.error("Failed to check authentication status:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  //   checkAuth();
-  // }, []);
+    checkAuth();
+  }, []);
 
-  const login = async (email: string, _password: string) => {
+  const login = async (email: string, password: string) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Temporarily always set default user
-      setUser({
-        id: DEFAULT_USER_ID,
-        email: email,
-        created_at: new Date().toISOString(),
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
       });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Nieprawidłowy email lub hasło");
+      }
+
+      setUser(data.user);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to login");
-      throw err;
+      const errorMessage = err instanceof Error ? err.message : "Wystąpił błąd podczas logowania";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const register = async (email: string, _password: string) => {
+  const register = async (email: string, password: string) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Temporarily always set default user
-      setUser({
-        id: DEFAULT_USER_ID,
-        email: email,
-        created_at: new Date().toISOString(),
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
       });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Nie udało się zarejestrować");
+      }
+
+      setUser(data.user);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to register");
-      throw err;
+      const errorMessage = err instanceof Error ? err.message : "Wystąpił błąd podczas rejestracji";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -93,25 +107,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setError(null);
 
     try {
+      const response = await fetch("/api/logout", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Nie udało się wylogować");
+      }
+
       setUser(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to logout");
-      throw err;
+      const errorMessage = err instanceof Error ? err.message : "Wystąpił błąd podczas wylogowywania";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const resetPassword = async (_email: string) => {
+  const resetPassword = async (email: string) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Temporarily do nothing
-      console.log("Reset password temporarily disabled");
+      const response = await fetch("/api/reset-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Nie udało się zresetować hasła");
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to reset password");
-      throw err;
+      const errorMessage = err instanceof Error ? err.message : "Wystąpił błąd podczas resetowania hasła";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
