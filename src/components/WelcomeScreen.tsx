@@ -3,6 +3,7 @@ import { useAuth } from "./providers/AuthProvider";
 import LoginModal from "./modals/LoginModal";
 import RegisterModal from "./modals/RegisterModal";
 import ForgotPasswordModal from "./modals/ForgotPasswordModal";
+import { showToast } from "../lib/toast";
 
 export const WelcomeScreen = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -13,8 +14,13 @@ export const WelcomeScreen = () => {
   const handleDemoLogin = async () => {
     try {
       await login("demo@example.com", "demo123");
+      showToast("Pomyślnie zalogowano do wersji demo", "success", {
+        description: "Witamy w aplikacji! Możesz teraz przetestować wszystkie funkcje."
+      });
     } catch (error) {
-      console.error("Demo login failed:", error);
+      showToast("Nie udało się zalogować do wersji demo", "error", {
+        description: error instanceof Error ? error.message : undefined,
+      });
     }
   };
 

@@ -5,6 +5,7 @@ import { ExportModal } from "./ExportModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { FlashcardDto, FlashcardUpdateDto } from "@/types";
+import { showToast } from "@/lib/toast";
 
 interface PreviewSectionProps {
   flashcards: FlashcardDto[];
@@ -64,13 +65,18 @@ export const PreviewSection = ({
   const handleEditSave = async (id: string, update: FlashcardUpdateDto) => {
     try {
       await onEdit(id, update);
+      showToast("Pomyślnie zaktualizowano fiszkę", "success", {
+        description: "Zapisano zmiany w treści fiszki. Możesz teraz kontynuować przeglądanie."
+      });
       // Refresh both lists since editing a candidate moves it to accepted
       await Promise.all([
         onLoadPage(pagination.page, pagination.limit),
         onLoadCandidatesPage(candidatesPagination.page, candidatesPagination.limit),
       ]);
     } catch (err) {
-      console.error("Failed to update flashcard:", err);
+      showToast("Błąd aktualizacji", "error", {
+        description: "Wystąpił problem podczas aktualizacji fiszki. Sprawdź wprowadzone dane i spróbuj ponownie."
+      });
     } finally {
       setIsEditModalOpen(false);
       setSelectedFlashcard(null);
@@ -79,11 +85,20 @@ export const PreviewSection = ({
 
   const handleDelete = async (id: string) => {
     if (window.confirm("Czy na pewno chcesz usunąć tę fiszkę?")) {
-      await onDelete(id);
-      if (activeTab === "accepted") {
-        await onLoadPage(pagination.page, pagination.limit);
-      } else {
-        await onLoadCandidatesPage(candidatesPagination.page, candidatesPagination.limit);
+      try {
+        await onDelete(id);
+        showToast("Pomyślnie usunięto fiszkę", "success", {
+          description: "Fiszka została trwale usunięta z systemu. Tej operacji nie można cofnąć."
+        });
+        if (activeTab === "accepted") {
+          await onLoadPage(pagination.page, pagination.limit);
+        } else {
+          await onLoadCandidatesPage(candidatesPagination.page, candidatesPagination.limit);
+        }
+      } catch (err) {
+        showToast("Błąd usuwania", "error", {
+          description: "Wystąpił problem podczas usuwania fiszki. Spróbuj ponownie później."
+        });
       }
     }
   };
@@ -91,21 +106,34 @@ export const PreviewSection = ({
   const handleAccept = async (id: string) => {
     try {
       await onAccept(id);
+      showToast("Pomyślnie zaakceptowano fiszkę", "success", {
+        description: "Fiszka została przeniesiona do zestawu zaakceptowanych i jest gotowa do nauki."
+      });
       await Promise.all([
         onLoadPage(pagination.page, pagination.limit),
         onLoadCandidatesPage(candidatesPagination.page, candidatesPagination.limit),
       ]);
     } catch (err) {
-      console.error("Failed to accept flashcard:", err);
+      showToast("Błąd akceptacji", "error", {
+        description: "Wystąpił problem podczas akceptowania fiszki. Spróbuj ponownie później."
+      });
     }
   };
 
   const handleDiscard = async (id: string) => {
     try {
       await onDiscard(id);
-      await onLoadCandidatesPage(candidatesPagination.page, candidatesPagination.limit);
+      showToast("Pomyślnie odrzucono fiszkę", "success", {
+        description: "Fiszka została usunięta z listy kandydatów. Możesz ją później wygenerować ponownie."
+      });
+      await Promise.all([
+        onLoadPage(pagination.page, pagination.limit),
+        onLoadCandidatesPage(candidatesPagination.page, candidatesPagination.limit),
+      ]);
     } catch (err) {
-      console.error("Failed to discard flashcard:", err);
+      showToast("Błąd odrzucania", "error", {
+        description: "Wystąpił problem podczas odrzucania fiszki. Spróbuj ponownie później."
+      });
     }
   };
 

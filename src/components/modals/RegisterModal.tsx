@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../providers/AuthProvider";
 import Modal from "./Modal";
+import { showToast } from "../../lib/toast";
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -12,21 +13,23 @@ const RegisterModal = ({ isOpen, onClose, onLogin }: RegisterModalProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
 
     if (password !== confirmPassword) {
-      setError("Hasła nie są identyczne");
+      showToast("Błąd walidacji", "error", {
+        description: "Wprowadzone hasła nie są identyczne. Upewnij się, że powtórzone hasło jest takie samo."
+      });
       return;
     }
 
     if (password.length < 8) {
-      setError("Hasło musi mieć co najmniej 8 znaków");
+      showToast("Błąd walidacji", "error", {
+        description: "Hasło jest za krótkie. Wprowadź hasło zawierające co najmniej 8 znaków."
+      });
       return;
     }
 
@@ -34,9 +37,14 @@ const RegisterModal = ({ isOpen, onClose, onLogin }: RegisterModalProps) => {
 
     try {
       await register(email, password);
+      showToast("Rejestracja zakończona", "success", {
+        description: "Konto zostało utworzone! Możesz się teraz zalogować i rozpocząć naukę z fiszkami."
+      });
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Błąd rejestracji");
+      showToast("Błąd rejestracji", "error", {
+        description: "Wystąpił problem podczas tworzenia konta. Sprawdź, czy podany email nie jest już zajęty i spróbuj ponownie."
+      });
     } finally {
       setIsLoading(false);
     }
@@ -50,25 +58,6 @@ const RegisterModal = ({ isOpen, onClose, onLogin }: RegisterModalProps) => {
             <h3 className="text-lg leading-6 font-medium text-gray-900">Zarejestruj się</h3>
             <div className="mt-2">
               <form onSubmit={handleSubmit} className="space-y-6">
-                {error && (
-                  <div className="rounded-md bg-red-50 p-4">
-                    <div className="flex">
-                      <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <h3 className="text-sm font-medium text-red-800">{error}</h3>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 <div>
                   <label htmlFor="register-email" className="block text-sm font-medium text-gray-700">
                     Email

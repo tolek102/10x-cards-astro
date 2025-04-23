@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { FlashcardDto, FlashcardCreateDto, GenerateFlashcardsCommand, PaginationDto } from "@/types";
 import { FlashcardsService } from "@/lib/services/flashcards";
+import { showToast } from "@/lib/toast";
 
 interface UseFlashcardsReturn {
   flashcards: FlashcardDto[];
@@ -45,7 +46,11 @@ export const useFlashcards = (initialPage = 1, pageSize = 10): UseFlashcardsRetu
       setFlashcards(response.data);
       setPagination(response.pagination);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to load flashcards"));
+      const error = err instanceof Error ? err : new Error("Failed to load flashcards");
+      setError(error);
+      showToast("Nie udało się załadować fiszek", "error", {
+        description: "Wystąpił problem podczas pobierania fiszek. Spróbuj odświeżyć stronę."
+      });
     } finally {
       setIsLoading(false);
     }
@@ -59,7 +64,11 @@ export const useFlashcards = (initialPage = 1, pageSize = 10): UseFlashcardsRetu
       setCandidates(response.data);
       setCandidatesPagination(response.pagination);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to load candidate flashcards"));
+      const error = err instanceof Error ? err : new Error("Failed to load candidate flashcards");
+      setError(error);
+      showToast("Nie udało się załadować kandydatów", "error", {
+        description: "Wystąpił problem podczas pobierania kandydatów na fiszki. Spróbuj odświeżyć stronę."
+      });
     } finally {
       setIsCandidatesLoading(false);
     }
@@ -81,9 +90,16 @@ export const useFlashcards = (initialPage = 1, pageSize = 10): UseFlashcardsRetu
         ...prev,
         total: prev.total + generatedFlashcards.length,
       }));
+      showToast("Wygenerowano nowe fiszki", "success", {
+        description: `Pomyślnie utworzono ${generatedFlashcards.length} nowych kandydatów na fiszki.`
+      });
       return generatedFlashcards;
     } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to generate flashcards"));
+      const error = err instanceof Error ? err : new Error("Failed to generate flashcards");
+      setError(error);
+      showToast("Nie udało się wygenerować fiszek", "error", {
+        description: "Wystąpił problem podczas generowania fiszek. Sprawdź wprowadzony tekst i spróbuj ponownie."
+      });
       return [];
     } finally {
       setIsLoading(false);
@@ -102,9 +118,16 @@ export const useFlashcards = (initialPage = 1, pageSize = 10): UseFlashcardsRetu
         ...prev,
         total: prev.total + 1,
       }));
+      showToast("Utworzono nową fiszkę", "success", {
+        description: "Nowa fiszka została dodana do listy kandydatów."
+      });
       return newFlashcard;
     } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to create flashcard"));
+      const error = err instanceof Error ? err : new Error("Failed to create flashcard");
+      setError(error);
+      showToast("Nie udało się utworzyć fiszki", "error", {
+        description: "Wystąpił problem podczas tworzenia fiszki. Sprawdź wprowadzone dane i spróbuj ponownie."
+      });
       throw err;
     } finally {
       setIsLoading(false);
@@ -118,8 +141,15 @@ export const useFlashcards = (initialPage = 1, pageSize = 10): UseFlashcardsRetu
       const updatedFlashcard = await FlashcardsService.updateFlashcard(id, flashcard);
       setFlashcards((prev) => prev.map((card) => (card.id === id ? updatedFlashcard : card)));
       setCandidates((prev) => prev.map((card) => (card.id === id ? updatedFlashcard : card)));
+      showToast("Zaktualizowano fiszkę", "success", {
+        description: "Pomyślnie zaktualizowano zawartość fiszki."
+      });
     } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to update flashcard"));
+      const error = err instanceof Error ? err : new Error("Failed to update flashcard");
+      setError(error);
+      showToast("Nie udało się zaktualizować fiszki", "error", {
+        description: "Wystąpił problem podczas aktualizacji fiszki. Sprawdź wprowadzone dane i spróbuj ponownie."
+      });
     } finally {
       setIsLoading(false);
     }
@@ -136,8 +166,15 @@ export const useFlashcards = (initialPage = 1, pageSize = 10): UseFlashcardsRetu
         ...prev,
         total: prev.total - 1,
       }));
+      showToast("Usunięto fiszkę", "success", {
+        description: "Pomyślnie usunięto fiszkę z systemu."
+      });
     } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to delete flashcard"));
+      const error = err instanceof Error ? err : new Error("Failed to delete flashcard");
+      setError(error);
+      showToast("Nie udało się usunąć fiszki", "error", {
+        description: "Wystąpił problem podczas usuwania fiszki. Spróbuj ponownie później."
+      });
     } finally {
       setIsLoading(false);
     }
@@ -158,8 +195,15 @@ export const useFlashcards = (initialPage = 1, pageSize = 10): UseFlashcardsRetu
         ...prev,
         total: prev.total + 1,
       }));
+      showToast("Zaakceptowano fiszkę", "success", {
+        description: "Fiszka została przeniesiona do głównej kolekcji."
+      });
     } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to accept flashcard"));
+      const error = err instanceof Error ? err : new Error("Failed to accept flashcard");
+      setError(error);
+      showToast("Nie udało się zaakceptować fiszki", "error", {
+        description: "Wystąpił problem podczas akceptowania fiszki. Spróbuj ponownie później."
+      });
     } finally {
       setIsLoading(false);
     }
@@ -175,8 +219,15 @@ export const useFlashcards = (initialPage = 1, pageSize = 10): UseFlashcardsRetu
         ...prev,
         total: prev.total - 1,
       }));
+      showToast("Odrzucono fiszkę", "success", {
+        description: "Pomyślnie odrzucono fiszkę z listy kandydatów."
+      });
     } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to discard flashcard"));
+      const error = err instanceof Error ? err : new Error("Failed to discard flashcard");
+      setError(error);
+      showToast("Nie udało się odrzucić fiszki", "error", {
+        description: "Wystąpił problem podczas odrzucania fiszki. Spróbuj ponownie później."
+      });
     } finally {
       setIsLoading(false);
     }

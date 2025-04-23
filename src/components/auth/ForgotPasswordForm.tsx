@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { showToast } from "../../lib/toast";
 
 interface ForgotPasswordFormProps {
   onSubmit: (email: string) => Promise<void>;
@@ -11,38 +12,23 @@ interface ForgotPasswordFormProps {
 export const ForgotPasswordForm = ({ onSubmit, onLogin }: ForgotPasswordFormProps) => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(false);
     setIsLoading(true);
 
     try {
       await onSubmit(email);
-      setSuccess(true);
+      showToast("Instrukcje resetowania hasła zostały wysłane", "success", {
+        description: `Sprawdź swoją skrzynkę ${email}`,
+      });
+      onLogin(); // Przekieruj do strony logowania po wysłaniu instrukcji
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Wystąpił błąd podczas resetowania hasła");
+      showToast(err instanceof Error ? err.message : "Wystąpił błąd podczas resetowania hasła", "error");
     } finally {
       setIsLoading(false);
     }
   };
-
-  if (success) {
-    return (
-      <div className="space-y-4">
-        <div className="text-center">
-          <h3 className="text-lg font-medium">Sprawdź swoją skrzynkę</h3>
-          <p className="text-sm text-gray-500 mt-2">Wysłaliśmy instrukcje resetowania hasła na adres {email}</p>
-        </div>
-        <Button type="button" onClick={onLogin} className="w-full">
-          Wróć do logowania
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -63,8 +49,6 @@ export const ForgotPasswordForm = ({ onSubmit, onLogin }: ForgotPasswordFormProp
           disabled={isLoading}
         />
       </div>
-
-      {error && <div className="text-sm text-red-500">{error}</div>}
 
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading ? "Wysyłanie..." : "Wyślij link resetujący"}

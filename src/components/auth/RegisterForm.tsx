@@ -3,6 +3,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import type { RegisterUserCommand } from "../../types";
+import { showToast } from "../../lib/toast";
 
 interface RegisterFormProps {
   onSubmit: (data: RegisterUserCommand) => Promise<void>;
@@ -14,14 +15,12 @@ export const RegisterForm = ({ onSubmit, onLogin }: RegisterFormProps) => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
 
     if (password !== confirmPassword) {
-      setError("Hasła nie są identyczne");
+      showToast("Hasła nie są identyczne", "error");
       return;
     }
 
@@ -30,7 +29,7 @@ export const RegisterForm = ({ onSubmit, onLogin }: RegisterFormProps) => {
     try {
       await onSubmit({ email, password });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Wystąpił błąd podczas rejestracji");
+      showToast(err instanceof Error ? err.message : "Wystąpił błąd podczas rejestracji", "error");
     } finally {
       setIsLoading(false);
     }
@@ -74,8 +73,6 @@ export const RegisterForm = ({ onSubmit, onLogin }: RegisterFormProps) => {
           disabled={isLoading}
         />
       </div>
-
-      {error && <div className="text-sm text-red-500">{error}</div>}
 
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading ? "Rejestracja..." : "Zarejestruj się"}

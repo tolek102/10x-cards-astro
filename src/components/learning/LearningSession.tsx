@@ -2,6 +2,7 @@ import { useState } from "react";
 import { LearningCard } from "./LearningCard";
 import { ProgressBar } from "./ProgressBar";
 import type { FlashcardDto } from "@/types";
+import { showToast } from "@/lib/toast";
 
 interface LearningSessionProps {
   flashcards: FlashcardDto[];
@@ -15,10 +16,13 @@ export const LearningSession = ({ flashcards }: LearningSessionProps) => {
   const totalCards = approvedFlashcards.length;
 
   if (totalCards === 0) {
+    showToast("Brak materiałów do nauki", "info", {
+      description: "Aby rozpocząć naukę, dodaj nowe fiszki w sekcji Kreator lub zaakceptuj istniejące fiszki w sekcji Podgląd."
+    });
     return (
       <div className="text-center py-12">
         <p className="text-lg text-gray-500">
-          Brak fiszek do nauki. Dodaj nowe fiszki w sekcji Creator lub zaakceptuj istniejące fiszki w sekcji Preview.
+          Brak fiszek do nauki. Dodaj nowe fiszki w sekcji Kreator lub zaakceptuj istniejące fiszki w sekcji Podgląd.
         </p>
       </div>
     );
@@ -31,6 +35,15 @@ export const LearningSession = ({ flashcards }: LearningSessionProps) => {
   const handleNext = () => {
     if (canGoNext) {
       setCurrentIndex((prev) => prev + 1);
+      if (currentIndex === totalCards - 2) {
+        showToast("Ostatnia fiszka", "info", {
+          description: "To już ostatnia fiszka w tej sesji. Świetna praca!"
+        });
+      }
+    } else {
+      showToast("Sesja zakończona", "success", {
+        description: `Gratulacje! Ukończyłeś sesję nauki, przerabiając wszystkie ${totalCards} fiszek.`
+      });
     }
   };
 

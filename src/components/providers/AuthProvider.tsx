@@ -1,14 +1,20 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import type { UserDto } from "../../types";
+import { showToast } from "../../lib/toast";
+
+interface AuthResult {
+  success: boolean;
+  error?: string;
+  user?: UserDto;
+}
 
 interface AuthContextType {
   user: UserDto | null;
   isLoading: boolean;
-  error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthResult>;
+  register: (email: string, password: string) => Promise<AuthResult>;
+  logout: () => Promise<AuthResult>;
+  resetPassword: (email: string) => Promise<AuthResult>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -24,7 +30,6 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<UserDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -44,9 +49,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     checkAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<AuthResult> => {
     setIsLoading(true);
-    setError(null);
 
     try {
       const response = await fetch("/api/login", {
@@ -60,22 +64,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Nieprawidłowy email lub hasło");
+        const errorMessage = data.error || "Nieprawidłowy email lub hasło";
+        showToast("Błąd logowania", "error", {
+          description: errorMessage
+        });
+        return { success: false, error: errorMessage };
       }
 
       setUser(data.user);
+      showToast("Pomyślnie zalogowano do systemu", "success", {
+        description: "Witamy w aplikacji!"
+      });
+      return { success: true, user: data.user };
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Wystąpił błąd podczas logowania";
-      setError(errorMessage);
-      throw new Error(errorMessage);
+      const errorMessage = err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd";
+      showToast("Błąd logowania", "error", {
+        description: `Nie można połączyć się z serwerem. ${errorMessage}`
+      });
+      return { success: false, error: errorMessage };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const register = async (email: string, password: string) => {
+  const register = async (email: string, password: string): Promise<AuthResult> => {
     setIsLoading(true);
-    setError(null);
 
     try {
       const response = await fetch("/api/register", {
@@ -89,22 +102,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Nie udało się zarejestrować");
+        const errorMessage = data.error || "Nie udało się zarejestrować";
+        showToast("Błąd rejestracji", "error", {
+          description: errorMessage
+        });
+        return { success: false, error: errorMessage };
       }
 
       setUser(data.user);
+      showToast("Pomyślnie utworzono konto", "success", {
+        description: "Witamy w aplikacji!"
+      });
+      return { success: true, user: data.user };
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Wystąpił błąd podczas rejestracji";
-      setError(errorMessage);
-      throw new Error(errorMessage);
+      const errorMessage = err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd";
+      showToast("Błąd rejestracji", "error", {
+        description: `Nie można połączyć się z serwerem. ${errorMessage}`
+      });
+      return { success: false, error: errorMessage };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = async () => {
+  const logout = async (): Promise<AuthResult> => {
     setIsLoading(true);
-    setError(null);
 
     try {
       const response = await fetch("/api/logout", {
@@ -113,22 +135,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "Nie udało się wylogować");
+        const errorMessage = data.error || "Nie udało się wylogować";
+        showToast("Błąd wylogowania", "error", {
+          description: errorMessage
+        });
+        return { success: false, error: errorMessage };
       }
 
       setUser(null);
+      showToast("Pomyślnie wylogowano z systemu", "success", {
+        description: "Do zobaczenia!"
+      });
+      return { success: true };
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Wystąpił błąd podczas wylogowywania";
-      setError(errorMessage);
-      throw new Error(errorMessage);
+      const errorMessage = err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd";
+      showToast("Błąd wylogowania", "error", {
+        description: `Nie można połączyć się z serwerem. ${errorMessage}`
+      });
+      return { success: false, error: errorMessage };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = async (email: string): Promise<AuthResult> => {
     setIsLoading(true);
-    setError(null);
 
     try {
       const response = await fetch("/api/reset-password", {
@@ -142,12 +173,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Nie udało się zresetować hasła");
+        const errorMessage = data.error || "Nie udało się zresetować hasła";
+        showToast("Błąd resetowania hasła", "error", {
+          description: errorMessage
+        });
+        return { success: false, error: errorMessage };
       }
+
+      showToast("Instrukcje resetowania hasła zostały wysłane na podany adres email", "success");
+      return { success: true };
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Wystąpił błąd podczas resetowania hasła";
-      setError(errorMessage);
-      throw new Error(errorMessage);
+      const errorMessage = err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd";
+      showToast("Błąd resetowania hasła", "error", {
+        description: `Nie można połączyć się z serwerem. ${errorMessage}`
+      });
+      return { success: false, error: errorMessage };
     } finally {
       setIsLoading(false);
     }
@@ -158,7 +198,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         user,
         isLoading,
-        error,
         login,
         register,
         logout,

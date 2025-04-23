@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { FlashcardDto, FlashcardUpdateDto } from "@/types";
+import { showToast } from "@/lib/toast";
 
 interface EditModalProps {
   isOpen: boolean;
@@ -25,17 +26,45 @@ export const EditModal = ({ isOpen, onClose, onSave, flashcard }: EditModalProps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!flashcard || !front.trim() || !back.trim()) return;
+    if (!flashcard) {
+      showToast("Błąd edycji", "error", {
+        description: "Nie można edytować fiszki. Wybierz fiszkę do edycji i spróbuj ponownie."
+      });
+      return;
+    }
+
+    const trimmedFront = front.trim();
+    const trimmedBack = back.trim();
+
+    if (!trimmedFront || !trimmedBack) {
+      showToast("Błąd walidacji", "error", {
+        description: "Przód i tył fiszki nie mogą być puste. Wprowadź treść dla obu stron fiszki przed zapisaniem."
+      });
+      return;
+    }
+
+    if (trimmedFront === flashcard.front && trimmedBack === flashcard.back) {
+      showToast("Brak zmian", "info", {
+        description: "Nie wprowadzono żadnych zmian w treści fiszki. Edycja została anulowana."
+      });
+      onClose();
+      return;
+    }
 
     setIsSaving(true);
     try {
       await onSave(flashcard.id, {
-        front: front.trim(),
-        back: back.trim(),
+        front: trimmedFront,
+        back: trimmedBack,
+      });
+      showToast("Pomyślnie zaktualizowano fiszkę", "success", {
+        description: "Zapisano nową treść fiszki. Możesz teraz kontynuować przeglądanie."
       });
       onClose();
     } catch (error) {
-      console.error("Błąd podczas zapisywania fiszki:", error);
+      showToast("Błąd zapisywania", "error", {
+        description: "Wystąpił problem podczas zapisywania zmian. Sprawdź wprowadzone dane i spróbuj ponownie."
+      });
     } finally {
       setIsSaving(false);
     }

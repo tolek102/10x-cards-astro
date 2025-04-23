@@ -19,7 +19,7 @@ export class FlashcardsService {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to generate flashcards");
+      throw new Error("Wystąpił problem podczas generowania fiszek. Sprawdź wprowadzony tekst i spróbuj ponownie.");
     }
 
     return response.json();
@@ -35,7 +35,7 @@ export class FlashcardsService {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to create flashcards");
+      throw new Error("Wystąpił problem podczas tworzenia fiszki. Sprawdź wprowadzone dane i spróbuj ponownie.");
     }
 
     const flashcard = await response.json();
@@ -46,7 +46,7 @@ export class FlashcardsService {
     const response = await fetch(`${API_BASE_URL}/flashcards?page=${page}&limit=${limit}`);
 
     if (!response.ok) {
-      throw new Error("Failed to fetch flashcards");
+      throw new Error("Wystąpił problem podczas pobierania fiszek. Spróbuj odświeżyć stronę.");
     }
 
     return response.json();
@@ -72,7 +72,7 @@ export class FlashcardsService {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to update flashcard");
+      throw new Error("Wystąpił problem podczas aktualizacji fiszki. Sprawdź wprowadzone dane i spróbuj ponownie.");
     }
 
     return response.json();
@@ -84,7 +84,7 @@ export class FlashcardsService {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to delete flashcard");
+      throw new Error("Wystąpił problem podczas usuwania fiszki. Spróbuj ponownie później.");
     }
   }
 
@@ -106,7 +106,7 @@ export class FlashcardsService {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to discard flashcard");
+      throw new Error("Wystąpił problem podczas odrzucania fiszki. Spróbuj ponownie później.");
     }
   }
 }

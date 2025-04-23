@@ -1,6 +1,7 @@
 ---
 import { ViewTransitions } from "astro:transitions";
 import { Auth } from "../components/auth/Auth";
+import { Toaster } from "../components/ui/sonner";
 ---
 
 <!doctype html>
@@ -23,5 +24,6 @@ import { Auth } from "../components/auth/Auth";
         <slot />
       </div>
     </main>
+    <Toaster richColors closeButton position="top-right" />
   </body>
 </html>
