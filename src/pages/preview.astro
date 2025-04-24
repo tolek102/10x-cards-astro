@@ -1,26 +1,8 @@
 ---
 import MainLayout from '../layouts/MainLayout.astro';
-import { ViewTransitions } from 'astro:transitions';
+import { PreviewSection } from '../components/react/preview/PreviewSection';
 ---
 
-<html lang="pl">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="generator" content={Astro.generator} />
-    <title>Moje Fiszki - 10x Cards</title>
-    <ViewTransitions />
-  </head>
-  <body>
-    <MainLayout>
-      <div id="preview-root" class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-6">Moje Fiszki</h1>
-        <div class="preview-container">
-          <!-- Tutaj zostanie zaimplementowany komponent React w następnym kroku -->
-          <p class="text-gray-600">Ładowanie fiszek...</p>
-        </div>
-      </div>
-    </MainLayout>
-  </body>
-</html> 
+<MainLayout title="Podgląd fiszek">
+  <PreviewSection client:load />
+</MainLayout> 

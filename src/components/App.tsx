@@ -1,9 +1,9 @@
 import { useAuth } from "./providers/AuthProvider";
 import AppLayout from "./layouts/AppLayout";
 import { WelcomeScreen } from "./WelcomeScreen";
-import { CreatorSection } from "./creator/CreatorSection";
+import { CreatorSection } from "./react/creator/CreatorSection";
 import { PreviewSection } from "./preview/PreviewSection";
-import { LearningSession as LearningSection } from "./learning/LearningSession";
+import { LearningSession as LearningSection } from "./react/learning/LearningSession";
 import { useState } from "react";
 import { useFlashcards } from "./hooks/useFlashcards";
 import type { FlashcardCreateDto } from "@/types";

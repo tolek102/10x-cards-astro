@@ -1,6 +1,7 @@
 ---
 import MainLayout from '../layouts/MainLayout.astro';
 import { ViewTransitions } from 'astro:transitions';
+import { LearningSession } from '../components/react/learning/LearningSession';
 ---
 
 <html lang="pl">
@@ -17,8 +18,7 @@ import { ViewTransitions } from 'astro:transitions';
       <div id="learning-root" class="container mx-auto px-4 py-8">
         <h1 class="text-3xl font-bold mb-6">Sesja Nauki</h1>
         <div class="learning-container">
-          <!-- Tutaj zostanie zaimplementowany komponent React w następnym kroku -->
-          <p class="text-gray-600">Przygotowywanie sesji nauki...</p>
+          <LearningSession client:load />
         </div>
       </div>
     </MainLayout>

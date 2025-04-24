@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { FlashcardDto, FlashcardUpdateDto } from "@/types";
 import { showToast } from "@/lib/toast";
@@ -8,14 +9,14 @@ import { showToast } from "@/lib/toast";
 interface EditModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (id: string, update: FlashcardUpdateDto) => Promise<void>;
+  onSave: (id: string, flashcard: FlashcardUpdateDto) => Promise<void>;
   flashcard: FlashcardDto | null;
 }
 
 export const EditModal = ({ isOpen, onClose, onSave, flashcard }: EditModalProps) => {
   const [front, setFront] = useState("");
   const [back, setBack] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (flashcard) {
@@ -51,12 +52,9 @@ export const EditModal = ({ isOpen, onClose, onSave, flashcard }: EditModalProps
       return;
     }
 
-    setIsSaving(true);
+    setIsSubmitting(true);
     try {
-      await onSave(flashcard.id, {
-        front: trimmedFront,
-        back: trimmedBack,
-      });
+      await onSave(flashcard.id, { front, back });
       showToast("Pomyślnie zaktualizowano fiszkę", "success", {
         description: "Zapisano nową treść fiszki. Możesz teraz kontynuować przeglądanie."
       });
@@ -66,60 +64,52 @@ export const EditModal = ({ isOpen, onClose, onSave, flashcard }: EditModalProps
         description: "Wystąpił problem podczas zapisywania zmian. Sprawdź wprowadzone dane i spróbuj ponownie."
       });
     } finally {
-      setIsSaving(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Edytuj fiszkę</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <label htmlFor="edit-front" className="text-sm font-medium text-gray-700">
-                  Przód fiszki
-                </label>
-                <span className="text-sm text-gray-500">{front.length}</span>
-              </div>
+            <div>
+              <Label htmlFor="front">Przód</Label>
               <Textarea
-                id="edit-front"
+                id="front"
                 value={front}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFront(e.target.value)}
-                placeholder="Wpisz treść przodu fiszki..."
-                className="h-32 resize-none"
-                aria-label="Treść przodu fiszki"
+                onChange={(e) => setFront(e.target.value)}
+                placeholder="Wprowadź tekst na przodzie fiszki"
+                className="mt-2"
+                rows={4}
+                required
               />
             </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <label htmlFor="edit-back" className="text-sm font-medium text-gray-700">
-                  Tył fiszki
-                </label>
-                <span className="text-sm text-gray-500">{back.length}</span>
-              </div>
+            <div>
+              <Label htmlFor="back">Tył</Label>
               <Textarea
-                id="edit-back"
+                id="back"
                 value={back}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setBack(e.target.value)}
-                placeholder="Wpisz treść tyłu fiszki..."
-                className="h-32 resize-none"
-                aria-label="Treść tyłu fiszki"
+                onChange={(e) => setBack(e.target.value)}
+                placeholder="Wprowadź tekst na tyle fiszki"
+                className="mt-2"
+                rows={4}
+                required
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Anuluj
             </Button>
-            <Button type="submit" disabled={isSaving || !front.trim() || !back.trim() || !flashcard}>
-              {isSaving ? "Zapisywanie..." : "Zapisz zmiany"}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Zapisywanie..." : "Zapisz"}
             </Button>
           </DialogFooter>
         </form>

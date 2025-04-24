@@ -1,26 +1,29 @@
 ---
 import "../styles/global.css";
+import { Providers } from "../components/providers/Providers";
 
 interface Props {
   title?: string;
 }
 
-const { title = "Flashcard Master - Learn Smarter" } = Astro.props;
+const { title = "10x Cards - Twórz i ucz się z fiszkami" } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="pl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <meta name="description" content="Create and study flashcards with AI assistance" />
+    <meta name="description" content="Twórz i ucz się z fiszkami w intuicyjny sposób" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="generator" content={Astro.generator} />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <title>{title}</title>
   </head>
   <body>
-    <slot />
+    <Providers client:load>
+      <slot />
+    </Providers>
   </body>
 </html>
 

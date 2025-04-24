@@ -16,7 +16,7 @@
   - [x] Wykorzystanie istniejących komponentów modalnych (LoginModal, RegisterModal, ForgotPasswordModal)
   - [x] Implementacja treści marketingowej (MarketingContent)
   - [x] Integracja z systemem autoryzacji
-- [ ] Adaptacja sekcji kreatora fiszek
+- [x] Adaptacja sekcji kreatora fiszek
   - [x] Analiza istniejącej implementacji
   - [x] Utworzenie podstawowej struktury strony kreatora (creator.astro)
   - [x] Przeniesienie komponentów do nowej struktury:
@@ -35,31 +35,50 @@
     - [x] Wykorzystanie FlashcardsService
     - [x] Obsługa operacji na fiszkach
     - [x] Zarządzanie stanem i cache'owaniem
-  - [ ] Testy i optymalizacje
-    - [ ] Testy jednostkowe komponentów
-    - [ ] Optymalizacja wydajności
-    - [ ] Implementacja lazy loading
+- [x] Adaptacja sekcji podglądu fiszek
+  - [x] Analiza istniejącej implementacji
+  - [x] Utworzenie podstawowej struktury strony podglądu (preview.astro)
+  - [x] Przeniesienie komponentów do nowej struktury:
+    - [x] PreviewSection.tsx
+    - [x] FlashcardList.tsx
+    - [x] FlashcardCard.tsx
+    - [x] EditModal.tsx
+    - [x] ExportModal.tsx
+  - [x] Integracja z hooked useFlashcards
+- [ ] Adaptacja sekcji nauki
+  - [x] Analiza istniejącej implementacji
+  - [x] Utworzenie podstawowej struktury strony nauki (learning.astro)
+  - [x] Przeniesienie komponentu LearningSession do nowej struktury
+  - [x] Naprawa błędów TypeScript w LearningSession:
+    - [x] Dodanie brakujących propsów (flashcards)
+    - [x] Integracja z hooked useFlashcardsLearning
+  - [ ] Implementacja logiki sesji nauki:
+    - [x] Utworzenie hooka useFlashcardsLearning
+    - [ ] Implementacja zapisywania postępów nauki
+    - [ ] Implementacja systemu powtórek
 
 ## W Trakcie
 ### Faza 2: Migracja komponentów statycznych
-- [ ] Adaptacja sekcji kreatora fiszek
-  - [ ] Testy i optymalizacje
-- [ ] Adaptacja sekcji podglądu fiszek
 - [ ] Adaptacja sekcji nauki
+  - [ ] Implementacja logiki sesji nauki:
+    - [ ] Implementacja zapisywania postępów nauki
+    - [ ] Implementacja systemu powtórek
 
 ## Następne Kroki
-1. Testy i optymalizacje sekcji kreatora:
-   - Implementacja testów jednostkowych dla komponentów
+1. Implementacja zapisywania postępów nauki:
+   - Utworzenie endpointów API do zapisywania postępów
+   - Integracja z bazą danych
+   - Implementacja logiki w komponencie
+2. Implementacja systemu powtórek:
+   - Algorytm wyboru fiszek do powtórki
+   - Integracja z bazą danych
+   - Implementacja logiki w komponencie
+3. Testy i optymalizacje (po ukończeniu implementacji):
+   - Testy jednostkowe dla wszystkich komponentów
    - Optymalizacja wydajności renderowania
-   - Wdrożenie lazy loading dla ciężkich komponentów
-2. Adaptacja sekcji podglądu fiszek:
-   - Analiza istniejącej implementacji
-   - Przeniesienie komponentów do nowej struktury
-   - Integracja z hooked useFlashcards
-3. Adaptacja sekcji nauki:
-   - Analiza istniejącej implementacji
-   - Przeniesienie komponentów do nowej struktury
-   - Implementacja logiki sesji nauki
+   - Implementacja lazy loading dla ciężkich komponentów
+   - Optymalizacja ładowania zasobów
+   - Audyt wydajności i dostępności
 
 ## Notatki
 - Start migracji: 2024-03-19
@@ -71,8 +90,11 @@
 - Zidentyfikowano istniejącą implementację generowania fiszek przez AI (AIGeneratorTab.tsx)
 - Zaimplementowano hook useFlashcards z pełną funkcjonalnością zarządzania fiszkami
 - Zintegrowano system z istniejącym API poprzez FlashcardsService
+- Utworzono hook useFlashcardsLearning do zarządzania sesją nauki
+- Zaimplementowano podstawową logikę sesji nauki
+- Pozostało do zrobienia: system zapisywania postępów i powtórek
 
-## Metryki
+## Metryki i cele jakościowe (do osiągnięcia po implementacji)
 - [ ] Lighthouse score > 90
 - [ ] FCP < 1.5s
 - [ ] TTI < 3.5s
