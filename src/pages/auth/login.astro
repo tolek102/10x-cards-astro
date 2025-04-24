@@ -1,0 +1,135 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { showToast } from '../../lib/toast';
+
+const error = Astro.url.searchParams.get('error');
+const registered = Astro.url.searchParams.get('registered');
+---
+
+<Layout title="Logowanie - 10x Cards">
+  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+      <div>
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          Zaloguj się do swojego konta
+        </h2>
+        <p class="mt-2 text-center text-sm text-gray-600">
+          Lub{" "}
+          <a href="/auth/register" class="font-medium text-indigo-600 hover:text-indigo-500">
+            zarejestruj się za darmo
+          </a>
+        </p>
+      </div>
+
+      {registered && (
+        <div class="rounded-md bg-green-50 p-4">
+          <div class="flex">
+            <div class="ml-3">
+              <h3 class="text-sm font-medium text-green-800">Sukces</h3>
+              <div class="mt-2 text-sm text-green-700">
+                <p>Konto zostało utworzone. Możesz się teraz zalogować.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div class="rounded-md bg-red-50 p-4">
+          <div class="flex">
+            <div class="ml-3">
+              <h3 class="text-sm font-medium text-red-800">Błąd</h3>
+              <div class="mt-2 text-sm text-red-700">
+                <p>{error}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <form id="loginForm" class="mt-8 space-y-6">
+        <input type="hidden" name="remember" value="true" />
+        <div class="rounded-md shadow-sm -space-y-px">
+          <div>
+            <label for="email" class="sr-only">Email</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+              placeholder="Adres email"
+            />
+          </div>
+          <div>
+            <label for="password" class="sr-only">Hasło</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+              placeholder="Hasło"
+            />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <div class="text-sm">
+            <a href="/auth/reset-password" class="font-medium text-indigo-600 hover:text-indigo-500">
+              Zapomniałeś hasła?
+            </a>
+          </div>
+        </div>
+
+        <div>
+          <button
+            type="submit"
+            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Zaloguj się
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { showToast } from '../../lib/toast';
+
+  document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+    
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.get('email'),
+          password: formData.get('password'),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        showToast(data.error || 'Wystąpił błąd podczas logowania', 'error');
+        return;
+      }
+
+      showToast('Zalogowano pomyślnie', 'success');
+      window.location.href = '/creator';
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd',
+        'error'
+      );
+    }
+  });
+</script> 

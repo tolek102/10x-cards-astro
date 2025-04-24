@@ -15,7 +15,7 @@ export const useAuth = ({ onSuccess, onError }: UseAuthProps = {}) => {
       setIsLoading(true);
       setError(null);
       
-      const response = await fetch('/api/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -45,7 +45,7 @@ export const useAuth = ({ onSuccess, onError }: UseAuthProps = {}) => {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('/api/register', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,7 +75,7 @@ export const useAuth = ({ onSuccess, onError }: UseAuthProps = {}) => {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('/api/logout', {
+      const response = await fetch('/api/auth/logout', {
         method: 'POST',
       });
 

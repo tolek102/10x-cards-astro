@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { createSupabaseServerInstance } from '../../db/supabase.client';
+import { createSupabaseServerInstance } from '../../../db/supabase.client';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {

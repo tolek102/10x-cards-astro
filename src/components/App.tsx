@@ -1,6 +1,6 @@
 import { useAuth } from "./providers/AuthProvider";
 import AppLayout from "./layouts/AppLayout";
-import { WelcomeScreen } from "./WelcomeScreen";
+import WelcomeScreen from "./astro/welcome/WelcomeScreen.astro";
 import { CreatorSection } from "./react/creator/CreatorSection";
 import { PreviewSection } from "./preview/PreviewSection";
 import { LearningSession as LearningSection } from "./react/learning/LearningSession";

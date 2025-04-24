@@ -1,18 +1,25 @@
 import type { APIRoute } from 'astro';
-import { createSupabaseServerInstance } from '../../db/supabase.client';
+import { createSupabaseServerInstance } from '../../../db/supabase.client';
 import { z } from 'zod';
 
-const resetPasswordSchema = z.object({
+export const prerender = false;
+
+const loginSchema = z.object({
   email: z.string().email('Nieprawidłowy format adresu email'),
+  password: z.string().min(6, 'Hasło musi mieć minimum 6 znaków'),
 });
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     const body = await request.json();
-    const { email } = resetPasswordSchema.parse(body);
+    const { email, password } = loginSchema.parse(body);
 
     const supabase = createSupabaseServerInstance({ cookies, headers: request.headers });
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     if (error) {
       return new Response(
@@ -28,7 +35,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     return new Response(
       JSON.stringify({
-        message: 'Instrukcje resetowania hasła zostały wysłane na podany adres email',
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+        },
       }),
       {
         status: 200,

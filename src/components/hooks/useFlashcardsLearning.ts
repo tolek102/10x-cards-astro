@@ -3,7 +3,7 @@ import type { FlashcardDto } from '@/types';
 import { showToast } from '@/lib/toast';
 
 interface UseFlashcardsLearningProps {
-  flashcards: FlashcardDto[];
+  flashcards: FlashcardDto[] | undefined;
 }
 
 interface LearningStats {
@@ -13,7 +13,7 @@ interface LearningStats {
   progress: number;
 }
 
-export const useFlashcardsLearning = ({ flashcards }: UseFlashcardsLearningProps) => {
+export const useFlashcardsLearning = ({ flashcards = [] }: UseFlashcardsLearningProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isSessionComplete, setIsSessionComplete] = useState(false);
 

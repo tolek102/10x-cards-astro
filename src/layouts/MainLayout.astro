@@ -1,29 +1,20 @@
 ---
-import { ViewTransitions } from "astro:transitions";
+import BaseLayout from "./BaseLayout.astro";
 import { Auth } from "../components/auth/Auth";
 import { Toaster } from "../components/ui/sonner";
 ---
 
-<!doctype html>
-<html lang="pl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>10x Cards - Learn Smarter</title>
-    <ViewTransitions />
-  </head>
-  <body class="min-h-screen bg-gray-50">
-    <header class="bg-white shadow">
-      <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 flex justify-between items-center">
-        <h1 class="text-3xl font-bold tracking-tight text-gray-900">10x Cards</h1>
-        <Auth client:load onLoginSuccess={() => console.log("Zalogowano pomyślnie")} />
-      </div>
-    </header>
-    <main>
-      <div class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
-        <slot />
-      </div>
-    </main>
-    <Toaster richColors closeButton position="top-right" />
-  </body>
-</html>
+<BaseLayout>
+  <header class="bg-white shadow">
+    <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 flex justify-between items-center">
+      <h1 class="text-3xl font-bold tracking-tight text-gray-900">10x Cards</h1>
+      <Auth client:load onLoginSuccess={() => console.log("Zalogowano pomyślnie")} />
+    </div>
+  </header>
+  <main>
+    <div class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
+      <slot />
+    </div>
+  </main>
+  <Toaster richColors closeButton position="top-right" />
+</BaseLayout>
