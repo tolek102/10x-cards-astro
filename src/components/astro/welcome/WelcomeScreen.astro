@@ -1,0 +1,122 @@
+---
+import MarketingContent from './MarketingContent.astro';
+import LoginModal from '../../modals/LoginModal';
+import RegisterModal from '../../modals/RegisterModal';
+import ForgotPasswordModal from '../../modals/ForgotPasswordModal';
+---
+
+<div class="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+  <header class="container mx-auto px-4 py-6 flex justify-between items-center">
+    <div class="flex items-center space-x-2">
+      <img src="/logo.svg" alt="10x Cards Logo" class="h-8 w-8" />
+      <span class="text-xl font-bold">10x Cards</span>
+    </div>
+    
+    <div class="flex space-x-4">
+      <button
+        id="loginButton"
+        class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+      >
+        Zaloguj się
+      </button>
+      <button
+        id="registerButton"
+        class="px-4 py-2 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-50 transition-colors"
+      >
+        Zarejestruj się
+      </button>
+    </div>
+  </header>
+
+  <MarketingContent />
+
+  <div id="auth-modals" class="hidden">
+    <LoginModal
+      client:idle
+      isOpen={false}
+      onClose={() => {}}
+      onForgotPassword={() => {}}
+      onRegister={() => {}}
+    />
+    <RegisterModal
+      client:idle
+      isOpen={false}
+      onClose={() => {}}
+      onLogin={() => {}}
+    />
+    <ForgotPasswordModal
+      client:idle
+      isOpen={false}
+      onClose={() => {}}
+      onLogin={() => {}}
+    />
+  </div>
+</div>
+
+<script>
+  // Stan modali
+  let isLoginModalOpen = false;
+  let isRegisterModalOpen = false;
+  let isForgotPasswordModalOpen = false;
+
+  // Referencje do komponentów React
+  let loginModal: any;
+  let registerModal: any;
+  let forgotPasswordModal: any;
+
+  // Funkcje obsługi modali
+  const openLoginModal = () => {
+    isLoginModalOpen = true;
+    loginModal?.setAttribute('isOpen', 'true');
+  };
+
+  const openRegisterModal = () => {
+    isRegisterModalOpen = true;
+    registerModal?.setAttribute('isOpen', 'true');
+  };
+
+  const openForgotPasswordModal = () => {
+    isForgotPasswordModalOpen = true;
+    forgotPasswordModal?.setAttribute('isOpen', 'true');
+  };
+
+  const closeAllModals = () => {
+    isLoginModalOpen = false;
+    isRegisterModalOpen = false;
+    isForgotPasswordModalOpen = false;
+    
+    loginModal?.setAttribute('isOpen', 'false');
+    registerModal?.setAttribute('isOpen', 'false');
+    forgotPasswordModal?.setAttribute('isOpen', 'false');
+  };
+
+  // Inicjalizacja po załadowaniu strony
+  document.addEventListener('astro:page-load', () => {
+    loginModal = document.querySelector('login-modal');
+    registerModal = document.querySelector('register-modal');
+    forgotPasswordModal = document.querySelector('forgot-password-modal');
+
+    // Konfiguracja event handlerów dla modali
+    loginModal?.addEventListener('onClose', closeAllModals);
+    loginModal?.addEventListener('onRegister', openRegisterModal);
+    loginModal?.addEventListener('onForgotPassword', openForgotPasswordModal);
+
+    registerModal?.addEventListener('onClose', closeAllModals);
+    registerModal?.addEventListener('onLogin', openLoginModal);
+
+    forgotPasswordModal?.addEventListener('onClose', closeAllModals);
+    forgotPasswordModal?.addEventListener('onLogin', openLoginModal);
+  });
+
+  // Obsługa przycisków w nagłówku
+  const loginButton = document.getElementById('loginButton');
+  const registerButton = document.getElementById('registerButton');
+
+  if (loginButton) {
+    loginButton.addEventListener('click', openLoginModal);
+  }
+
+  if (registerButton) {
+    registerButton.addEventListener('click', openRegisterModal);
+  }
+</script> 

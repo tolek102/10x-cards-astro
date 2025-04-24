@@ -1,0 +1,43 @@
+---
+const features = [
+  {
+    title: "Szybkie tworzenie",
+    description: "Twórz fiszki ręcznie lub generuj je automatycznie z pomocą AI",
+    icon: "🚀",
+  },
+  {
+    title: "Efektywna nauka",
+    description: "Wykorzystuj sprawdzone metody nauki z wykorzystaniem fiszek",
+    icon: "📚",
+  },
+  {
+    title: "Inteligentne powtórki",
+    description: "System automatycznie planuje powtórki w optymalnych odstępach",
+    icon: "🧠",
+  },
+];
+---
+
+<section class="py-16 px-4">
+  <div class="max-w-4xl mx-auto text-center">
+    <h1 class="text-5xl font-bold mb-6">
+      Ucz się 10 razy szybciej z inteligentnymi fiszkami
+    </h1>
+    <p class="text-xl text-gray-600 mb-12">
+      Wykorzystaj moc sztucznej inteligencji do tworzenia i nauki z fiszkami. 
+      Osiągaj lepsze wyniki w krótszym czasie.
+    </p>
+  </div>
+
+  <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+    {
+      features.map((feature) => (
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <div class="text-4xl mb-4">{feature.icon}</div>
+          <h3 class="text-xl font-semibold mb-2">{feature.title}</h3>
+          <p class="text-gray-600">{feature.description}</p>
+        </div>
+      ))
+    }
+  </div>
+</section> 

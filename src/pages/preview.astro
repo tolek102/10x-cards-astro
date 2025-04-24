@@ -9,19 +9,18 @@ import { ViewTransitions } from 'astro:transitions';
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <title>10x Cards - Twórz i ucz się z fiszkami</title>
+    <title>Moje Fiszki - 10x Cards</title>
     <ViewTransitions />
   </head>
   <body>
     <MainLayout>
-      <main class="container mx-auto px-4">
-        <h1 class="text-4xl font-bold text-center my-8">
-          Witaj w 10x Cards
-        </h1>
-        <p class="text-center text-lg mb-8">
-          Twórz, zarządzaj i ucz się z fiszkami w intuicyjny sposób.
-        </p>
-      </main>
+      <div id="preview-root" class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-6">Moje Fiszki</h1>
+        <div class="preview-container">
+          <!-- Tutaj zostanie zaimplementowany komponent React w następnym kroku -->
+          <p class="text-gray-600">Ładowanie fiszek...</p>
+        </div>
+      </div>
     </MainLayout>
   </body>
-</html>
+</html> 
