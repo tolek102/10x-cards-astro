@@ -1,6 +1,7 @@
 ---
 import MainLayout from '../layouts/MainLayout.astro';
 import { ViewTransitions } from 'astro:transitions';
+import { CreatorSection } from '../components/react/creator/CreatorSection';
 ---
 
 <html lang="pl">
@@ -14,11 +15,10 @@ import { ViewTransitions } from 'astro:transitions';
   </head>
   <body>
     <MainLayout>
-      <div id="creator-root" class="container mx-auto px-4 py-8">
+      <div class="container mx-auto px-4 py-8">
         <h1 class="text-3xl font-bold mb-6">Kreator Fiszek</h1>
         <div class="creator-container">
-          <!-- Tutaj zostanie zaimplementowany komponent React w następnym kroku -->
-          <p class="text-gray-600">Ładowanie kreatora...</p>
+          <CreatorSection client:load />
         </div>
       </div>
     </MainLayout>
