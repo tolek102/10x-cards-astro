@@ -73,11 +73,12 @@ Głównym celem zmian jest ujednolicenie sposobu wyświetlania komunikatów w ap
    - [ ] Wprowadzić obsługę błędów autoryzacji z jasnymi instrukcjami
    - [ ] Dodać obsługę błędów rate-limitingu
 
-2. Rozszerzyć funkcjonalność systemu powiadomień:
+ten punkt na ten moment pomijamy
+<!-- 2. Rozszerzyć funkcjonalność systemu powiadomień:
    - [ ] Dodać akcje w powiadomieniach (np. przycisk cofnij)
    - [ ] Wprowadzić system kolejkowania powiadomień
    - [ ] Dodać grupowanie podobnych powiadomień
-   - [ ] Dostosować czas wyświetlania do długości komunikatu
+   - [ ] Dostosować czas wyświetlania do długości komunikatu -->
 
 3. Przeprowadzić testy i optymalizację:
    - [ ] Sprawdzić wyświetlanie na różnych urządzeniach i rozdzielczościach

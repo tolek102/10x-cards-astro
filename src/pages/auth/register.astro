@@ -1,11 +1,13 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { showToast } from '../../lib/toast';
+import { ViewTransitions } from 'astro:transitions';
 
 const error = Astro.url.searchParams.get('error');
 ---
 
 <Layout title="Rejestracja - 10x Cards">
+  <ViewTransitions />
   <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
       <div>
@@ -15,23 +17,10 @@ const error = Astro.url.searchParams.get('error');
         <p class="mt-2 text-center text-sm text-gray-600">
           Lub{" "}
           <a href="/auth/login" class="font-medium text-indigo-600 hover:text-indigo-500">
-            zaloguj się do istniejącego
+            zaloguj się do istniejącego konta
           </a>
         </p>
       </div>
-
-      {error && (
-        <div class="rounded-md bg-red-50 p-4">
-          <div class="flex">
-            <div class="ml-3">
-              <h3 class="text-sm font-medium text-red-800">Błąd</h3>
-              <div class="mt-2 text-sm text-red-700">
-                <p>{error}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <form id="registerForm" class="mt-8 space-y-6">
         <div class="rounded-md shadow-sm -space-y-px">
@@ -75,11 +64,40 @@ const error = Astro.url.searchParams.get('error');
 <script>
   import { showToast } from '../../lib/toast';
 
+  // Funkcja do wyświetlania toastów
+  const displayToast = (message: string, type: 'success' | 'error' = 'error') => {
+    // Upewnij się, że wiadomość nie jest pusta i że toast jest dostępny
+    if (message?.trim() && typeof showToast === 'function') {
+      console.log('Wyświetlam toast:', { message, type });
+      showToast(message, type);
+    } else {
+      console.error('Nie można wyświetlić toastu:', { message, type, showToastAvailable: typeof showToast === 'function' });
+    }
+  };
+
+  // Sprawdź parametry URL przy załadowaniu strony
+  document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+
+    if (error) {
+      displayToast(error);
+    }
+  });
+
+  // Obsługa formularza rejestracji
   document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
+    const email = formData.get('email')?.toString();
+    const password = formData.get('password')?.toString();
+    
+    if (!email || !password) {
+      displayToast('Proszę wypełnić wszystkie pola');
+      return;
+    }
     
     try {
       const response = await fetch('/api/auth/register', {
@@ -87,25 +105,41 @@ const error = Astro.url.searchParams.get('error');
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email: formData.get('email'),
-          password: formData.get('password'),
-        }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        showToast(data.error || 'Wystąpił błąd podczas rejestracji', 'error');
+        let errorMessage = data.error || 'Wystąpił błąd podczas rejestracji';
+        // Mapowanie komunikatów błędów z Supabase na przyjazne dla użytkownika
+        if (errorMessage.includes('User already registered')) {
+          errorMessage = 'Użytkownik o tym adresie email jest już zarejestrowany';
+        }
+        displayToast(errorMessage);
         return;
       }
 
-      showToast('Konto zostało utworzone pomyślnie', 'success');
-      window.location.href = '/creator';
+      displayToast('Konto zostało utworzone pomyślnie', 'success');
+      
+      // Poczekaj chwilę, aby toast był widoczny
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Użyj View Transitions API do płynnego przekierowania
+      const loginUrl = new URL('/auth/login', window.location.origin);
+      loginUrl.searchParams.set('registered', 'true');
+      
+      if (document.startViewTransition) {
+        document.startViewTransition(() => {
+          window.location.href = loginUrl.toString();
+        });
+      } else {
+        window.location.href = loginUrl.toString();
+      }
     } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd',
-        'error'
+      console.error('Błąd podczas rejestracji:', error);
+      displayToast(
+        error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd'
       );
     }
   });

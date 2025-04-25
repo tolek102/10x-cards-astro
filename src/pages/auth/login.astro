@@ -1,12 +1,14 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { showToast } from '../../lib/toast';
+import { ViewTransitions } from 'astro:transitions';
 
 const error = Astro.url.searchParams.get('error');
 const registered = Astro.url.searchParams.get('registered');
 ---
 
 <Layout title="Logowanie - 10x Cards">
+  <ViewTransitions />
   <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
       <div>
@@ -20,32 +22,6 @@ const registered = Astro.url.searchParams.get('registered');
           </a>
         </p>
       </div>
-
-      {registered && (
-        <div class="rounded-md bg-green-50 p-4">
-          <div class="flex">
-            <div class="ml-3">
-              <h3 class="text-sm font-medium text-green-800">Sukces</h3>
-              <div class="mt-2 text-sm text-green-700">
-                <p>Konto zostało utworzone. Możesz się teraz zalogować.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {error && (
-        <div class="rounded-md bg-red-50 p-4">
-          <div class="flex">
-            <div class="ml-3">
-              <h3 class="text-sm font-medium text-red-800">Błąd</h3>
-              <div class="mt-2 text-sm text-red-700">
-                <p>{error}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <form id="loginForm" class="mt-8 space-y-6">
         <input type="hidden" name="remember" value="true" />
@@ -98,6 +74,30 @@ const registered = Astro.url.searchParams.get('registered');
 <script>
   import { showToast } from '../../lib/toast';
 
+  // Funkcja do wyświetlania toastów
+  const displayToast = (message: string, type: 'success' | 'error' = 'error') => {
+    // Upewnij się, że toast nie jest pusty
+    if (message && message.trim()) {
+      showToast(message, type);
+    }
+  };
+
+  // Sprawdź parametry URL przy załadowaniu strony
+  document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    const registered = urlParams.get('registered');
+
+    if (error) {
+      displayToast(error);
+    }
+    if (registered) {
+      displayToast('Konto zostało utworzone. Możesz się teraz zalogować.', 'success');
+      console.log('Konto zostało utworzone. Możesz się teraz zalogować.');
+    }
+  });
+
+  // Obsługa formularza logowania
   document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -119,16 +119,24 @@ const registered = Astro.url.searchParams.get('registered');
       const data = await response.json();
 
       if (!response.ok) {
-        showToast(data.error || 'Wystąpił błąd podczas logowania', 'error');
+        let errorMessage = data.error || 'Wystąpił błąd podczas logowania';
+        // Mapowanie komunikatów błędów z Supabase na przyjazne dla użytkownika
+        if (errorMessage.includes('Invalid login credentials')) {
+          errorMessage = 'Nieprawidłowe dane logowania';
+        }
+        displayToast(errorMessage);
         return;
       }
 
-      showToast('Zalogowano pomyślnie', 'success');
+      displayToast('Zalogowano pomyślnie', 'success');
+      
+      // Poczekaj chwilę, aby toast był widoczny
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       window.location.href = '/creator';
     } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd',
-        'error'
+      displayToast(
+        error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd'
       );
     }
   });
