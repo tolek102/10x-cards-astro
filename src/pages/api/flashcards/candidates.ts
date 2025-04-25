@@ -3,7 +3,6 @@ import { z } from "zod";
 import type { FlashcardsListResponseDto } from "../../../types";
 import { createFlashcardService } from "../../../lib/services/flashcardService";
 import { logger } from "../../../lib/services/loggerService";
-import { DEFAULT_USER_ID } from "../../../db/supabase.client";
 
 // Validation schema for query parameters
 const listCandidatesQuerySchema = z.object({
@@ -14,6 +13,19 @@ const listCandidatesQuerySchema = z.object({
 
 export const GET: APIRoute = async ({ url, locals }) => {
   try {
+    if (!locals.user) {
+      return new Response(
+        JSON.stringify({
+          error: "Unauthorized",
+          message: "Authentication required",
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Parse and validate query parameters
     const queryParams = Object.fromEntries(url.searchParams.entries());
     const validationResult = listCandidatesQuerySchema.safeParse(queryParams);
@@ -35,7 +47,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
 
     // Create service instance and fetch candidate flashcards
     const flashcardService = createFlashcardService(locals.supabase);
-    const response: FlashcardsListResponseDto = await flashcardService.listCandidateFlashcards(DEFAULT_USER_ID, {
+    const response: FlashcardsListResponseDto = await flashcardService.listCandidateFlashcards(locals.user.id, {
       page,
       limit,
       sort,

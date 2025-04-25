@@ -3,7 +3,6 @@ import { z } from "zod";
 import type { FlashcardCreateDto, FlashcardsListResponseDto } from "../../../types";
 import { createFlashcardService } from "../../../lib/services/flashcardService";
 import { logger } from "../../../lib/services/loggerService";
-import { DEFAULT_USER_ID } from "../../../db/supabase.client";
 
 // Validation schema for query parameters
 const listFlashcardsQuerySchema = z.object({
@@ -22,6 +21,19 @@ const createManualFlashcardSchema = z.object({
 
 export const GET: APIRoute = async ({ url, locals }) => {
   try {
+    if (!locals.user) {
+      return new Response(
+        JSON.stringify({
+          error: "Unauthorized",
+          message: "Authentication required",
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Parse and validate query parameters
     const queryParams = Object.fromEntries(url.searchParams.entries());
     const validationResult = listFlashcardsQuerySchema.safeParse(queryParams);
@@ -43,7 +55,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
 
     // Create service instance and fetch flashcards
     const flashcardService = createFlashcardService(locals.supabase);
-    const response: FlashcardsListResponseDto = await flashcardService.listAcceptedFlashcards(DEFAULT_USER_ID, {
+    const response: FlashcardsListResponseDto = await flashcardService.listAcceptedFlashcards(locals.user.id, {
       page,
       limit,
       sort,
@@ -70,7 +82,20 @@ export const GET: APIRoute = async ({ url, locals }) => {
 
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    // Parse and validate the request body
+    if (!locals.user) {
+      return new Response(
+        JSON.stringify({
+          error: "Unauthorized",
+          message: "Authentication required",
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Parse and validate request body
     const body = await request.json();
     const validationResult = createManualFlashcardSchema.safeParse(body);
 
@@ -91,14 +116,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     // Create service instance and create flashcard
     const flashcardService = createFlashcardService(locals.supabase);
-    const flashcard = await flashcardService.createManualFlashcard(DEFAULT_USER_ID, command);
+    const flashcard = await flashcardService.createManualFlashcard(locals.user.id, command);
 
     return new Response(JSON.stringify(flashcard), {
       status: 201,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    logger.error("Error creating manual flashcard", { error });
+    logger.error("Error creating flashcard", { error });
     return new Response(
       JSON.stringify({
         error: "Internal server error",

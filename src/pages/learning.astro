@@ -1,26 +1,13 @@
 ---
-import MainLayout from '../layouts/MainLayout.astro';
-import { ViewTransitions } from 'astro:transitions';
-import { LearningSession } from '../components/react/learning/LearningSession';
+import AuthenticatedLayout from '../layouts/AuthenticatedLayout.astro';
+import { LearningContainer } from '../components/react/learning/LearningContainer';
 ---
 
-<html lang="pl">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="generator" content={Astro.generator} />
-    <title>Nauka - 10x Cards</title>
-    <ViewTransitions />
-  </head>
-  <body>
-    <MainLayout>
-      <div id="learning-root" class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-6">Sesja Nauki</h1>
-        <div class="learning-container">
-          <LearningSession client:load />
-        </div>
-      </div>
-    </MainLayout>
-  </body>
-</html> 
+<AuthenticatedLayout title="Nauka - 10x Cards" activeSection="learning">
+  <div id="learning-root" class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Sesja Nauki</h1>
+    <div class="learning-container">
+      <LearningContainer client:load />
+    </div>
+  </div>
+</AuthenticatedLayout> 

@@ -1,26 +1,13 @@
 ---
-import MainLayout from '../layouts/MainLayout.astro';
-import { ViewTransitions } from 'astro:transitions';
-import { CreatorSection } from '../components/react/creator/CreatorSection';
+import AuthenticatedLayout from '../layouts/AuthenticatedLayout.astro';
+import { CreatorContainer } from '../components/react/creator/CreatorContainer';
 ---
 
-<html lang="pl">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="generator" content={Astro.generator} />
-    <title>Kreator Fiszek - 10x Cards</title>
-    <ViewTransitions />
-  </head>
-  <body>
-    <MainLayout>
-      <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-6">Kreator Fiszek</h1>
-        <div class="creator-container">
-          <CreatorSection client:load />
-        </div>
-      </div>
-    </MainLayout>
-  </body>
-</html> 
+<AuthenticatedLayout title="Kreator Fiszek - 10x Cards" activeSection="creator">
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Kreator Fiszek</h1>
+    <div class="creator-container">
+      <CreatorContainer client:load />
+    </div>
+  </div>
+</AuthenticatedLayout> 

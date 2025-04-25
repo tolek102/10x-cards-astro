@@ -12,14 +12,14 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
-interface UserData {
+interface UserDto {
   id: string;
   email: string | null;
 }
 
 declare namespace App {
   interface Locals {
-    user?: UserData;
+    user: UserDto;
     supabase: SupabaseClient<Database>;
   }
 }

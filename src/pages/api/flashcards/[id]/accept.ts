@@ -2,7 +2,6 @@ import type { APIRoute } from "astro";
 import { z } from "zod";
 import { createFlashcardService } from "../../../../lib/services/flashcardService";
 import { logger } from "../../../../lib/services/loggerService";
-import { DEFAULT_USER_ID } from "../../../../db/supabase.client";
 
 // Validation schema for the flashcard ID parameter
 const acceptFlashcardParamsSchema = z.object({
@@ -11,6 +10,19 @@ const acceptFlashcardParamsSchema = z.object({
 
 export const PATCH: APIRoute = async ({ params, locals }) => {
   try {
+    if (!locals.user) {
+      return new Response(
+        JSON.stringify({
+          error: "Unauthorized",
+          message: "Authentication required",
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Parse and validate the flashcard ID parameter
     const validationResult = acceptFlashcardParamsSchema.safeParse(params);
 
@@ -31,7 +43,7 @@ export const PATCH: APIRoute = async ({ params, locals }) => {
 
     // Create service instance and accept the flashcard
     const flashcardService = createFlashcardService(locals.supabase);
-    const flashcard = await flashcardService.acceptGeneratedFlashcard(DEFAULT_USER_ID, id);
+    const flashcard = await flashcardService.acceptGeneratedFlashcard(locals.user.id, id);
 
     return new Response(JSON.stringify(flashcard), {
       status: 200,

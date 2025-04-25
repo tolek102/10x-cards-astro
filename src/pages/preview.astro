@@ -1,8 +1,8 @@
 ---
-import MainLayout from '../layouts/MainLayout.astro';
-import { PreviewSection } from '../components/react/preview/PreviewSection';
+import AuthenticatedLayout from '../layouts/AuthenticatedLayout.astro';
+import { PreviewContainer } from '../components/react/preview/PreviewContainer';
 ---
 
-<MainLayout title="Podgląd fiszek">
-  <PreviewSection client:load />
-</MainLayout> 
+<AuthenticatedLayout title="Podgląd fiszek - 10x Cards" activeSection="preview">
+  <PreviewContainer client:load />
+</AuthenticatedLayout> 

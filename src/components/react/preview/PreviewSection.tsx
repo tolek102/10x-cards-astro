@@ -4,28 +4,40 @@ import { EditModal } from "./EditModal";
 import { ExportModal } from "./ExportModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { FlashcardDto, FlashcardUpdateDto } from "@/types";
+import type { FlashcardDto, FlashcardUpdateDto, PaginationDto } from "@/types";
 import { showToast } from "@/lib/toast";
-import { useFlashcards } from "@/components/hooks/useFlashcards";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
-export const PreviewSection = () => {
-  const {
-    flashcards,
-    candidates,
-    updateFlashcard,
-    deleteFlashcard,
-    acceptFlashcard,
-    discardFlashcard,
-    loadPage,
-    loadCandidatesPage,
-    isLoading,
-    isCandidatesLoading,
-    pagination,
-    candidatesPagination,
-  } = useFlashcards();
+interface PreviewSectionProps {
+  flashcards: FlashcardDto[];
+  candidates: FlashcardDto[];
+  isLoading: boolean;
+  isCandidatesLoading: boolean;
+  pagination: PaginationDto;
+  candidatesPagination: PaginationDto;
+  updateFlashcard: (id: string, update: FlashcardUpdateDto) => Promise<void>;
+  deleteFlashcard: (id: string) => Promise<void>;
+  acceptFlashcard: (id: string) => Promise<void>;
+  discardFlashcard: (id: string) => Promise<void>;
+  loadPage: (page: number, limit?: number) => Promise<void>;
+  loadCandidatesPage: (page: number, limit?: number) => Promise<void>;
+}
 
+export const PreviewSection = ({
+  flashcards,
+  candidates,
+  isLoading,
+  isCandidatesLoading,
+  pagination,
+  candidatesPagination,
+  updateFlashcard,
+  deleteFlashcard,
+  acceptFlashcard,
+  discardFlashcard,
+  loadPage,
+  loadCandidatesPage,
+}: PreviewSectionProps) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [selectedFlashcard, setSelectedFlashcard] = useState<FlashcardDto | null>(null);

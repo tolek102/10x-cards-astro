@@ -1,236 +1,165 @@
-import { useState, useEffect } from "react";
-import type { FlashcardDto, FlashcardCreateDto, GenerateFlashcardsCommand, PaginationDto } from "@/types";
-import { FlashcardsService } from "@/lib/services/flashcards";
-import { showToast } from "@/lib/toast";
+import { useState, useCallback } from 'react';
+import type { FlashcardDto, FlashcardCreateDto, FlashcardUpdateDto, PaginationDto } from '@/types';
+import { useCurrentUser } from './useCurrentUser';
+import { showToast } from '@/lib/toast';
 
-interface UseFlashcardsReturn {
-  flashcards: FlashcardDto[];
-  candidates: FlashcardDto[];
-  isLoading: boolean;
-  isCandidatesLoading: boolean;
-  error: Error | null;
-  pagination: PaginationDto;
-  candidatesPagination: PaginationDto;
-  generateFlashcards: (text: string) => Promise<FlashcardDto[]>;
-  createFlashcard: (flashcard: FlashcardCreateDto) => Promise<FlashcardDto>;
-  updateFlashcard: (id: string, flashcard: Partial<FlashcardDto>) => Promise<void>;
-  deleteFlashcard: (id: string) => Promise<void>;
-  acceptFlashcard: (id: string) => Promise<void>;
-  discardFlashcard: (id: string) => Promise<void>;
-  loadPage: (page: number, limit?: number) => Promise<void>;
-  loadCandidatesPage: (page: number, limit?: number) => Promise<void>;
-}
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
 
-export const useFlashcards = (initialPage = 1, pageSize = 10): UseFlashcardsReturn => {
+export const useFlashcards = () => {
+  const { user } = useCurrentUser();
   const [flashcards, setFlashcards] = useState<FlashcardDto[]>([]);
   const [candidates, setCandidates] = useState<FlashcardDto[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isCandidatesLoading, setIsCandidatesLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [pagination, setPagination] = useState<PaginationDto>({
-    page: initialPage,
-    limit: pageSize,
-    total: 0,
-  });
-  const [candidatesPagination, setCandidatesPagination] = useState<PaginationDto>({
-    page: initialPage,
-    limit: pageSize,
-    total: 0,
-  });
+  const [pagination, setPagination] = useState<PaginationDto>({ page: 1, limit: 10, total: 0 });
+  const [candidatesPagination, setCandidatesPagination] = useState<PaginationDto>({ page: 1, limit: 10, total: 0 });
 
-  const loadPage = async (page: number, limit?: number) => {
-    setIsLoading(true);
-    setError(null);
+  const handleApiError = useCallback(async (operation: () => Promise<any>, errorMessage: string, retries = 0): Promise<any> => {
     try {
-      const response = await FlashcardsService.getFlashcards(page, limit ?? pagination.limit);
-      setFlashcards(response.data);
-      setPagination(response.pagination);
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to load flashcards");
-      setError(error);
-      showToast("Nie udało się załadować fiszek", "error", {
-        description: "Wystąpił problem podczas pobierania fiszek. Spróbuj odświeżyć stronę."
-      });
+      return await operation();
+    } catch (error) {
+      console.error(`Error during ${errorMessage}:`, error);
+      
+      if (retries < MAX_RETRIES) {
+        showToast(`Ponawiam próbę... (${retries + 1}/${MAX_RETRIES})`, 'info');
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        return handleApiError(operation, errorMessage, retries + 1);
+      }
+
+      if (error instanceof Error) {
+        showToast(errorMessage, 'error', {
+          description: error.message
+        });
+      } else {
+        showToast(errorMessage, 'error');
+      }
+      throw error;
+    }
+  }, []);
+
+  const loadPage = async (page: number, limit: number = 10) => {
+    if (!user) return;
+    setIsLoading(true);
+    try {
+      await handleApiError(async () => {
+        const response = await fetch(`/api/flashcards?page=${page}&limit=${limit}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Nie udało się załadować fiszek');
+        }
+        const data = await response.json();
+        setFlashcards(data.data);
+        setPagination(data.pagination);
+      }, 'Błąd ładowania fiszek');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const loadCandidatesPage = async (page: number, limit?: number) => {
+  const loadCandidatesPage = async (page: number, limit: number = 10) => {
+    if (!user) return;
     setIsCandidatesLoading(true);
-    setError(null);
     try {
-      const response = await FlashcardsService.getCandidates(page, limit ?? candidatesPagination.limit);
-      setCandidates(response.data);
-      setCandidatesPagination(response.pagination);
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to load candidate flashcards");
-      setError(error);
-      showToast("Nie udało się załadować kandydatów", "error", {
-        description: "Wystąpił problem podczas pobierania kandydatów na fiszki. Spróbuj odświeżyć stronę."
-      });
+      await handleApiError(async () => {
+        const response = await fetch(`/api/flashcards/candidates?page=${page}&limit=${limit}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Nie udało się załadować kandydatów');
+        }
+        const data = await response.json();
+        setCandidates(data.data);
+        setCandidatesPagination(data.pagination);
+      }, 'Błąd ładowania kandydatów');
     } finally {
       setIsCandidatesLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadPage(initialPage);
-    loadCandidatesPage(initialPage);
-  }, [initialPage]);
-
-  const generateFlashcards = async (text: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const command: GenerateFlashcardsCommand = { text };
-      const generatedFlashcards = await FlashcardsService.generateFlashcards(command);
-      setCandidates((prev) => [...prev, ...generatedFlashcards]);
-      setCandidatesPagination((prev) => ({
-        ...prev,
-        total: prev.total + generatedFlashcards.length,
-      }));
-      showToast("Wygenerowano nowe fiszki", "success", {
-        description: `Pomyślnie utworzono ${generatedFlashcards.length} nowych kandydatów na fiszki.`
+  const createFlashcard = async (flashcard: FlashcardCreateDto): Promise<FlashcardDto> => {
+    if (!user) throw new Error('Użytkownik nie jest zalogowany');
+    return handleApiError(async () => {
+      const response = await fetch('/api/flashcards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(flashcard),
       });
-      return generatedFlashcards;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to generate flashcards");
-      setError(error);
-      showToast("Nie udało się wygenerować fiszek", "error", {
-        description: "Wystąpił problem podczas generowania fiszek. Sprawdź wprowadzony tekst i spróbuj ponownie."
-      });
-      return [];
-    } finally {
-      setIsLoading(false);
-    }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Nie udało się utworzyć fiszki');
+      }
+      return response.json();
+    }, 'Błąd tworzenia fiszki');
   };
 
-  const createFlashcard = async (flashcard: FlashcardCreateDto) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const [newFlashcard] = await FlashcardsService.createFlashcards({
-        flashcards: [flashcard],
+  const updateFlashcard = async (id: string, update: FlashcardUpdateDto): Promise<void> => {
+    if (!user) throw new Error('Użytkownik nie jest zalogowany');
+    await handleApiError(async () => {
+      const response = await fetch(`/api/flashcards/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(update),
       });
-      setCandidates((prev) => [...prev, newFlashcard]);
-      setCandidatesPagination((prev) => ({
-        ...prev,
-        total: prev.total + 1,
-      }));
-      showToast("Utworzono nową fiszkę", "success", {
-        description: "Nowa fiszka została dodana do listy kandydatów."
-      });
-      return newFlashcard;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to create flashcard");
-      setError(error);
-      showToast("Nie udało się utworzyć fiszki", "error", {
-        description: "Wystąpił problem podczas tworzenia fiszki. Sprawdź wprowadzone dane i spróbuj ponownie."
-      });
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Nie udało się zaktualizować fiszki');
+      }
+    }, 'Błąd aktualizacji fiszki');
   };
 
-  const updateFlashcard = async (id: string, flashcard: Partial<FlashcardDto>) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const updatedFlashcard = await FlashcardsService.updateFlashcard(id, flashcard);
-      setFlashcards((prev) => prev.map((card) => (card.id === id ? updatedFlashcard : card)));
-      setCandidates((prev) => prev.map((card) => (card.id === id ? updatedFlashcard : card)));
-      showToast("Zaktualizowano fiszkę", "success", {
-        description: "Pomyślnie zaktualizowano zawartość fiszki."
+  const deleteFlashcard = async (id: string): Promise<void> => {
+    if (!user) throw new Error('Użytkownik nie jest zalogowany');
+    await handleApiError(async () => {
+      const response = await fetch(`/api/flashcards/${id}`, {
+        method: 'DELETE',
       });
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to update flashcard");
-      setError(error);
-      showToast("Nie udało się zaktualizować fiszki", "error", {
-        description: "Wystąpił problem podczas aktualizacji fiszki. Sprawdź wprowadzone dane i spróbuj ponownie."
-      });
-    } finally {
-      setIsLoading(false);
-    }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Nie udało się usunąć fiszki');
+      }
+    }, 'Błąd usuwania fiszki');
   };
 
-  const deleteFlashcard = async (id: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await FlashcardsService.deleteFlashcard(id);
-      setFlashcards((prev) => prev.filter((card) => card.id !== id));
-      setCandidates((prev) => prev.filter((card) => card.id !== id));
-      setPagination((prev) => ({
-        ...prev,
-        total: prev.total - 1,
-      }));
-      showToast("Usunięto fiszkę", "success", {
-        description: "Pomyślnie usunięto fiszkę z systemu."
+  const acceptFlashcard = async (id: string): Promise<void> => {
+    if (!user) throw new Error('Użytkownik nie jest zalogowany');
+    await handleApiError(async () => {
+      const response = await fetch(`/api/flashcards/${id}/accept`, {
+        method: 'PATCH',
       });
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to delete flashcard");
-      setError(error);
-      showToast("Nie udało się usunąć fiszki", "error", {
-        description: "Wystąpił problem podczas usuwania fiszki. Spróbuj ponownie później."
-      });
-    } finally {
-      setIsLoading(false);
-    }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Nie udało się zaakceptować fiszki');
+      }
+    }, 'Błąd akceptacji fiszki');
   };
 
-  const acceptFlashcard = async (id: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const updatedFlashcard = await FlashcardsService.acceptFlashcard(id);
-      setCandidates((prev) => prev.filter((f) => f.id !== id));
-      setFlashcards((prev) => [...prev, updatedFlashcard]);
-      setCandidatesPagination((prev) => ({
-        ...prev,
-        total: prev.total - 1,
-      }));
-      setPagination((prev) => ({
-        ...prev,
-        total: prev.total + 1,
-      }));
-      showToast("Zaakceptowano fiszkę", "success", {
-        description: "Fiszka została przeniesiona do głównej kolekcji."
+  const discardFlashcard = async (id: string): Promise<void> => {
+    if (!user) throw new Error('Użytkownik nie jest zalogowany');
+    await handleApiError(async () => {
+      const response = await fetch(`/api/flashcards/${id}/discard`, {
+        method: 'POST',
       });
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to accept flashcard");
-      setError(error);
-      showToast("Nie udało się zaakceptować fiszki", "error", {
-        description: "Wystąpił problem podczas akceptowania fiszki. Spróbuj ponownie później."
-      });
-    } finally {
-      setIsLoading(false);
-    }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Nie udało się odrzucić fiszki');
+      }
+    }, 'Błąd odrzucania fiszki');
   };
 
-  const discardFlashcard = async (id: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await FlashcardsService.discardFlashcard(id);
-      setCandidates((prev) => prev.filter((f) => f.id !== id));
-      setCandidatesPagination((prev) => ({
-        ...prev,
-        total: prev.total - 1,
-      }));
-      showToast("Odrzucono fiszkę", "success", {
-        description: "Pomyślnie odrzucono fiszkę z listy kandydatów."
+  const generateFlashcards = async (text: string): Promise<FlashcardDto[]> => {
+    if (!user) throw new Error('Użytkownik nie jest zalogowany');
+    return handleApiError(async () => {
+      const response = await fetch('/api/flashcards/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
       });
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to discard flashcard");
-      setError(error);
-      showToast("Nie udało się odrzucić fiszki", "error", {
-        description: "Wystąpił problem podczas odrzucania fiszki. Spróbuj ponownie później."
-      });
-    } finally {
-      setIsLoading(false);
-    }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Nie udało się wygenerować fiszek');
+      }
+      return response.json();
+    }, 'Błąd generowania fiszek');
   };
 
   return {
@@ -238,16 +167,15 @@ export const useFlashcards = (initialPage = 1, pageSize = 10): UseFlashcardsRetu
     candidates,
     isLoading,
     isCandidatesLoading,
-    error,
     pagination,
     candidatesPagination,
-    generateFlashcards,
+    loadPage,
+    loadCandidatesPage,
     createFlashcard,
     updateFlashcard,
     deleteFlashcard,
     acceptFlashcard,
     discardFlashcard,
-    loadPage,
-    loadCandidatesPage,
+    generateFlashcards,
   };
 };

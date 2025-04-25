@@ -1,4 +1,5 @@
 import type { Database } from "./db/database.types";
+import type { SupabaseClient } from "./db/supabase.client";
 
 // Extract database table rows for type derivation
 
@@ -10,8 +11,14 @@ type StatisticsRow = Database["public"]["Tables"]["statistics"]["Row"];
  * User DTOs and Commands
  */
 
-// User DTO omitting sensitive data
-export type UserDto = Omit<UserRow, "password">;
+// Basic user information returned by Supabase Auth
+export interface UserDto {
+  id: string;
+  email: string;
+}
+
+// Full user information from database
+export type UserDbDto = Omit<UserRow, "password">;
 
 // Command for registering a user
 export type RegisterUserCommand = Pick<UserRow, "email" | "password">;
@@ -24,6 +31,16 @@ export interface LoginUserResponseDto {
   token: string;
   user: UserDto;
 }
+
+declare global {
+  namespace App {
+    interface Locals {
+      user: UserDto | null;
+      supabase: SupabaseClient;
+    }
+  }
+}
+
 /**
  * Generic Pagination DTO
  */
@@ -38,18 +55,23 @@ export interface PaginationDto {
  * Flashcard DTOs and Commands
  */
 
+export type Source = "MANUAL" | "AI" | "AI_EDITED";
+
 // Flashcard DTO mirroring the flashcards table
-export type FlashcardDto = Pick<
-  FlashcardRow,
-  "id" | "front" | "back" | "source" | "candidate" | "created_at" | "updated_at"
->;
+export interface FlashcardDto {
+  id: string;
+  front: string;
+  back: string;
+  source: Source;
+  candidate: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface FlashcardsListResponseDto {
   data: FlashcardDto[];
   pagination: PaginationDto;
 }
-
-export type Source = "MANUAL" | "AI" | "AI_EDITED";
 
 export interface FlashcardCreateDto {
   front: string;
@@ -63,12 +85,7 @@ export interface FlashcardsCreateCommand {
   flashcards: FlashcardCreateDto[];
 }
 
-export type FlashcardUpdateDto = Partial<{
-  front: string;
-  back: string;
-  source: Source;
-  candidate: boolean;
-}>;
+export type FlashcardUpdateDto = Partial<FlashcardCreateDto>;
 
 // Command for generating flashcards via AI by providing a long text input
 export interface GenerateFlashcardsCommand {

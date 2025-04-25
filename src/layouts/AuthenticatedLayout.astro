@@ -1,0 +1,29 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import { NavigationBar } from "../components/NavigationBar";
+import { Toaster } from "../components/ui/sonner";
+
+interface Props {
+  title?: string;
+  activeSection?: "creator" | "preview" | "learning";
+}
+
+const { title = "10x Cards", activeSection = "creator" } = Astro.props;
+const { user } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/auth/login");
+}
+---
+
+<BaseLayout title={title}>
+  <div class="min-h-screen bg-gray-50">
+    <NavigationBar client:load user={user} activeSection={activeSection} />
+    <main>
+      <div class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
+        <slot />
+      </div>
+    </main>
+    <Toaster client:load />
+  </div>
+</BaseLayout> 
