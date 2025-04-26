@@ -2,7 +2,7 @@ import type { FlashcardDto } from "@/types";
 import { showToast } from "@/lib/toast";
 import { LearningCard } from "./LearningCard";
 import { ProgressBar } from "../learning/ProgressBar";
-import { useFlashcardsLearning } from "@/components/hooks/useFlashcardsLearning";
+import { useFlashcardsLearning } from "@/lib/hooks/useFlashcardsLearning";
 
 interface LearningSessionProps {
   flashcards: FlashcardDto[];

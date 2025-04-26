@@ -1,5 +1,5 @@
 import { CreatorSection } from './CreatorSection';
-import { useFlashcards } from '@/components/hooks/useFlashcards';
+import { useFlashcards } from '@/lib/hooks/useFlashcards';
 
 export const CreatorContainer = () => {
   const {

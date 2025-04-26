@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { LearningSession } from './LearningSession';
-import { useFlashcards } from '@/components/hooks/useFlashcards';
+import { useFlashcards } from '@/lib/hooks/useFlashcards';
 import type { FlashcardDto } from '@/types';
 import { showToast } from '@/lib/toast';
 

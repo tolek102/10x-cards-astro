@@ -2,11 +2,13 @@ import { useAuth } from "./providers/AuthProvider";
 import AppLayout from "./layouts/AppLayout";
 import WelcomeScreen from "./astro/welcome/WelcomeScreen.astro";
 import { CreatorSection } from "./react/creator/CreatorSection";
-import { PreviewSection } from "./preview/PreviewSection";
+import { PreviewSection } from "./react/preview/PreviewSection";
 import { LearningSession as LearningSection } from "./react/learning/LearningSession";
 import { useState } from "react";
-import { useFlashcards } from "./hooks/useFlashcards";
+import { useFlashcards } from "@/lib/hooks/useFlashcards";
 import type { FlashcardCreateDto } from "@/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 
 const App = () => {
   const { user, isLoading } = useAuth();
@@ -83,12 +85,12 @@ const App = () => {
           <PreviewSection
             flashcards={flashcards}
             candidates={candidates}
-            onEdit={updateFlashcard}
-            onDelete={deleteFlashcard}
-            onAccept={handleAcceptFlashcard}
-            onDiscard={discardFlashcard}
-            onLoadPage={loadPage}
-            onLoadCandidatesPage={loadCandidatesPage}
+            updateFlashcard={updateFlashcard}
+            deleteFlashcard={deleteFlashcard}
+            acceptFlashcard={handleAcceptFlashcard}
+            discardFlashcard={discardFlashcard}
+            loadPage={loadPage}
+            loadCandidatesPage={loadCandidatesPage}
             isLoading={isFlashcardsLoading}
             isCandidatesLoading={isCandidatesLoading}
             pagination={pagination}

@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { PreviewSection } from './PreviewSection';
-import { useFlashcards } from '@/components/hooks/useFlashcards';
+import { useFlashcards } from '@/lib/hooks/useFlashcards';
 
 export const PreviewContainer = () => {
   const {
