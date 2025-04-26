@@ -19,10 +19,12 @@ export const PreviewContainer = () => {
   } = useFlashcards();
 
   const loadInitialData = useCallback(async () => {
-    await Promise.all([
-      loadPage(1),
-      loadCandidatesPage(1),
-    ]);
+    try {
+      await loadPage(1);
+      await loadCandidatesPage(1);
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+    }
   }, [loadPage, loadCandidatesPage]);
 
   useEffect(() => {

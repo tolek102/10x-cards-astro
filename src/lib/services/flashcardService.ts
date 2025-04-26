@@ -5,18 +5,26 @@ import type {
   FlashcardDto,
   FlashcardsListResponseDto,
   FlashcardUpdateDto,
+  Source,
 } from "../../types";
 import type { SupabaseClient } from "../../db/supabase.client";
-import { DEFAULT_USER_ID } from "../../db/supabase.client";
+import type { Database } from "../../db/database.types";
 import { logger } from "./loggerService";
 import { createStatisticsService } from "./statisticsService";
+
+type DatabaseFlashcard = Database["public"]["Tables"]["flashcards"]["Row"];
+
+const mapDatabaseFlashcardToDto = (flashcard: DatabaseFlashcard): FlashcardDto => ({
+  ...flashcard,
+  source: flashcard.source as Source,
+});
 
 export class FlashcardService {
   constructor(private readonly supabase: SupabaseClient) {}
 
-  async generateFlashcards(command: GenerateFlashcardsCommand): Promise<GeneratedFlashcardDto> {
+  async generateFlashcards(userId: string, command: GenerateFlashcardsCommand): Promise<GeneratedFlashcardDto> {
     try {
-      logger.info("Starting flashcards generation", { textLength: command.text.length });
+      logger.info("Starting flashcards generation", { userId, textLength: command.text.length });
 
       // Mock AI response for development - in the future, this will use the command.text
       // to generate relevant flashcards using AI
@@ -24,16 +32,16 @@ export class FlashcardService {
         {
           front: "Sample question from text: " + command.text.substring(0, 50) + "...",
           back: "Sample answer",
-          source: "AI",
+          source: "AI" as Source,
           candidate: true,
-          user_id: DEFAULT_USER_ID,
+          user_id: userId,
         },
         {
           front: "Another sample question",
           back: "Another sample answer",
-          source: "AI",
+          source: "AI" as Source,
           candidate: true,
-          user_id: DEFAULT_USER_ID,
+          user_id: userId,
         },
       ];
 
@@ -47,11 +55,11 @@ export class FlashcardService {
         throw new Error("Failed to store generated flashcards");
       }
 
-      const generatedFlashcards = flashcards || [];
+      const generatedFlashcards = (flashcards || []).map(mapDatabaseFlashcardToDto);
 
       // Update statistics
       const statisticsService = createStatisticsService(this.supabase);
-      await statisticsService.trackFlashcardsGeneration(DEFAULT_USER_ID, generatedFlashcards.length);
+      await statisticsService.trackFlashcardsGeneration(userId, generatedFlashcards.length);
 
       logger.info("Successfully generated and stored flashcards", {
         count: generatedFlashcards.length,
@@ -84,13 +92,15 @@ export class FlashcardService {
         throw new Error("Flashcard was not created");
       }
 
+      const mappedFlashcard = mapDatabaseFlashcardToDto(flashcard);
+
       // Update statistics
       const statisticsService = createStatisticsService(this.supabase);
       await statisticsService.trackFlashcardsGeneration(userId, 1);
 
-      logger.info("Successfully created manual flashcard", { flashcardId: flashcard.id });
+      logger.info("Successfully created manual flashcard", { flashcardId: mappedFlashcard.id });
 
-      return flashcard;
+      return mappedFlashcard;
     } catch (error) {
       logger.error("Error in createManualFlashcard", { error });
       throw error;
@@ -123,7 +133,7 @@ export class FlashcardService {
         throw new Error("Flashcard not found");
       }
 
-      return flashcard;
+      return mapDatabaseFlashcardToDto(flashcard);
     } catch (error) {
       logger.error("Error in getFlashcardById", { error });
       throw error;
@@ -174,14 +184,15 @@ export class FlashcardService {
       }
 
       const totalCount = count ?? 0;
+      const mappedFlashcards = (flashcards || []).map(mapDatabaseFlashcardToDto);
 
       logger.info("Successfully fetched flashcards", {
-        count: flashcards?.length,
+        count: mappedFlashcards.length,
         total: totalCount,
       });
 
       return {
-        data: flashcards || [],
+        data: mappedFlashcards,
         pagination: {
           page: params.page,
           limit: params.limit,
@@ -238,14 +249,15 @@ export class FlashcardService {
       }
 
       const totalCount = count ?? 0;
+      const mappedFlashcards = (flashcards || []).map(mapDatabaseFlashcardToDto);
 
       logger.info("Successfully fetched candidate flashcards", {
-        count: flashcards?.length,
+        count: mappedFlashcards.length,
         total: totalCount,
       });
 
       return {
-        data: flashcards || [],
+        data: mappedFlashcards,
         pagination: {
           page: params.page,
           limit: params.limit,
@@ -287,7 +299,7 @@ export class FlashcardService {
         candidate:
           existingFlashcard.candidate || existingFlashcard.source === "AI" ? false : existingFlashcard.candidate,
         // If source was AI, change to AI_EDITED
-        source: existingFlashcard.source === "AI" ? "AI_EDITED" : existingFlashcard.source,
+        source: existingFlashcard.source === "AI" ? "AI_EDITED" as Source : existingFlashcard.source,
         updated_at: new Date().toISOString(),
       };
 
@@ -311,7 +323,7 @@ export class FlashcardService {
 
       logger.info("Successfully updated flashcard", { flashcardId });
 
-      return updatedFlashcard;
+      return mapDatabaseFlashcardToDto(updatedFlashcard);
     } catch (error) {
       logger.error("Error in updateFlashcard", { error });
       throw error;
@@ -402,7 +414,7 @@ export class FlashcardService {
 
       logger.info("Successfully accepted flashcard", { flashcardId });
 
-      return updatedFlashcard;
+      return mapDatabaseFlashcardToDto(updatedFlashcard);
     } catch (error) {
       logger.error("Error in acceptGeneratedFlashcard", { error });
       throw error;

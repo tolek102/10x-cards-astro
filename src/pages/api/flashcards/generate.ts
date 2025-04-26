@@ -14,6 +14,19 @@ const generateFlashcardsSchema = z.object({
 
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
+    if (!locals.user) {
+      return new Response(
+        JSON.stringify({
+          error: "Unauthorized",
+          message: "Authentication required",
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Parse and validate the request body
     const body = await request.json();
     const validationResult = generateFlashcardsSchema.safeParse(body);
@@ -35,7 +48,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     // Create service instance and generate flashcards
     const flashcardService = createFlashcardService(locals.supabase);
-    const generatedFlashcards = await flashcardService.generateFlashcards(command);
+    const generatedFlashcards = await flashcardService.generateFlashcards(locals.user.id, command);
 
     return new Response(JSON.stringify(generatedFlashcards), {
       status: 200,

@@ -58,13 +58,18 @@ Celem implementacji jest dodanie nawigacji między stronami aplikacji oraz prawi
    - Naprawiono błędy 500 w endpointach `/api/flashcards` i `/api/flashcards/candidates`
    - Dodano obsługę błędów z użyciem toastów w komponencie NavigationBar
 
+9. Poprawki błędów w obsłudze fiszek:
+   - Usunięto użycie DEFAULT_USER_ID z serwisu fiszek
+   - Naprawiono problemy z typami w FlashcardService
+   - Zmodyfikowano ładowanie danych w PreviewContainer, aby uniknąć błędów ERR_INSUFFICIENT_RESOURCES
+
 ## Napotkane problemy
 
 1. Błędy w endpointach API:
    - ~~Endpointy `/api/flashcards` i `/api/flashcards/candidates` zwracają błąd 500~~
    - Niezgodność metod HTTP w endpoincie `/api/flashcards/[id]/accept`
-   - Brak prawidłowej obsługi błędów w komponentach
-   - Potrzebna aktualizacja logiki biznesowej w serwisach
+   - ~~Brak prawidłowej obsługi błędów w komponentach~~
+   - ~~Potrzebna aktualizacja logiki biznesowej w serwisach~~
 
 2. Problemy z komponentami React:
    - Błędy przy próbie użycia hooków React w plikach Astro
@@ -87,17 +92,7 @@ Celem implementacji jest dodanie nawigacji między stronami aplikacji oraz prawi
    - Obsługa trybu offline w komponentach
    - Synchronizacja danych po przywróceniu połączenia
 
-4. Zaktualizować obsługę błędów w pozostałych endpointach API:
+4. Poprawić obsługę błędów w pozostałych endpointach:
    - Dodać szczegółowe komunikaty błędów
    - Ujednolicić format odpowiedzi błędów
-   - Dodać logowanie błędów
-
-5. Poprawić obsługę błędów w komponentach:
-   - Dodać wyświetlanie komunikatów o błędach
-   - Dodać stan ładowania
-   - Dodać obsługę ponownych prób
-   - Ujednolicić obsługę błędów między komponentami
-
-6. Zaktualizować testy:
-   - Dodać testy dla nowych komponentów nawigacji
-   - Dodać testy dla obsługi błędów 
+   - Dodać logowanie błędów 
