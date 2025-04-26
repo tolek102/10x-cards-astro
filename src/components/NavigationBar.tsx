@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 import type { UserDto } from "@/types";
+import { showToast } from '../lib/toast';
+
 
 interface NavigationBarProps {
   user: UserDto | null;
@@ -25,9 +27,12 @@ export const NavigationBar = ({ user, activeSection }: NavigationBarProps) => {
         throw new Error('Błąd podczas wylogowywania');
       }
 
-      window.location.href = '/auth/login';
+      window.location.href = '/';
     } catch (error) {
       console.error('Błąd podczas wylogowywania:', error);
+      showToast("Błąd wylogowania", "error", {
+        description: "Nie udało się wylogować. Spróbuj ponownie za chwilę.",
+      });
     }
   };
 

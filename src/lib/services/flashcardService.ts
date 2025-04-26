@@ -173,14 +173,11 @@ export class FlashcardService {
         throw new Error("Failed to fetch flashcards");
       }
 
-      if (!count) {
-        logger.warn("No flashcards found or count not available");
-        throw new Error("Failed to get flashcards count");
-      }
+      const totalCount = count ?? 0;
 
       logger.info("Successfully fetched flashcards", {
         count: flashcards?.length,
-        total: count,
+        total: totalCount,
       });
 
       return {
@@ -188,7 +185,7 @@ export class FlashcardService {
         pagination: {
           page: params.page,
           limit: params.limit,
-          total: count,
+          total: totalCount,
         },
       };
     } catch (error) {
@@ -240,14 +237,11 @@ export class FlashcardService {
         throw new Error("Failed to fetch candidate flashcards");
       }
 
-      if (!count) {
-        logger.warn("No candidate flashcards found or count not available");
-        throw new Error("Failed to get candidate flashcards count");
-      }
+      const totalCount = count ?? 0;
 
       logger.info("Successfully fetched candidate flashcards", {
         count: flashcards?.length,
-        total: count,
+        total: totalCount,
       });
 
       return {
@@ -255,7 +249,7 @@ export class FlashcardService {
         pagination: {
           page: params.page,
           limit: params.limit,
-          total: count,
+          total: totalCount,
         },
       };
     } catch (error) {

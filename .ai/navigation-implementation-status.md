@@ -53,10 +53,15 @@ Celem implementacji jest dodanie nawigacji między stronami aplikacji oraz prawi
    - Ujednolicono format obsługi błędów w hooku useFlashcards
    - Dodano wyświetlanie statusu ponownych prób w toastach
 
+8. Poprawki błędów i ulepszenia:
+   - Zmieniono przekierowanie po wylogowaniu na stronę główną `/`
+   - Naprawiono błędy 500 w endpointach `/api/flashcards` i `/api/flashcards/candidates`
+   - Dodano obsługę błędów z użyciem toastów w komponencie NavigationBar
+
 ## Napotkane problemy
 
 1. Błędy w endpointach API:
-   - Endpointy `/api/flashcards` i `/api/flashcards/candidates` zwracają błąd 500
+   - ~~Endpointy `/api/flashcards` i `/api/flashcards/candidates` zwracają błąd 500~~
    - Niezgodność metod HTTP w endpoincie `/api/flashcards/[id]/accept`
    - Brak prawidłowej obsługi błędów w komponentach
    - Potrzebna aktualizacja logiki biznesowej w serwisach
@@ -68,9 +73,9 @@ Celem implementacji jest dodanie nawigacji między stronami aplikacji oraz prawi
 
 ## Kolejne kroki
 
-1. Poprawić obsługę wylogowania:
-   - zmienić przekierowanie po wylogowaniu na stroną główną `/`
-   (obecnie przekierowuje na `/auth/login`)
+1. ~~Poprawić obsługę wylogowania:~~
+   ~~- zmienić przekierowanie po wylogowaniu na stroną główną `/`~~
+   ~~(obecnie przekierowuje na `/auth/login`)~~
 
 2. Zaktualizować testy:
    - Dostosować testy do nowej logiki obsługi błędów
