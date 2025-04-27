@@ -39,8 +39,18 @@ export const AIGeneratorTab = ({ onGenerate, isGenerating }: AIGeneratorTabProps
         {!isValidLength && <p className="text-sm text-red-500">Tekst powinien zawierać od 1000 do 10000 znaków</p>}
       </div>
 
-      <div className="flex justify-end">
-        <Button type="submit" disabled={!isValidLength || isGenerating} className="w-full sm:w-auto">
+      <div className="flex justify-end space-x-4">
+      <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            setText("");
+          }}
+          disabled={isGenerating}
+        >
+          Wyczyść
+        </Button>
+        <Button type="submit" disabled={!isValidLength || isGenerating} className="w-32">
           {isGenerating ? (
             <>
               <span className="animate-spin mr-2">⏳</span>
