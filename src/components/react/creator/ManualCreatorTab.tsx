@@ -11,6 +11,10 @@ interface ManualCreatorTabProps {
 export const ManualCreatorTab = ({ onAdd, isAdding }: ManualCreatorTabProps) => {
   const [front, setFront] = useState("");
   const [back, setBack] = useState("");
+  const charCountFront = front.length;
+  const charCountBack = back.length;
+  const isValidLengthFront = charCountFront > 0 && charCountFront <= 200;
+  const isValidLengthBack = charCountBack > 0 && charCountBack <= 500;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -36,7 +40,7 @@ export const ManualCreatorTab = ({ onAdd, isAdding }: ManualCreatorTabProps) => 
             <label htmlFor="front" className="text-sm font-medium text-gray-700">
               Przód fiszki
             </label>
-            <span className="text-sm text-gray-500">{front.length}</span>
+            <span className={`text-sm ${!isValidLengthFront ? "text-red-500" : "text-gray-500"}`}>{charCountFront}/200</span>
           </div>
           <Textarea
             id="front"
@@ -53,7 +57,7 @@ export const ManualCreatorTab = ({ onAdd, isAdding }: ManualCreatorTabProps) => 
             <label htmlFor="back" className="text-sm font-medium text-gray-700">
               Tył fiszki
             </label>
-            <span className="text-sm text-gray-500">{back.length}</span>
+            <span className={`text-sm ${!isValidLengthBack ? "text-red-500" : "text-gray-500"}`}>{charCountBack}/500</span>
           </div>
           <Textarea
             id="back"
@@ -78,7 +82,7 @@ export const ManualCreatorTab = ({ onAdd, isAdding }: ManualCreatorTabProps) => 
         >
           Wyczyść
         </Button>
-        <Button type="submit" disabled={!front.trim() || !back.trim() || isAdding} className="w-32">
+        <Button type="submit" disabled={!isValidLengthFront || !isValidLengthBack || isAdding} className="w-32">
           {isAdding ? (
             <>
               <span className="animate-spin mr-2">⏳</span>
