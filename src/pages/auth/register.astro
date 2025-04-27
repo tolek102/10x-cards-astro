@@ -126,8 +126,9 @@ const error = Astro.url.searchParams.get('error');
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Użyj View Transitions API do płynnego przekierowania
-      const loginUrl = new URL('/auth/login', window.location.origin);
-      loginUrl.searchParams.set('registered', 'true');
+      const loginUrl = new URL('/creator', window.location.origin);
+    //   const loginUrl = new URL('/auth/login', window.location.origin);
+    //   loginUrl.searchParams.set('registered', 'true');
       
       if (document.startViewTransition) {
         document.startViewTransition(() => {

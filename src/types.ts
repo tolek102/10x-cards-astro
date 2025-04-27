@@ -3,7 +3,6 @@ import type { SupabaseClient } from "./db/supabase.client";
 
 // Extract database table rows for type derivation
 
-type UserRow = Database["public"]["Tables"]["users"]["Row"];
 type FlashcardRow = Database["public"]["Tables"]["flashcards"]["Row"];
 type StatisticsRow = Database["public"]["Tables"]["statistics"]["Row"];
 
@@ -14,21 +13,23 @@ type StatisticsRow = Database["public"]["Tables"]["statistics"]["Row"];
 // Basic user information returned by Supabase Auth
 export interface UserDto {
   id: string;
-  email: string;
+  email: string | null;
 }
 
-// Full user information from database
-export type UserDbDto = Omit<UserRow, "password">;
+// Command for logging in a user
+export interface LoginUserCommand {
+  email: string;
+  password: string;
+}
 
 // Command for registering a user
-export type RegisterUserCommand = Pick<UserRow, "email" | "password">;
-
-// Command for logging in a user
-export type LoginUserCommand = Pick<UserRow, "email" | "password">;
+export interface RegisterUserCommand {
+  email: string;
+  password: string;
+}
 
 // Response DTO for a successful login including token and user details
 export interface LoginUserResponseDto {
-  token: string;
   user: UserDto;
 }
 

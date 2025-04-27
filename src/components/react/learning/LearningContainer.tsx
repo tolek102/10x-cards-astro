@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { LearningSession } from './LearningSession';
 import { useFlashcards } from '@/lib/hooks/useFlashcards';
 import type { FlashcardDto } from '@/types';
@@ -8,22 +8,17 @@ export const LearningContainer = () => {
   const { flashcards, isLoading, loadPage } = useFlashcards();
   const [learningFlashcards, setLearningFlashcards] = useState<FlashcardDto[]>([]);
 
-  const loadFlashcards = useCallback(async () => {
-    try {
-      await loadPage(1, 100); // Ładujemy większą ilość fiszek do nauki
-    } catch (error) {
+  // Efekt do ładowania danych
+  useEffect(() => {
+    loadPage(1, 100).catch(error => {
       showToast('Błąd ładowania fiszek', 'error', {
         description: 'Wystąpił problem podczas ładowania fiszek do nauki. Spróbuj odświeżyć stronę.'
       });
-    }
-  }, [loadPage]);
+    });
+  }, [loadPage]); // Usuwamy flashcards z zależności
 
+  // Osobny efekt do filtrowania fiszek
   useEffect(() => {
-    loadFlashcards();
-  }, [loadFlashcards]);
-
-  useEffect(() => {
-    // Filtrujemy tylko zaakceptowane fiszki
     const acceptedFlashcards = flashcards.filter(f => !f.candidate);
     setLearningFlashcards(acceptedFlashcards);
   }, [flashcards]);

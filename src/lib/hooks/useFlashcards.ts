@@ -280,12 +280,6 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
     }
   }, []);
 
-  // Efekty
-  useEffect(() => {
-    loadPage(initialPage);
-    loadCandidatesPage(initialPage);
-  }, [initialPage, loadPage, loadCandidatesPage]);
-
   return {
     ...state,
     generateFlashcards,
