@@ -12,42 +12,51 @@ const PUBLIC_PATHS = [
   "/api/auth/register",
   "/api/auth/reset-password",
   "/api/auth/logout",
+  "/api/auth/me",
   // Public pages
   "/",
 ];
 
-export const onRequest = defineMiddleware(async ({ request, cookies, redirect, locals }, next) => {
+// Ścieżki chronione - wymagają zalogowania
+const PROTECTED_PATHS = [
+  "/learning",
+  "/preview",
+  "/creator"
+];
+
+export const onRequest = defineMiddleware(async (context, next) => {
+  const { request, cookies, redirect, locals } = context;
+  const url = new URL(request.url);
+  const pathname = url.pathname;
+
+  // Inicjalizacja Supabase i pobranie użytkownika
   const supabase = createSupabaseServerInstance({ cookies, headers: request.headers });
   const { data: { user }, error } = await supabase.auth.getUser();
 
-  // Set user and supabase client in locals for use in API routes and components
+  // Ustawienie user i supabase w locals
   locals.user = user && user.email ? { id: user.id, email: user.email } : null;
   locals.supabase = supabase;
 
-  const url = new URL(request.url);
-  const isPublicPath = PUBLIC_PATHS.some(path => url.pathname.startsWith(path));
-  const isApiPath = url.pathname.startsWith("/api");
+  // Sprawdź czy ścieżka jest chroniona
+  const isProtectedPath = PROTECTED_PATHS.some(path => pathname.startsWith(path));
+  const isPublicPath = PUBLIC_PATHS.some(path => pathname.startsWith(path));
+  const isApiPath = pathname.startsWith("/api");
 
-  // Allow public paths
-  if (isPublicPath) {
-    return next();
-  }
-
-  // Handle API routes
-  if (isApiPath) {
+  // Obsługa ścieżek API
+  if (isApiPath && !isPublicPath) {
     if (!user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
       });
     }
-    return next();
   }
 
-  // Handle page routes
-  if (!user) {
+  // Przekierowanie niezalogowanych użytkowników z chronionych ścieżek
+  if (isProtectedPath && !user) {
     return redirect("/auth/login");
   }
 
+  // Kontynuuj dla publicznych ścieżek lub zalogowanych użytkowników
   return next();
 });
