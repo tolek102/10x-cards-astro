@@ -2,12 +2,22 @@
 import "../styles/global.css";
 import { Providers } from "../components/providers/Providers";
 import { ClientRouter } from "astro:transitions";
+import { NavigationBar } from "../components/NavigationBar";
+import { Toaster } from "../components/ui/sonner";
 
 interface Props {
   title?: string;
+  showNav?: boolean;
+  activeSection?: "creator" | "preview" | "learning";
 }
 
-const { title = "10x Cards - Twórz i ucz się z fiszkami" } = Astro.props;
+const { 
+  title = "10x Cards - Twórz i ucz się z fiszkami",
+  showNav = false,
+  activeSection = "creator"
+} = Astro.props;
+
+const { user } = Astro.locals;
 ---
 
 <!doctype html>
@@ -24,7 +34,19 @@ const { title = "10x Cards - Twórz i ucz się z fiszkami" } = Astro.props;
   </head>
   <body>
     <Providers client:load>
-      <slot />
+      <div class:list={["min-h-screen", { "bg-gray-50": showNav }]}>
+        {showNav && <NavigationBar client:load user={user} activeSection={activeSection} />}
+        <main>
+          {showNav ? (
+            <div class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
+              <slot />
+            </div>
+          ) : (
+            <slot />
+          )}
+        </main>
+        {showNav && <Toaster client:load />}
+      </div>
     </Providers>
   </body>
 </html>

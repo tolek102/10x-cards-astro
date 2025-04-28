@@ -1,13 +1,13 @@
 ---
-import AuthenticatedLayout from '../layouts/AuthenticatedLayout.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
 import { CreatorContainer } from '../components/react/creator/CreatorContainer';
 ---
 
-<AuthenticatedLayout title="Kreator Fiszek - 10x Cards" activeSection="creator">
+<BaseLayout title="Kreator Fiszek - 10x Cards" activeSection="creator" showNav={true}>
   <div class="container mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold mb-6">Kreator Fiszek</h1>
     <div class="creator-container">
       <CreatorContainer client:load />
     </div>
   </div>
-</AuthenticatedLayout> 
+</BaseLayout> 

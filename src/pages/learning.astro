@@ -1,13 +1,13 @@
 ---
-import AuthenticatedLayout from '../layouts/AuthenticatedLayout.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
 import { LearningContainer } from '../components/react/learning/LearningContainer';
 ---
 
-<AuthenticatedLayout title="Nauka - 10x Cards" activeSection="learning">
+<BaseLayout title="Nauka - 10x Cards" activeSection="learning" showNav={true}>
   <div id="learning-root" class="container mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold mb-6">Sesja Nauki</h1>
     <div class="learning-container">
       <LearningContainer client:load />
     </div>
   </div>
-</AuthenticatedLayout> 
+</BaseLayout> 

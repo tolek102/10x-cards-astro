@@ -1,8 +1,8 @@
 ---
-import AuthenticatedLayout from '../layouts/AuthenticatedLayout.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
 import { PreviewContainer } from '../components/react/preview/PreviewContainer';
 ---
 
-<AuthenticatedLayout title="Podgląd fiszek - 10x Cards" activeSection="preview">
+<BaseLayout title="Podgląd fiszek - 10x Cards" activeSection="preview" showNav={true}>
   <PreviewContainer client:load />
-</AuthenticatedLayout> 
+</BaseLayout> 
