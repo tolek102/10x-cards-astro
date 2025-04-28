@@ -1,9 +1,9 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
 import WelcomeScreen from '../components/astro/welcome/WelcomeScreen.astro';
-import { ViewTransitions } from 'astro:transitions';
+import { ClientRouter } from 'astro:transitions';
 ---
 
-<Layout>
+<BaseLayout>
   <WelcomeScreen />
-</Layout>
+</BaseLayout>

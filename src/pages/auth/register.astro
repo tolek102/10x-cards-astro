@@ -1,13 +1,13 @@
 ---
-import Layout from '../../layouts/Layout.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
 import { showToast } from '../../lib/toast';
-import { ViewTransitions } from 'astro:transitions';
+import { ClientRouter } from 'astro:transitions';
 
 const error = Astro.url.searchParams.get('error');
 ---
 
-<Layout title="Rejestracja - 10x Cards">
-  <ViewTransitions />
+<BaseLayout title="Rejestracja - 10x Cards">
+  <ClientRouter />
   <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
       <div>
@@ -59,7 +59,7 @@ const error = Astro.url.searchParams.get('error');
       </form>
     </div>
   </div>
-</Layout>
+</BaseLayout>
 
 <script>
   import { showToast } from '../../lib/toast';
