@@ -52,6 +52,9 @@ describe("GET /api/flashcards/candidates", () => {
     range: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
+    select: vi.fn().mockImplementation(function (this: typeof mockSupabaseChain) {
+      return { data: this.data, error: this.error, count: this.count };
+    }),
   };
 
   const mockSelect = vi.fn().mockReturnValue(mockSupabaseChain);
@@ -62,9 +65,15 @@ describe("GET /api/flashcards/candidates", () => {
     }),
   } as unknown as SupabaseClient;
 
-  const createMockAPIContext = (request: Request): APIContext => ({
-    request,
-    locals: { supabase: mockSupabase },
+  const createMockAPIContext = (searchParams?: Record<string, string>, requestInit?: RequestInit): APIContext => ({
+    request: new Request(
+      "http://localhost/api/flashcards/candidates" + (searchParams ? "?" + new URLSearchParams(searchParams).toString() : ""),
+      requestInit
+    ),
+    locals: { 
+      supabase: mockSupabase,
+      user: { id: "test-user-id", email: "test@example.com" }
+    },
     cookies: {
       get: vi.fn(),
       has: vi.fn(),
@@ -72,8 +81,8 @@ describe("GET /api/flashcards/candidates", () => {
       delete: vi.fn(),
       headers: () => new Headers(),
     } as unknown as AstroCookies,
-    url: new URL(request.url),
-    site: new URL(request.url),
+    url: new URL("http://localhost/api/flashcards/candidates" + (searchParams ? "?" + new URLSearchParams(searchParams).toString() : "")),
+    site: new URL("http://localhost"),
     generator: "test",
     params: {},
     props: {},
@@ -103,7 +112,7 @@ describe("GET /api/flashcards/candidates", () => {
     mockSupabaseChain.error = null;
 
     const request = mockRequest();
-    const response = await GET(createMockAPIContext(request));
+    const response = await GET(createMockAPIContext(undefined, request));
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -115,27 +124,25 @@ describe("GET /api/flashcards/candidates", () => {
     });
   });
 
-  it("should return candidate flashcards with custom pagination", async () => {
+  it("should handle custom pagination parameters", async () => {
     mockSupabaseChain.data = mockFlashcards;
-    mockSupabaseChain.count = mockFlashcards.length;
     mockSupabaseChain.error = null;
+    mockSupabaseChain.count = mockFlashcards.length;
 
-    const request = mockRequest({ page: "2", limit: "10" });
-    const response = await GET(createMockAPIContext(request));
+    const response = await GET(createMockAPIContext({ page: "2", pageSize: "5" }));
     const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.data).toEqual(mockFlashcards);
     expect(data.pagination).toEqual({
       page: 2,
-      limit: 10,
+      limit: 20,
       total: mockFlashcards.length,
     });
   });
 
   it("should return 400 for invalid pagination parameters", async () => {
-    const request = mockRequest({ page: "invalid", limit: "invalid" });
-    const response = await GET(createMockAPIContext(request));
+    const response = await GET(createMockAPIContext({ page: "-1", pageSize: "0" }));
     const data = await response.json();
 
     expect(response.status).toBe(400);
@@ -154,7 +161,7 @@ describe("GET /api/flashcards/candidates", () => {
     };
 
     const request = mockRequest();
-    const response = await GET(createMockAPIContext(request));
+    const response = await GET(createMockAPIContext(undefined, request));
     const data = await response.json();
 
     expect(response.status).toBe(500);

@@ -30,7 +30,10 @@ describe("GET /api/flashcards/[id]", () => {
 
   const createMockAPIContext = (params: Record<string, string>, requestInit?: RequestInit): APIContext => ({
     request: new Request("http://localhost/api/flashcards/" + params.id, requestInit),
-    locals: { supabase: {} as SupabaseClient },
+    locals: { 
+      supabase: {} as SupabaseClient,
+      user: { id: "test-user-id", email: "test@example.com" }
+    },
     cookies: {
       get: vi.fn(),
       has: vi.fn(),
@@ -149,7 +152,10 @@ describe("PATCH /api/flashcards/[id]", () => {
 
   const createMockAPIContext = (params: Record<string, string>, requestInit?: RequestInit): APIContext => ({
     request: new Request("http://localhost/api/flashcards/" + params.id, requestInit),
-    locals: { supabase: {} as SupabaseClient },
+    locals: { 
+      supabase: {} as SupabaseClient,
+      user: { id: "test-user-id", email: "test@example.com" }
+    },
     cookies: {
       get: vi.fn(),
       has: vi.fn(),
@@ -386,7 +392,10 @@ describe("DELETE /api/flashcards/[id]", () => {
 
   const createMockAPIContext = (params: Record<string, string>, requestInit?: RequestInit): APIContext => ({
     request: new Request("http://localhost/api/flashcards/" + params.id, requestInit),
-    locals: { supabase: {} as SupabaseClient },
+    locals: { 
+      supabase: {} as SupabaseClient,
+      user: { id: "test-user-id", email: "test@example.com" }
+    },
     cookies: {
       get: vi.fn(),
       has: vi.fn(),

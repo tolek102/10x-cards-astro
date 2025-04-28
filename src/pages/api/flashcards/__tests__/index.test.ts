@@ -57,9 +57,15 @@ describe("POST /api/flashcards", () => {
     }),
   } as unknown as SupabaseClient;
 
-  const createMockAPIContext = (request: Request): APIContext => ({
-    request,
-    locals: { supabase: mockSupabase },
+  const createMockAPIContext = (searchParams?: Record<string, string>, requestInit?: RequestInit): APIContext => ({
+    request: new Request(
+      "http://localhost/api/flashcards" + (searchParams ? "?" + new URLSearchParams(searchParams).toString() : ""),
+      requestInit
+    ),
+    locals: { 
+      supabase: mockSupabase,
+      user: { id: "test-user-id", email: "test@example.com" }
+    },
     cookies: {
       get: vi.fn(),
       has: vi.fn(),
@@ -67,8 +73,8 @@ describe("POST /api/flashcards", () => {
       delete: vi.fn(),
       headers: () => new Headers(),
     } as unknown as AstroCookies,
-    url: new URL(request.url),
-    site: new URL(request.url),
+    url: new URL("http://localhost/api/flashcards" + (searchParams ? "?" + new URLSearchParams(searchParams).toString() : "")),
+    site: new URL("http://localhost"),
     generator: "test",
     params: {},
     props: {},
@@ -103,7 +109,7 @@ describe("POST /api/flashcards", () => {
     mockSupabaseChain.error = null;
 
     const request = mockRequest(validCommand);
-    const response = await POST(createMockAPIContext(request));
+    const response = await POST(createMockAPIContext(undefined, request));
     const data = await response.json();
 
     expect(response.status).toBe(201);
@@ -119,7 +125,7 @@ describe("POST /api/flashcards", () => {
     };
 
     const request = mockRequest(invalidCommand);
-    const response = await POST(createMockAPIContext(request));
+    const response = await POST(createMockAPIContext(undefined, request));
     const data = await response.json();
 
     expect(response.status).toBe(400);
@@ -145,7 +151,7 @@ describe("POST /api/flashcards", () => {
     };
 
     const request = mockRequest(validCommand);
-    const response = await POST(createMockAPIContext(request));
+    const response = await POST(createMockAPIContext(undefined, request));
     const data = await response.json();
 
     expect(response.status).toBe(500);
@@ -202,9 +208,15 @@ describe("GET /api/flashcards", () => {
     }),
   } as unknown as SupabaseClient;
 
-  const createMockAPIContext = (request: Request): APIContext => ({
-    request,
-    locals: { supabase: mockSupabase },
+  const createMockAPIContext = (searchParams?: Record<string, string>, requestInit?: RequestInit): APIContext => ({
+    request: new Request(
+      "http://localhost/api/flashcards" + (searchParams ? "?" + new URLSearchParams(searchParams).toString() : ""),
+      requestInit
+    ),
+    locals: { 
+      supabase: mockSupabase,
+      user: { id: "test-user-id", email: "test@example.com" }
+    },
     cookies: {
       get: vi.fn(),
       has: vi.fn(),
@@ -212,8 +224,8 @@ describe("GET /api/flashcards", () => {
       delete: vi.fn(),
       headers: () => new Headers(),
     } as unknown as AstroCookies,
-    url: new URL(request.url),
-    site: new URL(request.url),
+    url: new URL("http://localhost/api/flashcards" + (searchParams ? "?" + new URLSearchParams(searchParams).toString() : "")),
+    site: new URL("http://localhost"),
     generator: "test",
     params: {},
     props: {},
@@ -243,7 +255,7 @@ describe("GET /api/flashcards", () => {
     mockSupabaseChain.error = null;
 
     const request = mockRequest();
-    const response = await GET(createMockAPIContext(request));
+    const response = await GET(createMockAPIContext(undefined, request));
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -257,11 +269,10 @@ describe("GET /api/flashcards", () => {
 
   it("should handle custom pagination parameters", async () => {
     mockSupabaseChain.data = mockFlashcards;
-    mockSupabaseChain.count = mockFlashcards.length;
     mockSupabaseChain.error = null;
+    mockSupabaseChain.count = mockFlashcards.length;
 
-    const request = mockRequest({ page: "2", limit: "10" });
-    const response = await GET(createMockAPIContext(request));
+    const response = await GET(createMockAPIContext({ page: "2", limit: "10" }));
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -278,7 +289,7 @@ describe("GET /api/flashcards", () => {
     mockSupabaseChain.error = null;
 
     const request = mockRequest({ sort: "created_at_asc" });
-    const response = await GET(createMockAPIContext(request));
+    const response = await GET(createMockAPIContext(undefined, request));
     await response.json(); // consume response to avoid memory leaks
 
     expect(response.status).toBe(200);
@@ -286,8 +297,7 @@ describe("GET /api/flashcards", () => {
   });
 
   it("should return 400 for invalid pagination parameters", async () => {
-    const request = mockRequest({ page: "-1", limit: "1000" });
-    const response = await GET(createMockAPIContext(request));
+    const response = await GET(createMockAPIContext({ page: "-1", limit: "0" }));
     const data = await response.json();
 
     expect(response.status).toBe(400);
@@ -306,7 +316,7 @@ describe("GET /api/flashcards", () => {
     };
 
     const request = mockRequest();
-    const response = await GET(createMockAPIContext(request));
+    const response = await GET(createMockAPIContext(undefined, request));
     const data = await response.json();
 
     expect(response.status).toBe(500);

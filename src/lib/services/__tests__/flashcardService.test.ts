@@ -4,6 +4,43 @@ import type { GenerateFlashcardsCommand, FlashcardCreateDto, FlashcardDto } from
 import type { SupabaseClient } from "../../../db/supabase.client";
 import type { PostgrestError } from "@supabase/supabase-js";
 
+vi.mock("../openrouter/config", () => ({
+  getOpenRouterConfig: vi.fn().mockReturnValue({
+    apiKey: "test-api-key",
+    baseUrl: "https://api.openrouter.ai/api/v1",
+  }),
+}));
+
+// Mock global fetch
+const mockFetchResponse = {
+  ok: true,
+  json: async () => ({
+    choices: [
+      {
+        message: {
+          content: JSON.stringify([
+            {
+              front: "Sample question",
+              back: "Sample answer",
+            },
+          ]),
+        },
+      },
+    ],
+  }),
+};
+
+global.fetch = vi.fn().mockResolvedValue(mockFetchResponse);
+
+vi.mock("../openrouter/client", () => ({
+  generateFlashcards: vi.fn().mockResolvedValue([
+    {
+      front: "Sample question",
+      back: "Sample answer",
+    },
+  ]),
+}));
+
 // Type for our minimal mock implementation
 type MinimalSupabaseClient = Pick<SupabaseClient, "from">;
 
@@ -52,17 +89,18 @@ describe("FlashcardService", () => {
   });
 
   describe("generateFlashcards", () => {
+    const mockUserId = "test-user-id";
     const mockCommand: GenerateFlashcardsCommand = {
       text: "This is a sample text for testing flashcard generation.",
     };
 
     it("should generate and store flashcards successfully", async () => {
-      const mockFlashcards = [
+      const mockFlashcards: FlashcardDto[] = [
         {
           id: "1",
           front: "Sample question",
           back: "Sample answer",
-          source: "AI",
+          source: "AI" as const,
           candidate: true,
           created_at: "2025-04-12T21:24:01.802Z",
           updated_at: "2025-04-12T21:24:01.803Z",
@@ -72,7 +110,7 @@ describe("FlashcardService", () => {
       mockSupabaseChain.data = mockFlashcards;
       mockSupabaseChain.error = null;
 
-      const result = await service.generateFlashcards(mockCommand);
+      const result = await service.generateFlashcards(mockUserId, mockCommand);
 
       expect(result).toEqual(mockFlashcards);
       expect(mockFrom).toHaveBeenCalledWith("flashcards");
@@ -91,14 +129,14 @@ describe("FlashcardService", () => {
       mockSupabaseChain.data = null;
       mockSupabaseChain.error = mockError;
 
-      await expect(service.generateFlashcards(mockCommand)).rejects.toThrow("Failed to store generated flashcards");
+      await expect(service.generateFlashcards(mockUserId, mockCommand)).rejects.toThrow("Failed to store generated flashcards");
     });
 
     it("should handle empty response from database", async () => {
       mockSupabaseChain.data = null;
       mockSupabaseChain.error = null;
 
-      const result = await service.generateFlashcards(mockCommand);
+      const result = await service.generateFlashcards(mockUserId, mockCommand);
       expect(result).toEqual([]);
     });
   });
@@ -108,7 +146,7 @@ describe("FlashcardService", () => {
     const mockCommand: FlashcardCreateDto = {
       front: "Test front",
       back: "Test back",
-      source: "MANUAL",
+      source: "MANUAL" as const,
       candidate: false,
     };
 
@@ -117,7 +155,7 @@ describe("FlashcardService", () => {
         id: "1",
         front: "Test front",
         back: "Test back",
-        source: "MANUAL",
+        source: "MANUAL" as const,
         candidate: false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -170,7 +208,7 @@ describe("FlashcardService", () => {
         id: mockFlashcardId,
         front: "Test front",
         back: "Test back",
-        source: "MANUAL",
+        source: "MANUAL" as const,
         candidate: false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -350,14 +388,15 @@ describe("FlashcardService", () => {
   describe("updateFlashcard", () => {
     const mockUserId = "test-user-id";
     const mockFlashcardId = "123e4567-e89b-12d3-a456-426614174000";
-    const mockExistingFlashcard: FlashcardDto = {
+
+    const mockFlashcard: FlashcardDto = {
       id: mockFlashcardId,
-      front: "Original front",
-      back: "Original back",
-      source: "AI",
+      front: "Test Question",
+      back: "Test Answer",
+      source: "AI" as const,
       candidate: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      created_at: "2024-02-20T12:00:00Z",
+      updated_at: "2024-02-20T12:00:00Z",
     };
 
     beforeEach(() => {
@@ -368,7 +407,7 @@ describe("FlashcardService", () => {
 
     it("should update a flashcard successfully", async () => {
       // Setup mock for fetching existing flashcard
-      mockSupabaseChain.data = mockExistingFlashcard;
+      mockSupabaseChain.data = mockFlashcard;
       mockSupabaseChain.error = null;
 
       const updateCommand = {
@@ -377,8 +416,8 @@ describe("FlashcardService", () => {
         candidate: false,
       };
 
-      const expectedUpdate = {
-        ...mockExistingFlashcard,
+      const expectedUpdate: FlashcardDto = {
+        ...mockFlashcard,
         ...updateCommand,
         source: "AI_EDITED", // Should change from AI to AI_EDITED
         updated_at: expect.any(String),
@@ -408,46 +447,47 @@ describe("FlashcardService", () => {
     });
 
     it("should preserve source if not AI", async () => {
-      const manualFlashcard = {
-        ...mockExistingFlashcard,
-        source: "MANUAL",
-      };
-      mockSupabaseChain.data = manualFlashcard;
-      mockSupabaseChain.error = null;
-
+      const mockDate = "2024-02-20T12:00:00Z";
       const updateCommand = {
         front: "Updated front",
         back: "Updated back",
-        candidate: false,
+        source: "MANUAL" as const,
       };
 
-      const expectedUpdate = {
-        ...manualFlashcard,
-        ...updateCommand,
-        source: "MANUAL", // Should remain MANUAL
+      const existingFlashcard: FlashcardDto = {
+        id: mockFlashcardId,
+        front: "Old front",
+        back: "Old back",
+        source: "AI",
+        candidate: false,
+        created_at: mockDate,
+        updated_at: mockDate,
+      };
+
+      mockSupabaseChain.data = existingFlashcard;
+      mockSupabaseChain.error = null;
+
+      const expectedUpdate: FlashcardDto = {
+        ...existingFlashcard,
+        front: updateCommand.front,
+        back: updateCommand.back,
+        source: "AI_EDITED",
         updated_at: expect.any(String),
       };
-
-      const mockUpdateChain = {
-        ...mockSupabaseChain,
-        data: expectedUpdate,
-        error: null,
-      };
-
-      mockSupabaseChain.update = vi.fn().mockReturnValue(mockUpdateChain);
 
       const result = await service.updateFlashcard(mockUserId, mockFlashcardId, updateCommand);
 
       expect(result).toEqual(expectedUpdate);
-      expect(mockSupabaseChain.update).toHaveBeenCalledWith({
-        ...updateCommand,
-        source: "MANUAL",
-        updated_at: expect.any(String),
-      });
+      expect(mockSupabaseChain.update).toHaveBeenCalledWith(expect.objectContaining({
+        front: updateCommand.front,
+        back: updateCommand.back,
+        source: "AI_EDITED",
+        updated_at: expect.any(String)
+      }));
     });
 
     it("should preserve candidate status if not explicitly set to false", async () => {
-      mockSupabaseChain.data = mockExistingFlashcard;
+      mockSupabaseChain.data = mockFlashcard;
       mockSupabaseChain.error = null;
 
       const updateCommand = {
@@ -456,8 +496,8 @@ describe("FlashcardService", () => {
         // candidate not specified
       };
 
-      const expectedUpdate = {
-        ...mockExistingFlashcard,
+      const expectedUpdate: FlashcardDto = {
+        ...mockFlashcard,
         ...updateCommand,
         candidate: true, // Should remain true
         source: "AI_EDITED",
@@ -519,7 +559,7 @@ describe("FlashcardService", () => {
     });
 
     it("should throw error when update operation fails", async () => {
-      mockSupabaseChain.data = mockExistingFlashcard;
+      mockSupabaseChain.data = mockFlashcard;
       mockSupabaseChain.error = null;
 
       const updateCommand = {

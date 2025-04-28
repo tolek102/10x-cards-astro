@@ -1,7 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { PATCH } from "../[id]/accept";
 import type { FlashcardDto } from "../../../../types";
-import type { APIContext } from "astro";
+import type { APIContext, AstroCookies } from "astro";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 vi.mock("../../../../lib/services/loggerService", () => ({
   logger: {
@@ -37,10 +38,7 @@ describe("PATCH /api/flashcards/:id/accept", () => {
   it("should accept a flashcard successfully", async () => {
     mockAcceptGeneratedFlashcard.mockResolvedValue(mockFlashcard);
 
-    const context = {
-      params: { id: "test-id" },
-      locals: { supabase: {} },
-    } as unknown as APIContext;
+    const context = createMockAPIContext({ id: "test-id" });
 
     const response = await PATCH(context);
     const data = await response.json();
@@ -51,10 +49,7 @@ describe("PATCH /api/flashcards/:id/accept", () => {
   });
 
   it("should return 400 for invalid flashcard ID", async () => {
-    const context = {
-      params: {},
-      locals: { supabase: {} },
-    } as unknown as APIContext;
+    const context = createMockAPIContext({}, { method: "POST" });
 
     const response = await PATCH(context);
     const data = await response.json();
@@ -66,10 +61,7 @@ describe("PATCH /api/flashcards/:id/accept", () => {
   it("should return 404 when flashcard is not found", async () => {
     mockAcceptGeneratedFlashcard.mockRejectedValue(new Error("Flashcard not found"));
 
-    const context = {
-      params: { id: "non-existent-id" },
-      locals: { supabase: {} },
-    } as unknown as APIContext;
+    const context = createMockAPIContext({ id: "non-existent-id" });
 
     const response = await PATCH(context);
     const data = await response.json();
@@ -82,10 +74,7 @@ describe("PATCH /api/flashcards/:id/accept", () => {
   it("should return 404 when flashcard is not a candidate", async () => {
     mockAcceptGeneratedFlashcard.mockRejectedValue(new Error("Flashcard not found"));
 
-    const context = {
-      params: { id: "non-candidate-id" },
-      locals: { supabase: {} },
-    } as unknown as APIContext;
+    const context = createMockAPIContext({ id: "non-candidate-id" });
 
     const response = await PATCH(context);
     const data = await response.json();
@@ -99,10 +88,7 @@ describe("PATCH /api/flashcards/:id/accept", () => {
   it("should return 500 for unexpected errors", async () => {
     mockAcceptGeneratedFlashcard.mockRejectedValue(new Error("Unexpected error"));
 
-    const context = {
-      params: { id: "test-id" },
-      locals: { supabase: {} },
-    } as unknown as APIContext;
+    const context = createMockAPIContext({ id: "test-id" });
 
     const response = await PATCH(context);
     const data = await response.json();
@@ -112,3 +98,34 @@ describe("PATCH /api/flashcards/:id/accept", () => {
     expect(data.message).toBe("Failed to process the request");
   });
 });
+
+const createMockAPIContext = (params: Record<string, string>, requestInit?: RequestInit): APIContext => ({
+    request: new Request("http://localhost/api/flashcards/" + params.id + "/accept", requestInit),
+    locals: { 
+      supabase: {} as SupabaseClient,
+      user: { id: "test-user-id", email: "test@example.com" }
+    },
+    cookies: {
+      get: vi.fn(),
+      has: vi.fn(),
+      set: vi.fn(),
+      delete: vi.fn(),
+      headers: () => new Headers(),
+    } as unknown as AstroCookies,
+    url: new URL("http://localhost/api/flashcards/" + params.id + "/accept"),
+    site: new URL("http://localhost"),
+    generator: "test",
+    params,
+    props: {},
+    redirect: () => new Response(null, { status: 302 }),
+    currentLocale: "en",
+    preferredLocale: "en",
+    preferredLocaleList: ["en"],
+    rewrite: vi.fn(),
+    clientAddress: "127.0.0.1",
+    routePattern: "/api/flashcards/[id]/accept",
+    originPathname: "/api/flashcards/" + params.id + "/accept",
+    getActionResult: vi.fn(),
+    callAction: vi.fn(),
+    isPrerendered: false,
+  });
