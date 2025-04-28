@@ -11,6 +11,8 @@ import type { SupabaseClient } from "../../db/supabase.client";
 import type { Database } from "../../db/database.types";
 import { logger } from "./loggerService";
 import { createStatisticsService } from "./statisticsService";
+import { getOpenRouterConfig } from "../services/openrouter/config";
+import { OpenRouterService } from "../services/openrouter";
 
 type DatabaseFlashcard = Database["public"]["Tables"]["flashcards"]["Row"];
 
@@ -26,46 +28,38 @@ export class FlashcardService {
     try {
       logger.info("Starting flashcards generation", { userId, textLength: command.text.length });
 
-      // Mock AI response for development - in the future, this will use the command.text
-      // to generate relevant flashcards using AI
-      const mockFlashcards: (FlashcardCreateDto & { user_id: string })[] = [
-        {
-          front: "Sample question from text: " + command.text.substring(0, 50) + "...",
-          back: "Sample answer",
-          source: "AI" as Source,
-          candidate: true,
-          user_id: userId,
-        },
-        {
-          front: "Another sample question",
-          back: "Another sample answer",
-          source: "AI" as Source,
-          candidate: true,
-          user_id: userId,
-        },
-      ];
+      // Generuj fiszki przez OpenRouter
+      const config = getOpenRouterConfig();
+      const openRouterService = new OpenRouterService(config);
+      const generatedFlashcards = await openRouterService.generateFlashcards(command.text);
 
-      logger.debug("Generated mock flashcards", { count: mockFlashcards.length });
+      // Przygotuj dane do zapisu w bazie
+      const flashcardsToSave = generatedFlashcards.map((flashcard: FlashcardCreateDto) => ({
+        ...flashcard,
+        user_id: userId,
+        source: "AI" as Source,
+        candidate: true
+      }));
 
       // Store flashcards in database
-      const { data: flashcards, error } = await this.supabase.from("flashcards").insert(mockFlashcards).select();
+      const { data: flashcards, error } = await this.supabase.from("flashcards").insert(flashcardsToSave).select();
 
       if (error) {
         logger.error("Error storing flashcards", { error });
         throw new Error("Failed to store generated flashcards");
       }
 
-      const generatedFlashcards = (flashcards || []).map(mapDatabaseFlashcardToDto);
+      const savedFlashcards = (flashcards || []).map(mapDatabaseFlashcardToDto);
 
       // Update statistics
       const statisticsService = createStatisticsService(this.supabase);
-      await statisticsService.trackFlashcardsGeneration(userId, generatedFlashcards.length);
+      await statisticsService.trackFlashcardsGeneration(userId, savedFlashcards.length);
 
       logger.info("Successfully generated and stored flashcards", {
-        count: generatedFlashcards.length,
+        count: savedFlashcards.length,
       });
 
-      return generatedFlashcards;
+      return savedFlashcards;
     } catch (error) {
       logger.error("Error in generateFlashcards", { error });
       throw error;

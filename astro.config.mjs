@@ -12,7 +12,7 @@ export default defineConfig({
   integrations: [react(), sitemap(), tailwind()],
   server: { port: 3000 },
   vite: {
-    envPrefix: ["SUPABASE_"],
+    envPrefix: ["SUPABASE_", "PUBLIC_"],
   },
   adapter: node({
     mode: "standalone",

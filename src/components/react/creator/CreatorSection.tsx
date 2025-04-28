@@ -127,7 +127,9 @@ export const CreatorSection = ({
     try {
       await acceptFlashcard(id);
       // Remove the accepted flashcard from the list
-      setLastGeneratedFlashcards((prev) => prev.filter((card) => card.id !== id));
+      if (activeTab === "ai") {
+        setLastGeneratedFlashcards((prev) => prev.filter((card) => card.id !== id));
+      }
       // Refresh both lists in PreviewSection
       if (onLoadPage && onLoadCandidatesPage) {
         await Promise.all([onLoadPage(1), onLoadCandidatesPage(1)]);
@@ -151,7 +153,9 @@ export const CreatorSection = ({
     try {
       await discardFlashcard(id);
       // Remove the discarded flashcard from the list
-      setLastGeneratedFlashcards((prev) => prev.filter((card) => card.id !== id));
+      if (activeTab === "ai") {
+        setLastGeneratedFlashcards((prev) => prev.filter((card) => card.id !== id));
+      }
       showToast("Odrzucono fiszkę", "success", {
         description: "Pomyślnie odrzucono fiszkę."
       });
