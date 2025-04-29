@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 import type { UserDto } from "@/types";
 import { showToast } from '../lib/toast';
-
+import { Logo } from "./Logo";
 
 interface NavigationBarProps {
   user: UserDto | null;
@@ -38,8 +38,8 @@ export const NavigationBar = ({ user, activeSection }: NavigationBarProps) => {
 
   return (
     <nav className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
-      <div className="flex items-center space-x-2">
-        <span className="text-xl font-bold text-indigo-600">10x Cards</span>
+      <div className="flex items-center">
+        <Logo size="sm" />
       </div>
 
       {user && (

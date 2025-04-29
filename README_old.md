@@ -99,8 +99,7 @@ src/
 │   ├── astro/
 │   ├── layouts/
 │   ├── modals/
-│   ├── NavigationBar.tsx
-│   └── ToastContainer.astro
+│   └──  NavigationBar.tsx
 │
 ├── pages/
 │   ├── api/
