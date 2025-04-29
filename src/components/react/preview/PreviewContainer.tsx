@@ -1,6 +1,6 @@
-import { useEffect, useCallback } from 'react';
-import { PreviewSection } from './PreviewSection';
-import { useFlashcards } from '@/lib/hooks/useFlashcards';
+import { useEffect, useCallback } from "react";
+import { PreviewSection } from "./PreviewSection";
+import { useFlashcards } from "@/lib/hooks/useFlashcards";
 
 export const PreviewContainer = () => {
   const {
@@ -21,15 +21,12 @@ export const PreviewContainer = () => {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        await Promise.all([
-          loadPage(1),
-          loadCandidatesPage(1)
-        ]);
+        await Promise.all([loadPage(1), loadCandidatesPage(1)]);
       } catch (error) {
-        console.error('Error loading initial data:', error);
+        console.error("Error loading initial data:", error);
       }
     };
-    
+
     loadInitialData();
   }, [loadPage, loadCandidatesPage]);
 
@@ -49,4 +46,4 @@ export const PreviewContainer = () => {
       loadCandidatesPage={loadCandidatesPage}
     />
   );
-}; 
+};

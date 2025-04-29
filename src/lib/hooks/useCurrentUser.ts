@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import type { UserDto } from '@/types';
+import { useState, useEffect } from "react";
+import type { UserDto } from "@/types";
 
 export const useCurrentUser = () => {
   const [user, setUser] = useState<UserDto | null>(null);
@@ -8,7 +8,7 @@ export const useCurrentUser = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch('/api/auth/me');
+        const response = await fetch("/api/auth/me");
         if (response.ok) {
           const data = await response.json();
           setUser(data.user);
@@ -16,7 +16,7 @@ export const useCurrentUser = () => {
           setUser(null);
         }
       } catch (error) {
-        console.error('Error fetching user:', error);
+        console.error("Error fetching user:", error);
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -27,4 +27,4 @@ export const useCurrentUser = () => {
   }, []);
 
   return { user, isLoading };
-}; 
+};

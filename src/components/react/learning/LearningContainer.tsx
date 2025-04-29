@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import { LearningSession } from './LearningSession';
-import { useFlashcards } from '@/lib/hooks/useFlashcards';
-import type { FlashcardDto } from '@/types';
-import { showToast } from '@/lib/toast';
+import { useEffect, useState } from "react";
+import { LearningSession } from "./LearningSession";
+import { useFlashcards } from "@/lib/hooks/useFlashcards";
+import type { FlashcardDto } from "@/types";
+import { showToast } from "@/lib/toast";
 
 export const LearningContainer = () => {
   const { flashcards, isLoading, loadPage } = useFlashcards();
@@ -10,16 +10,16 @@ export const LearningContainer = () => {
 
   // Efekt do ładowania danych
   useEffect(() => {
-    loadPage(1, 100).catch(error => {
-      showToast('Błąd ładowania fiszek', 'error', {
-        description: 'Wystąpił problem podczas ładowania fiszek do nauki. Spróbuj odświeżyć stronę.'
+    loadPage(1, 100).catch((error) => {
+      showToast("Błąd ładowania fiszek", "error", {
+        description: "Wystąpił problem podczas ładowania fiszek do nauki. Spróbuj odświeżyć stronę.",
       });
     });
   }, [loadPage]);
 
   // Osobny efekt do filtrowania fiszek
   useEffect(() => {
-    const acceptedFlashcards = flashcards.filter(f => !f.candidate);
+    const acceptedFlashcards = flashcards.filter((f) => !f.candidate);
     setLearningFlashcards(acceptedFlashcards);
   }, [flashcards]);
 
@@ -39,11 +39,12 @@ export const LearningContainer = () => {
     return (
       <div className="text-center py-12">
         <p className="text-lg text-gray-500">
-          Nie masz jeszcze żadnych fiszek. Dodaj nowe fiszki w sekcji Kreator lub zaakceptuj istniejące fiszki w sekcji Podgląd.
+          Nie masz jeszcze żadnych fiszek. Dodaj nowe fiszki w sekcji Kreator lub zaakceptuj istniejące fiszki w sekcji
+          Podgląd.
         </p>
       </div>
     );
   }
 
   return <LearningSession flashcards={learningFlashcards} />;
-}; 
+};

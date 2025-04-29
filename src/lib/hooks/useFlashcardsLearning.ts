@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
-import type { FlashcardDto } from '@/types';
-import { showToast } from '@/lib/toast';
+import { useState, useCallback } from "react";
+import type { FlashcardDto } from "@/types";
+import { showToast } from "@/lib/toast";
 
 interface UseFlashcardsLearningProps {
   flashcards: FlashcardDto[] | undefined;
@@ -25,7 +25,7 @@ export const useFlashcardsLearning = ({ flashcards = [] }: UseFlashcardsLearning
     totalCards,
     completedCards: currentIndex + 1,
     remainingCards: totalCards - (currentIndex + 1),
-    progress: Math.round(((currentIndex + 1) / totalCards) * 100)
+    progress: Math.round(((currentIndex + 1) / totalCards) * 100),
   };
 
   const canGoPrevious = currentIndex > 0;
@@ -36,13 +36,13 @@ export const useFlashcardsLearning = ({ flashcards = [] }: UseFlashcardsLearning
       setCurrentIndex((prev) => prev + 1);
       if (currentIndex === totalCards - 2) {
         showToast("Ostatnia fiszka", "info", {
-          description: "To już ostatnia fiszka w tej sesji. Świetna praca!"
+          description: "To już ostatnia fiszka w tej sesji. Świetna praca!",
         });
       }
     } else {
       setIsSessionComplete(true);
       showToast("Sesja zakończona", "success", {
-        description: `Gratulacje! Ukończyłeś sesję nauki, przerabiając wszystkie ${totalCards} fiszek.`
+        description: `Gratulacje! Ukończyłeś sesję nauki, przerabiając wszystkie ${totalCards} fiszek.`,
       });
     }
   }, [canGoNext, currentIndex, totalCards]);
@@ -66,6 +66,6 @@ export const useFlashcardsLearning = ({ flashcards = [] }: UseFlashcardsLearning
     canGoNext,
     handleNext,
     handlePrevious,
-    resetSession
+    resetSession,
   };
-}; 
+};

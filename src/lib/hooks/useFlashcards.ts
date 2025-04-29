@@ -48,65 +48,71 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
 
   // Pomocnicze funkcje do aktualizacji stanu
   const setLoading = useCallback((isLoading: boolean) => {
-    setState(prev => ({ ...prev, isLoading, error: null }));
+    setState((prev) => ({ ...prev, isLoading, error: null }));
   }, []);
 
   const setCandidatesLoading = useCallback((isCandidatesLoading: boolean) => {
-    setState(prev => ({ ...prev, isCandidatesLoading, error: null }));
+    setState((prev) => ({ ...prev, isCandidatesLoading, error: null }));
   }, []);
 
   const setError = useCallback((error: Error) => {
-    setState(prev => ({ ...prev, error }));
+    setState((prev) => ({ ...prev, error }));
   }, []);
 
   // Funkcje do zarządzania fiszkami
-  const loadPage = useCallback(async (page: number, limit?: number) => {
-    setLoading(true);
-    try {
-      const response = await FlashcardsService.getFlashcards(page, limit ?? state.pagination.limit);
-      setState(prev => ({
-        ...prev,
-        flashcards: response.data,
-        pagination: response.pagination,
-      }));
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to load flashcards");
-      setError(error);
-      showToast("Nie udało się załadować fiszek", "error", {
-        description: "Wystąpił problem podczas pobierania fiszek. Spróbuj odświeżyć stronę."
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [state.pagination.limit]);
+  const loadPage = useCallback(
+    async (page: number, limit?: number) => {
+      setLoading(true);
+      try {
+        const response = await FlashcardsService.getFlashcards(page, limit ?? state.pagination.limit);
+        setState((prev) => ({
+          ...prev,
+          flashcards: response.data,
+          pagination: response.pagination,
+        }));
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("Failed to load flashcards");
+        setError(error);
+        showToast("Nie udało się załadować fiszek", "error", {
+          description: "Wystąpił problem podczas pobierania fiszek. Spróbuj odświeżyć stronę.",
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [state.pagination.limit]
+  );
 
-  const loadCandidatesPage = useCallback(async (page: number, limit?: number) => {
-    setCandidatesLoading(true);
-    try {
-      const response = await FlashcardsService.getCandidates(page, limit ?? state.candidatesPagination.limit);
-      setState(prev => ({
-        ...prev,
-        candidates: response.data,
-        candidatesPagination: response.pagination,
-      }));
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to load candidate flashcards");
-      setError(error);
-      showToast("Nie udało się załadować kandydatów", "error", {
-        description: "Wystąpił problem podczas pobierania kandydatów na fiszki. Spróbuj odświeżyć stronę."
-      });
-    } finally {
-      setCandidatesLoading(false);
-    }
-  }, [state.candidatesPagination.limit]);
+  const loadCandidatesPage = useCallback(
+    async (page: number, limit?: number) => {
+      setCandidatesLoading(true);
+      try {
+        const response = await FlashcardsService.getCandidates(page, limit ?? state.candidatesPagination.limit);
+        setState((prev) => ({
+          ...prev,
+          candidates: response.data,
+          candidatesPagination: response.pagination,
+        }));
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("Failed to load candidate flashcards");
+        setError(error);
+        showToast("Nie udało się załadować kandydatów", "error", {
+          description: "Wystąpił problem podczas pobierania kandydatów na fiszki. Spróbuj odświeżyć stronę.",
+        });
+      } finally {
+        setCandidatesLoading(false);
+      }
+    },
+    [state.candidatesPagination.limit]
+  );
 
   const generateFlashcards = useCallback(async (text: string): Promise<FlashcardDto[]> => {
     setLoading(true);
     try {
       const command: GenerateFlashcardsCommand = { text };
       const generatedFlashcards = await FlashcardsService.generateFlashcards(command);
-      
-      setState(prev => ({
+
+      setState((prev) => ({
         ...prev,
         candidates: [...prev.candidates, ...generatedFlashcards],
         candidatesPagination: {
@@ -116,15 +122,15 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
       }));
 
       showToast("Wygenerowano nowe fiszki", "success", {
-        description: `Pomyślnie utworzono ${generatedFlashcards.length} nowych kandydatów na fiszki.`
+        description: `Pomyślnie utworzono ${generatedFlashcards.length} nowych kandydatów na fiszki.`,
       });
-      
+
       return generatedFlashcards;
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Failed to generate flashcards");
       setError(error);
       showToast("Nie udało się wygenerować fiszek", "error", {
-        description: "Wystąpił problem podczas generowania fiszek. Sprawdź wprowadzony tekst i spróbuj ponownie."
+        description: "Wystąpił problem podczas generowania fiszek. Sprawdź wprowadzony tekst i spróbuj ponownie.",
       });
       return [];
     } finally {
@@ -139,7 +145,7 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
         flashcards: [flashcard],
       });
 
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         candidates: [...prev.candidates, newFlashcard],
         candidatesPagination: {
@@ -149,7 +155,7 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
       }));
 
       showToast("Utworzono nową fiszkę", "success", {
-        description: "Nowa fiszka została dodana do listy kandydatów."
+        description: "Nowa fiszka została dodana do listy kandydatów.",
       });
 
       return newFlashcard;
@@ -157,7 +163,7 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
       const error = err instanceof Error ? err : new Error("Failed to create flashcard");
       setError(error);
       showToast("Nie udało się utworzyć fiszki", "error", {
-        description: "Wystąpił problem podczas tworzenia fiszki. Sprawdź wprowadzone dane i spróbuj ponownie."
+        description: "Wystąpił problem podczas tworzenia fiszki. Sprawdź wprowadzone dane i spróbuj ponownie.",
       });
       throw err;
     } finally {
@@ -169,21 +175,21 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
     setLoading(true);
     try {
       const updatedFlashcard = await FlashcardsService.updateFlashcard(id, flashcard);
-      
-      setState(prev => ({
+
+      setState((prev) => ({
         ...prev,
-        flashcards: prev.flashcards.map(card => card.id === id ? updatedFlashcard : card),
-        candidates: prev.candidates.map(card => card.id === id ? updatedFlashcard : card),
+        flashcards: prev.flashcards.map((card) => (card.id === id ? updatedFlashcard : card)),
+        candidates: prev.candidates.map((card) => (card.id === id ? updatedFlashcard : card)),
       }));
 
       showToast("Zaktualizowano fiszkę", "success", {
-        description: "Pomyślnie zaktualizowano zawartość fiszki."
+        description: "Pomyślnie zaktualizowano zawartość fiszki.",
       });
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Failed to update flashcard");
       setError(error);
       showToast("Nie udało się zaktualizować fiszki", "error", {
-        description: "Wystąpił problem podczas aktualizacji fiszki. Sprawdź wprowadzone dane i spróbuj ponownie."
+        description: "Wystąpił problem podczas aktualizacji fiszki. Sprawdź wprowadzone dane i spróbuj ponownie.",
       });
     } finally {
       setLoading(false);
@@ -194,11 +200,11 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
     setLoading(true);
     try {
       await FlashcardsService.deleteFlashcard(id);
-      
-      setState(prev => ({
+
+      setState((prev) => ({
         ...prev,
-        flashcards: prev.flashcards.filter(card => card.id !== id),
-        candidates: prev.candidates.filter(card => card.id !== id),
+        flashcards: prev.flashcards.filter((card) => card.id !== id),
+        candidates: prev.candidates.filter((card) => card.id !== id),
         pagination: {
           ...prev.pagination,
           total: prev.pagination.total - 1,
@@ -206,13 +212,13 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
       }));
 
       showToast("Usunięto fiszkę", "success", {
-        description: "Pomyślnie usunięto fiszkę z systemu."
+        description: "Pomyślnie usunięto fiszkę z systemu.",
       });
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Failed to delete flashcard");
       setError(error);
       showToast("Nie udało się usunąć fiszki", "error", {
-        description: "Wystąpił problem podczas usuwania fiszki. Spróbuj ponownie później."
+        description: "Wystąpił problem podczas usuwania fiszki. Spróbuj ponownie później.",
       });
     } finally {
       setLoading(false);
@@ -223,10 +229,10 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
     setLoading(true);
     try {
       const updatedFlashcard = await FlashcardsService.acceptFlashcard(id);
-      
-      setState(prev => ({
+
+      setState((prev) => ({
         ...prev,
-        candidates: prev.candidates.filter(f => f.id !== id),
+        candidates: prev.candidates.filter((f) => f.id !== id),
         flashcards: [...prev.flashcards, updatedFlashcard],
         candidatesPagination: {
           ...prev.candidatesPagination,
@@ -239,13 +245,13 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
       }));
 
       showToast("Zaakceptowano fiszkę", "success", {
-        description: "Fiszka została przeniesiona do głównej kolekcji."
+        description: "Fiszka została przeniesiona do głównej kolekcji.",
       });
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Failed to accept flashcard");
       setError(error);
       showToast("Nie udało się zaakceptować fiszki", "error", {
-        description: "Wystąpił problem podczas akceptowania fiszki. Spróbuj ponownie później."
+        description: "Wystąpił problem podczas akceptowania fiszki. Spróbuj ponownie później.",
       });
     } finally {
       setLoading(false);
@@ -256,10 +262,10 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
     setLoading(true);
     try {
       await FlashcardsService.discardFlashcard(id);
-      
-      setState(prev => ({
+
+      setState((prev) => ({
         ...prev,
-        candidates: prev.candidates.filter(f => f.id !== id),
+        candidates: prev.candidates.filter((f) => f.id !== id),
         candidatesPagination: {
           ...prev.candidatesPagination,
           total: prev.candidatesPagination.total - 1,
@@ -267,13 +273,13 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
       }));
 
       showToast("Odrzucono fiszkę", "success", {
-        description: "Pomyślnie odrzucono fiszkę z listy kandydatów."
+        description: "Pomyślnie odrzucono fiszkę z listy kandydatów.",
       });
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Failed to discard flashcard");
       setError(error);
       showToast("Nie udało się odrzucić fiszki", "error", {
-        description: "Wystąpił problem podczas odrzucania fiszki. Spróbuj ponownie później."
+        description: "Wystąpił problem podczas odrzucania fiszki. Spróbuj ponownie później.",
       });
     } finally {
       setLoading(false);
@@ -291,4 +297,4 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
     loadPage,
     loadCandidatesPage,
   };
-}; 
+};

@@ -1,10 +1,5 @@
-import { OpenRouterError, OpenRouterErrorType } from './types';
-import type { 
-  OpenRouterConfig, 
-  OpenRouterRequest, 
-  OpenRouterResponse, 
-  FlashcardCreateDto
-} from './types';
+import { OpenRouterError, OpenRouterErrorType } from "./types";
+import type { OpenRouterConfig, OpenRouterRequest, OpenRouterResponse, FlashcardCreateDto } from "./types";
 
 export class OpenRouterService {
   private readonly apiKey: string;
@@ -15,10 +10,10 @@ export class OpenRouterService {
 
   constructor(config: OpenRouterConfig) {
     this.apiKey = config.apiKey;
-    this.model = config.model ?? 'google/gemini-2.0-flash-exp:free';
+    this.model = config.model ?? "google/gemini-2.0-flash-exp:free";
     this.maxRetries = config.maxRetries ?? 3;
     this.timeout = config.timeout ?? 30000;
-    this.baseUrl = config.baseUrl ?? 'https://openrouter.ai/api/v1';
+    this.baseUrl = config.baseUrl ?? "https://openrouter.ai/api/v1";
   }
 
   public async generateFlashcards(text: string): Promise<FlashcardCreateDto[]> {
@@ -34,16 +29,16 @@ export class OpenRouterService {
 
   private async makeRequest(text: string): Promise<OpenRouterResponse> {
     const request = this.formatPrompt(text);
-    
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify(request),
         signal: controller.signal,
@@ -61,18 +56,10 @@ export class OpenRouterService {
       if (error instanceof OpenRouterError) {
         throw error;
       }
-      if ((error as Error).name === 'AbortError') {
-        throw new OpenRouterError(
-          OpenRouterErrorType.TIMEOUT_ERROR,
-          'Request timed out',
-          error
-        );
+      if ((error as Error).name === "AbortError") {
+        throw new OpenRouterError(OpenRouterErrorType.TIMEOUT_ERROR, "Request timed out", error);
       }
-      throw new OpenRouterError(
-        OpenRouterErrorType.NETWORK_ERROR,
-        'Failed to communicate with OpenRouter API',
-        error
-      );
+      throw new OpenRouterError(OpenRouterErrorType.NETWORK_ERROR, "Failed to communicate with OpenRouter API", error);
     } finally {
       clearTimeout(timeoutId);
     }
@@ -82,50 +69,38 @@ export class OpenRouterService {
     try {
       const content = response.choices[0]?.message?.content;
       if (!content) {
-        throw new OpenRouterError(
-          OpenRouterErrorType.GENERATION_ERROR,
-          'Empty response from AI'
-        );
+        throw new OpenRouterError(OpenRouterErrorType.GENERATION_ERROR, "Empty response from AI");
       }
 
-      const parsedContent = JSON.parse(content) as Array<{ front: string; back: string }>;
-      return parsedContent.map(card => ({
+      const parsedContent = JSON.parse(content) as { front: string; back: string }[];
+      return parsedContent.map((card) => ({
         ...card,
-        source: 'AI' as const,
-        candidate: true
+        source: "AI" as const,
+        candidate: true,
       }));
     } catch (error) {
       if (error instanceof OpenRouterError) {
         throw error;
       }
-      throw new OpenRouterError(
-        OpenRouterErrorType.GENERATION_ERROR,
-        'Failed to parse AI response',
-        error
-      );
+      throw new OpenRouterError(OpenRouterErrorType.GENERATION_ERROR, "Failed to parse AI response", error);
     }
   }
 
   private async validateGeneratedFlashcards(flashcards: FlashcardCreateDto[]): Promise<FlashcardCreateDto[]> {
     if (!Array.isArray(flashcards) || flashcards.length === 0) {
-      throw new OpenRouterError(
-        OpenRouterErrorType.VALIDATION_ERROR,
-        'No valid flashcards generated'
-      );
+      throw new OpenRouterError(OpenRouterErrorType.VALIDATION_ERROR, "No valid flashcards generated");
     }
 
-    const validatedCards = flashcards.filter(card => 
-      typeof card.front === 'string' && 
-      typeof card.back === 'string' && 
-      card.front.trim().length > 0 && 
-      card.back.trim().length > 0
+    const validatedCards = flashcards.filter(
+      (card) =>
+        typeof card.front === "string" &&
+        typeof card.back === "string" &&
+        card.front.trim().length > 0 &&
+        card.back.trim().length > 0
     );
 
     if (validatedCards.length === 0) {
-      throw new OpenRouterError(
-        OpenRouterErrorType.VALIDATION_ERROR,
-        'All generated flashcards were invalid'
-      );
+      throw new OpenRouterError(OpenRouterErrorType.VALIDATION_ERROR, "All generated flashcards were invalid");
     }
 
     return validatedCards;
@@ -133,7 +108,7 @@ export class OpenRouterService {
 
   private handleApiError(error: Error): void {
     // In a real implementation, this would log to a monitoring service
-    console.error('OpenRouter API Error:', error);
+    console.error("OpenRouter API Error:", error);
   }
 
   private formatPrompt(text: string): OpenRouterRequest {
@@ -141,32 +116,33 @@ export class OpenRouterService {
       model: this.model,
       messages: [
         {
-          role: 'system',
-          content: 'You are a helpful AI that creates high-quality educational flashcards. Generate concise, clear, and accurate flashcards from the provided text. Each flashcard should have a clear question on the front and a comprehensive answer on the back.'
+          role: "system",
+          content:
+            "You are a helpful AI that creates high-quality educational flashcards. Generate concise, clear, and accurate flashcards from the provided text. Each flashcard should have a clear question on the front and a comprehensive answer on the back.",
         },
         {
-          role: 'user',
-          content: text
-        }
+          role: "user",
+          content: text,
+        },
       ],
       response_format: {
-        type: 'json_schema',
+        type: "json_schema",
         json_schema: {
-          name: 'flashcards',
+          name: "flashcards",
           strict: true,
           schema: {
-            type: 'array',
+            type: "array",
             items: {
-              type: 'object',
+              type: "object",
               properties: {
-                front: { type: 'string' },
-                back: { type: 'string' }
+                front: { type: "string" },
+                back: { type: "string" },
               },
-              required: ['front', 'back']
-            }
-          }
-        }
-      }
+              required: ["front", "back"],
+            },
+          },
+        },
+      },
     };
   }
 
@@ -199,8 +175,7 @@ export class OpenRouterService {
 
   private isRetryableError(error: unknown): boolean {
     if (error instanceof OpenRouterError) {
-      return error.type === OpenRouterErrorType.NETWORK_ERROR ||
-             error.type === OpenRouterErrorType.RATE_LIMIT_ERROR;
+      return error.type === OpenRouterErrorType.NETWORK_ERROR || error.type === OpenRouterErrorType.RATE_LIMIT_ERROR;
     }
     return false;
   }
@@ -210,6 +185,6 @@ export class OpenRouterService {
   }
 
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
-} 
+}

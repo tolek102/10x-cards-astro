@@ -40,7 +40,9 @@ export const ManualCreatorTab = ({ onAdd, isAdding }: ManualCreatorTabProps) => 
             <label htmlFor="front" className="text-sm font-medium text-gray-700">
               Przód fiszki
             </label>
-            <span className={`text-sm ${!isValidLengthFront ? "text-red-500" : "text-gray-500"}`}>{charCountFront}/200</span>
+            <span className={`text-sm ${!isValidLengthFront ? "text-red-500" : "text-gray-500"}`}>
+              {charCountFront}/200
+            </span>
           </div>
           <Textarea
             id="front"
@@ -57,7 +59,9 @@ export const ManualCreatorTab = ({ onAdd, isAdding }: ManualCreatorTabProps) => 
             <label htmlFor="back" className="text-sm font-medium text-gray-700">
               Tył fiszki
             </label>
-            <span className={`text-sm ${!isValidLengthBack ? "text-red-500" : "text-gray-500"}`}>{charCountBack}/500</span>
+            <span className={`text-sm ${!isValidLengthBack ? "text-red-500" : "text-gray-500"}`}>
+              {charCountBack}/500
+            </span>
           </div>
           <Textarea
             id="back"
@@ -95,4 +99,4 @@ export const ManualCreatorTab = ({ onAdd, isAdding }: ManualCreatorTabProps) => 
       </div>
     </form>
   );
-}; 
+};

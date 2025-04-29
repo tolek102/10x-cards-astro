@@ -66,20 +66,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!response.ok) {
         const errorMessage = data.error || "Nieprawidłowy email lub hasło";
         showToast("Błąd logowania", "error", {
-          description: errorMessage
+          description: errorMessage,
         });
         return { success: false, error: errorMessage };
       }
 
       setUser(data.user);
       showToast("Pomyślnie zalogowano do systemu", "success", {
-        description: "Witamy w aplikacji!"
+        description: "Witamy w aplikacji!",
       });
       return { success: true, user: data.user };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd";
       showToast("Błąd logowania", "error", {
-        description: `Nie można połączyć się z serwerem. ${errorMessage}`
+        description: `Nie można połączyć się z serwerem. ${errorMessage}`,
       });
       return { success: false, error: errorMessage };
     } finally {
@@ -104,20 +104,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!response.ok) {
         const errorMessage = data.error || "Nie udało się zarejestrować";
         showToast("Błąd rejestracji", "error", {
-          description: errorMessage
+          description: errorMessage,
         });
         return { success: false, error: errorMessage };
       }
 
       setUser(data.user);
       showToast("Pomyślnie utworzono konto", "success", {
-        description: "Witamy w aplikacji!"
+        description: "Witamy w aplikacji!",
       });
       return { success: true, user: data.user };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd";
       showToast("Błąd rejestracji", "error", {
-        description: `Nie można połączyć się z serwerem. ${errorMessage}`
+        description: `Nie można połączyć się z serwerem. ${errorMessage}`,
       });
       return { success: false, error: errorMessage };
     } finally {
@@ -137,20 +137,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const data = await response.json();
         const errorMessage = data.error || "Nie udało się wylogować";
         showToast("Błąd wylogowania", "error", {
-          description: errorMessage
+          description: errorMessage,
         });
         return { success: false, error: errorMessage };
       }
 
       setUser(null);
       showToast("Pomyślnie wylogowano z systemu", "success", {
-        description: "Do zobaczenia!"
+        description: "Do zobaczenia!",
       });
       return { success: true };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd";
       showToast("Błąd wylogowania", "error", {
-        description: `Nie można połączyć się z serwerem. ${errorMessage}`
+        description: `Nie można połączyć się z serwerem. ${errorMessage}`,
       });
       return { success: false, error: errorMessage };
     } finally {
@@ -175,7 +175,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!response.ok) {
         const errorMessage = data.error || "Nie udało się zresetować hasła";
         showToast("Błąd resetowania hasła", "error", {
-          description: errorMessage
+          description: errorMessage,
         });
         return { success: false, error: errorMessage };
       }
@@ -185,7 +185,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd";
       showToast("Błąd resetowania hasła", "error", {
-        description: `Nie można połączyć się z serwerem. ${errorMessage}`
+        description: `Nie można połączyć się z serwerem. ${errorMessage}`,
       });
       return { success: false, error: errorMessage };
     } finally {

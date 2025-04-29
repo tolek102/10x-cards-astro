@@ -18,11 +18,7 @@ const PUBLIC_PATHS = [
 ];
 
 // Ścieżki chronione - wymagają zalogowania
-const PROTECTED_PATHS = [
-  "/learning",
-  "/preview",
-  "/creator"
-];
+const PROTECTED_PATHS = ["/learning", "/preview", "/creator"];
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { request, cookies, redirect, locals } = context;
@@ -31,15 +27,18 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Inicjalizacja Supabase i pobranie użytkownika
   const supabase = createSupabaseServerInstance({ cookies, headers: request.headers });
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
   // Ustawienie user i supabase w locals
   locals.user = user && user.email ? { id: user.id, email: user.email } : null;
   locals.supabase = supabase;
 
   // Sprawdź czy ścieżka jest chroniona
-  const isProtectedPath = PROTECTED_PATHS.some(path => pathname.startsWith(path));
-  const isPublicPath = PUBLIC_PATHS.some(path => pathname.startsWith(path));
+  const isProtectedPath = PROTECTED_PATHS.some((path) => pathname.startsWith(path));
+  const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
   const isApiPath = pathname.startsWith("/api");
 
   // Obsługa ścieżek API

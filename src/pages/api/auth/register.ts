@@ -1,10 +1,10 @@
-import type { APIRoute } from 'astro';
-import { createSupabaseServerInstance } from '../../../db/supabase.client';
-import { z } from 'zod';
+import type { APIRoute } from "astro";
+import { createSupabaseServerInstance } from "../../../db/supabase.client";
+import { z } from "zod";
 
 const registerSchema = z.object({
-  email: z.string().email('Nieprawidłowy format adresu email'),
-  password: z.string().min(6, 'Hasło musi mieć minimum 6 znaków'),
+  email: z.string().email("Nieprawidłowy format adresu email"),
+  password: z.string().min(6, "Hasło musi mieć minimum 6 znaków"),
 });
 
 export const POST: APIRoute = async ({ request, cookies }) => {
@@ -26,8 +26,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         }),
         {
           status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        },
+          headers: { "Content-Type": "application/json" },
+        }
       );
     }
 
@@ -40,8 +40,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       }),
       {
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      },
+        headers: { "Content-Type": "application/json" },
+      }
     );
   } catch (err) {
     if (err instanceof z.ZodError) {
@@ -51,19 +51,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         }),
         {
           status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        },
+          headers: { "Content-Type": "application/json" },
+        }
       );
     }
 
     return new Response(
       JSON.stringify({
-        error: 'Wystąpił nieoczekiwany błąd',
+        error: "Wystąpił nieoczekiwany błąd",
       }),
       {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      },
+        headers: { "Content-Type": "application/json" },
+      }
     );
   }
-}; 
+};

@@ -1,30 +1,32 @@
 interface LogoProps {
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   withContainer?: boolean;
 }
 
-export const Logo = ({ size = 'md', withContainer = false }: LogoProps) => {
+export const Logo = ({ size = "md", withContainer = false }: LogoProps) => {
   const sizeClasses = {
     sm: {
-      container: 'text-xl',
-      icon: 'w-7 h-7',
-      iconInner: 'w-4 h-4',
+      container: "text-xl",
+      icon: "w-7 h-7",
+      iconInner: "w-4 h-4",
     },
     md: {
-      container: 'text-2xl',
-      icon: 'w-8 h-8',
-      iconInner: 'w-5 h-5',
+      container: "text-2xl",
+      icon: "w-8 h-8",
+      iconInner: "w-5 h-5",
     },
     lg: {
-      container: 'text-4xl',
-      icon: 'w-10 h-10',
-      iconInner: 'w-6 h-6',
+      container: "text-4xl",
+      icon: "w-10 h-10",
+      iconInner: "w-6 h-6",
     },
   };
 
   const LogoContent = () => (
     <div className="relative flex items-center">
-      <div className={`${sizeClasses[size].icon} flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-inner`}>
+      <div
+        className={`${sizeClasses[size].icon} flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-inner`}
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className={sizeClasses[size].iconInner}
@@ -41,7 +43,9 @@ export const Logo = ({ size = 'md', withContainer = false }: LogoProps) => {
           <path d="m21 2-4 4" />
         </svg>
       </div>
-      <div className={`${sizeClasses[size].container} font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 ml-2 pr-1`}>
+      <div
+        className={`${sizeClasses[size].container} font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 ml-2 pr-1`}
+      >
         10x Cards
       </div>
     </div>
@@ -56,4 +60,4 @@ export const Logo = ({ size = 'md', withContainer = false }: LogoProps) => {
   }
 
   return <LogoContent />;
-}; 
+};
