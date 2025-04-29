@@ -15,7 +15,7 @@ export const LearningContainer = () => {
         description: 'Wystąpił problem podczas ładowania fiszek do nauki. Spróbuj odświeżyć stronę.'
       });
     });
-  }, [loadPage]); // Usuwamy flashcards z zależności
+  }, [loadPage]);
 
   // Osobny efekt do filtrowania fiszek
   useEffect(() => {
@@ -30,6 +30,17 @@ export const LearningContainer = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Ładowanie fiszek...</p>
         </div>
+      </div>
+    );
+  }
+
+  // Pokazujemy LearningSession tylko gdy dane są załadowane i nie ma błędu
+  if (!isLoading && flashcards.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-lg text-gray-500">
+          Nie masz jeszcze żadnych fiszek. Dodaj nowe fiszki w sekcji Kreator lub zaakceptuj istniejące fiszki w sekcji Podgląd.
+        </p>
       </div>
     );
   }

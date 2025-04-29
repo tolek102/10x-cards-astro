@@ -1,5 +1,4 @@
 import type { FlashcardDto } from "@/types";
-import { showToast } from "@/lib/toast";
 import { LearningCard } from "./LearningCard";
 import { ProgressBar } from "../learning/ProgressBar";
 import { useFlashcardsLearning } from "@/lib/hooks/useFlashcardsLearning";
@@ -21,9 +20,6 @@ export const LearningSession = ({ flashcards }: LearningSessionProps) => {
   } = useFlashcardsLearning({ flashcards });
 
   if (stats.totalCards === 0) {
-    showToast("Brak materiałów do nauki", "info", {
-      description: "Aby rozpocząć naukę, dodaj nowe fiszki w sekcji Kreator lub zaakceptuj istniejące fiszki w sekcji Podgląd."
-    });
     return (
       <div className="text-center py-12">
         <p className="text-lg text-gray-500">
