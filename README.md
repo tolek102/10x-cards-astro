@@ -1,155 +1,203 @@
-# 10x-cards
+
+# 10x Cards
+
+## Table of Contents
+
+1.  [Project Description](#project-description)
+2.  [Tech Stack](#tech-stack)
+3.  [Key Features](#key-features)
+4.  [Getting Started Locally](#getting-started-locally)
+5.  [Available Scripts](#available-scripts)
+6.  [Project Scope](#project-scope)
+7.  [API Documentation](#api-documentation)
+8.  [Project Status](#project-status)
+9.  [Project Structure](#project-structure)
+10. [License](#license)
 
 ## Project Description
 
-10x-cards is a web application designed to streamline the creation and management of educational flashcards. Leveraging AI, the app can automatically generate flashcard suggestions from pasted text, saving time and enhancing learning through spaced repetition techniques. Users can also manually create, edit, and delete flashcards, and access a learning session powered by a proven repetition algorithm.
+**10x Cards** is an intelligent flashcard application designed to accelerate learning. It leverages AI (via OpenRouter) to automatically generate flashcards from text input, alongside manual creation options. Users can manage their flashcards, review AI-generated candidates, and engage in learning sessions to master the material. The application features user authentication and provides a clean, responsive interface for a seamless learning experience.
 
 ## Tech Stack
 
-- **Frontend:**
-  - Astro 5
-  - React 19
-  - TypeScript 5
-  - Tailwind CSS 4
-  - Shadcn/ui
+*   **Framework:** [Astro](https://astro.build/)
+*   **UI Library:** [React](https://reactjs.org/) (integrated within Astro)
+*   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+*   **UI Components:** Custom components (likely inspired by shadcn/ui, located in `src/components/ui/`)
+*   **State Management (Client):** React Context API (`AuthProvider`), Custom React Hooks (`useFlashcards`, `useCurrentUser`, `useFlashcardsLearning`)
+*   **Backend:** Astro API Routes
+*   **Database:** [Supabase](https://supabase.io/) (PostgreSQL)
+*   **Authentication:** Supabase Auth
+*   **AI Integration:** [OpenRouter](https://openrouter.ai/)
+*   **API Documentation:** OpenAPI v3 (`src/openapi/flashcards.yaml`)
+*   **Validation:** [Zod](https://zod.dev/) (in API routes)
+*   **Testing:** [Vitest](https://vitest.dev/)
+*   **Notifications:** [Sonner](https://sonner.emilkowal.ski/) (via `ToastProvider`)
+*   **Language:** TypeScript
 
-- **Backend:**
-  - Supabase (for database, authentication, and API integration)
+## Key Features
 
-- **Runtime:**
-  - Node.js (ensure version matches .nvmrc: 22.14.0)
+*   **AI Flashcard Generation:** Automatically create flashcards from text (1000-10000 characters) using OpenRouter AI.
+*   **Manual Flashcard Creation:** Create flashcards directly through the UI.
+*   **Flashcard Management (Preview):**
+    *   View separate lists for accepted flashcards and AI-generated candidates.
+    *   Edit flashcard content (front/back).
+    *   Delete flashcards.
+    *   Accept AI-generated candidates into the main learning deck.
+    *   Discard unwanted candidates.
+    *   Pagination and configurable page size for lists.
+    *   Export accepted flashcards to JSON or CSV.
+*   **Learning Module:**
+    *   Study accepted flashcards with a front/back flipping interface.
+    *   Track progress within a learning session.
+    *   Keyboard navigation (arrow keys, spacebar).
+*   **User Authentication:** Secure registration, login, logout, and password reset functionality via Supabase Auth.
+*   **Responsive UI:** User-friendly interface adapting to different screen sizes.
+*   **Toast Notifications:** Provide feedback to users for various actions.
 
 ## Getting Started Locally
 
-1. **Clone the repository:**
-   ```sh
-   git clone <repository-url>
-   cd 10x-cards-astro
-   ```
+### Prerequisites
 
-2. **Install dependencies:**
-   ```sh
-   npm install
-   ```
+*   Node.js (Check Astro's documentation for recommended versions)
+*   npm, yarn, or pnpm
+*   A Supabase account and project ([supabase.com](https://supabase.com/))
+*   An OpenRouter API Key ([openrouter.ai](https://openrouter.ai/))
 
-3. **Ensure you are using Node version specified in .nvmrc:**
-   ```sh
-   nvm use
-   ```
+### Installation & Setup
 
-4. **Run the development server:**
-   ```sh
-   npm run dev
-   ```
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/your-username/10x-cards.git
+    cd 10x-cards
+    ```
 
-Open your browser and navigate to [http://localhost:3000](http://localhost:3000) to see the application in action.
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    # or
+    yarn install
+    # or
+    pnpm install
+    ```
+
+3.  **Set up Environment Variables:**
+    Create a `.env` file in the root of the project and add the following variables:
+
+    ```dotenv
+    # Supabase credentials (find in your Supabase project settings > API)
+    SUPABASE_URL=YOUR_SUPABASE_PROJECT_URL
+    SUPABASE_KEY=YOUR_SUPABASE_ANON_KEY
+
+    # OpenRouter API Key (find in your OpenRouter account settings)
+    PUBLIC_OPENROUTER_API_KEY=YOUR_OPENROUTER_API_KEY
+
+    # Optional OpenRouter configuration (defaults are provided in the code)
+    # PUBLIC_OPENROUTER_MODEL=google/gemini-flash-1.5 # Example model
+    # PUBLIC_OPENROUTER_MAX_RETRIES=3
+    # PUBLIC_OPENROUTER_TIMEOUT=30000
+    # PUBLIC_OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+    ```
+    *Replace placeholders with your actual credentials.*
+
+4.  **Database Schema:**
+    The required database schema (tables: `flashcards`, `statistics`) should be set up in your Supabase project. The types are defined in `src/db/database.types.ts`. You can usually apply the schema via the Supabase dashboard SQL editor or using Supabase migrations if configured.
+
+5.  **Run the development server:**
+    ```bash
+    npm run dev
+    # or
+    yarn dev
+    # or
+    pnpm dev
+    ```
+
+6.  **Open the application:**
+    Navigate to `http://localhost:4321` (or the port specified in your terminal) in your browser.
 
 ## Available Scripts
 
-In the project directory, you can run:
+*   `dev`: Starts the development server with hot reloading.
+*   `build`: Builds the application for production.
+*   `preview`: Serves the production build locally for previewing.
+*   `test`: Runs the test suite using Vitest.
 
-- **`npm run dev`**: Starts the development server.
-- **`npm run build`**: Builds the app for production.
-- **`npm run preview`**: Starts a local server to preview the production build.
-- **`npm run astro`**: Executes Astro CLI commands.
-- **`npm run lint`**: Runs ESLint to analyze code quality.
-- **`npm run lint:fix`**: Automatically fixes lint errors.
-- **`npm run format`**: Formats the code using Prettier.
+*(Execute scripts using `npm run <script>`, `yarn <script>`, or `pnpm <script>`)*
 
 ## Project Scope
 
-The project focuses on the following features:
+The application provides a complete workflow for flashcard-based learning, centered around AI assistance:
 
-- **Automatic Flashcard Generation:**
-  - Paste text and let the AI generate flashcard suggestions.
-  - Review, edit, and accept generated flashcards.
+1.  **User Management:** Standard authentication flows.
+2.  **Creation:** Users can input text for AI generation or manually add cards.
+3.  **Review/Management:** AI-generated cards appear as "candidates" for users to accept, edit, or discard. Accepted cards can also be edited or deleted.
+4.  **Learning:** Accepted cards are used in a dedicated learning interface.
+5.  **Export:** Users can export their verified flashcards.
 
-- **Manual Flashcard Management:**
-  - Create, edit, and delete flashcards manually.
-  - Manage a personal set of flashcards in the "My Flashcards" view.
+## API Documentation
 
-- **Learning Sessions:**
-  - Engage in learning sessions using spaced repetition algorithms.
-  - Interactive flashcard review to support effective learning.
+The backend API for flashcard operations is documented using the OpenAPI 3.0 standard.
 
-- **User Authentication:**
-  - Registration and login functionality to secure user data.
-  - Ensure that only authenticated users can manage and view their flashcards.
+*   **Specification File:** `src/openapi/flashcards.yaml`
+*   **Base Path:** `/api`
+
+The specification details all available endpoints under `/api/flashcards`, including:
+*   `GET /flashcards`: List accepted flashcards.
+*   `POST /flashcards`: Create a manual flashcard.
+*   `GET /flashcards/candidates`: List candidate flashcards.
+*   `POST /flashcards/generate`: Generate flashcards via AI.
+*   `GET /flashcards/{id}`: Get a specific flashcard.
+*   `PATCH /flashcards/{id}`: Update a flashcard.
+*   `DELETE /flashcards/{id}`: Delete a flashcard.
+*   `PATCH /flashcards/{id}/accept`: Accept a candidate flashcard.
+
+*(Note: Authentication endpoints under `/api/auth` are implemented but not included in this specific OpenAPI file.)*
 
 ## Project Status
 
-This project is currently in the MVP stage, where core functionalities are implemented and iteratively improved based on user feedback.
+**Actively Developed**
+
+The project includes core functionalities for flashcard creation, management, and learning, along with user authentication and AI integration. Tests are included for backend services and API routes, indicating ongoing development and maintenance.
+
+## Project Structure
+
+
+└── src/
+    ├── env.d.ts             # TypeScript definitions for environment variables
+    ├── types.ts             # Core application DTOs and types
+    ├── components/          # UI components (Astro & React)
+    │   ├── astro/           # Astro-specific components (e.g., Welcome screen)
+    │   ├── modals/          # Reusable modal components
+    │   ├── providers/       # React Context providers (Auth, Toast)
+    │   ├── react/           # React components grouped by feature (creator, learning, preview)
+    │   └── ui/              # Base UI elements (Button, Dialog, Input, etc.)
+    ├── db/                  # Database related files
+    │   ├── database.types.ts # Auto-generated Supabase schema types
+    │   ├── supabase.client.ts # Supabase client setup (browser & server)
+    │   └── supabase.ts      # Simplified Supabase client instance (usage might vary)
+    ├── layouts/             # Astro layout components
+    │   ├── README.md        # Internal layout documentation
+    │   └── BaseLayout.astro # Main page layout
+    ├── lib/                 # Core logic, utilities, services, hooks
+    │   ├── hooks/           # Custom React hooks for data fetching and state management
+    │   ├── services/        # Business logic services (client & server-side)
+    │   │   ├── __tests__/   # Unit/Integration tests for services
+    │   │   └── openrouter/  # AI generation service integration
+    │   ├── toast.ts         # Toast notification utility
+    │   └── utils.ts         # General utility functions (e.g., `cn` for classnames)
+    ├── middleware/          # Astro middleware (e.g., authentication checks)
+    │   └── index.ts
+    ├── openapi/             # API specifications
+    │   └── flashcards.yaml  # OpenAPI spec for flashcards API
+    ├── pages/               # Application pages and API routes
+    │   ├── api/             # Backend API endpoints (auth, flashcards)
+    │   │   └── __tests__/   # API route tests
+    │   ├── auth/            # Authentication pages (Login, Register, Reset Password)
+    │   └── *.astro          # Main application pages (index, creator, preview, learning)
+    └── styles/              # Global styles
+        └── global.css       # Tailwind CSS setup and global styling rules
+
 
 ## License
 
 This project is licensed under the MIT License. 
-
-## Project structure
-
-src/
-├── middleware/
-│   └── index.ts
-│       ├── defineMiddleware (from astro:middleware)
-│       └── createSupabaseServerInstance (from ../db/supabase.client)
-│
-├── components/
-│   ├── ui/ (shadcn components)
-│   ├── providers/
-│   ├── react/
-│   ├── astro/
-│   ├── layouts/
-│   ├── modals/
-│   ├── NavigationBar.tsx
-│   └── ToastContainer.astro
-│
-├── pages/
-│   ├── api/
-│   │   └── flashcards/
-│   │       ├── index.ts
-│   │       └── __tests__/
-│   │           └── index.test.ts
-│   └── [other pages]
-│
-├── lib/
-│   └── services/
-│       └── openrouter/
-│           └── index.ts
-│
-├── db/
-│   └── supabase.client.ts
-│
-├── layouts/
-├── styles/
-├── openapi/
-└── types.ts
-
-Key Dependencies:
-- Astro 5
-- TypeScript 5
-- React 19
-- Tailwind 4
-- Shadcn/ui
-- Supabase
-
-Protected Routes:
-└── /learning
-└── /preview
-└── /creator
-
-Public Routes:
-└── /
-└── /auth/
-    ├── login
-    ├── register
-    └── reset-password
-
-- **This structure shows:**
-- The main application entry points through middleware/index.ts
-- Clear separation of components by type (React, Astro, UI)
-- API routes under pages/api
-- Service layer under lib/services
-- Database interactions through Supabase client
-- Protected and public routes as defined in middleware
-- Clear component organization following the project structure rules
-
-The middleware/index.ts serves as a central authentication and routing control, managing access to protected and public routes while initializing Supabase for each request.

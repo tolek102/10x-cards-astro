@@ -1,9 +1,8 @@
-```markdown
 # Plan Testów dla Aplikacji 10x Cards
 
 **Wersja:** 1.0
-**Data:** 2025-04-29
-**Autor:** Paweł Bachta - przy uzyciu Gemini 2.5 Pro
+**Data:** 2024-07-26
+**Autor:** Doświadczony Inżynier QA
 
 ## 1. Wprowadzenie i Cele Testowania
 
