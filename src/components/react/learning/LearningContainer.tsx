@@ -10,11 +10,14 @@ export const LearningContainer = () => {
 
   // Efekt do ładowania danych
   useEffect(() => {
-    loadPage(1, 100).catch((error) => {
-      showToast("Błąd ładowania fiszek", "error", {
-        description: "Wystąpił problem podczas ładowania fiszek do nauki. Spróbuj odświeżyć stronę.",
-      });
-    });
+    loadPage(1, 100).catch(
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      (error) => {
+        showToast("Błąd ładowania fiszek", "error", {
+          description: "Wystąpił problem podczas ładowania fiszek do nauki. Spróbuj odświeżyć stronę.",
+        });
+      }
+    );
   }, [loadPage]);
 
   // Osobny efekt do filtrowania fiszek

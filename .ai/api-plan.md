@@ -3,10 +3,12 @@
 ## 1. Resources
 
 - **Users**: Maps to the `users` table.
+
   - Fields: `id`, `email`, `password`, `created_at`
   - Managed through Supabase Auth; operations such as registration and login may be handled via Supabase or custom endpoints if needed.
 
 - **Flashcards**: Maps to the `flashcards` table.
+
   - Fields: `id`, `user_id`, `front`, `back`, `source`, `created_at`, `updated_at`
   - Validation: `front` ≤ 200 characters, `back` ≤ 500 characters, `source` must be one of `AI`, `AI_EDITED`, or `MANUAL`.
   - Index: An index on `user_id` for query optimization.
@@ -20,6 +22,7 @@
 ### A. Authentication & User Management
 
 1. **Register User**
+
    - **Method:** POST
    - **URL:** `/api/register`
    - **Description:** Creates a new user account.
@@ -35,6 +38,7 @@
      - **Error Codes:** 400 (Bad Request), 409 (Conflict if email already exists).
 
 2. **Login User**
+
    - **Method:** POST
    - **URL:** `/api/login`
    - **Description:** Authenticates a user and returns an access token.
@@ -60,6 +64,7 @@
 ### B. Flashcards Management
 
 1. **List Accepted Flashcards**
+
    - **Method:** GET
    - **URL:** `/api/flashcards`
    - **Description:** Retrieves a paginated list of accepted flashcards (candidate = false) for the authenticated user.
@@ -72,6 +77,7 @@
      - **Error Codes:** 401 (Unauthorized).
 
 2. **List Candidate Flashcards**
+
    - **Method:** GET
    - **URL:** `/api/flashcards/candidates`
    - **Description:** Retrieves a paginated list of candidate flashcards (candidate = true) for the authenticated user.
@@ -83,7 +89,8 @@
      - **200 OK:** Returns an array of candidate flashcards and pagination metadata.
      - **Error Codes:** 401 (Unauthorized).
 
-2. **Get Flashcard by ID**
+3. **Get Flashcard by ID**
+
    - **Method:** GET
    - **URL:** `/api/flashcards/{id}`
    - **Description:** Retrieves details for a specific flashcard.
@@ -91,7 +98,8 @@
      - **200 OK:** Returns flashcard details.
      - **Error Codes:** 404 (Not Found), 401 (Unauthorized).
 
-3. **Create Flashcard (Manual)**
+4. **Create Flashcard (Manual)**
+
    - **Method:** POST
    - **URL:** `/api/flashcards`
    - **Description:** Creates a new manual flashcard.
@@ -108,7 +116,8 @@
      - **201 Created:** Returns the created flashcard details.
      - **Error Codes:** 400 (Validation Error), 401 (Unauthorized).
 
-4. **Update Flashcard**
+5. **Update Flashcard**
+
    - **Method:** PATCH
    - **URL:** `/api/flashcards/{id}`
    - **Description:** Updates an existing flashcard. If a candidate flashcard is edited, it will be automatically marked as accepted (candidate = false). If a flashcard with source "AI" is edited, its source will be automatically changed to "AI_EDITED".
@@ -124,7 +133,8 @@
      - **200 OK:** Returns the updated flashcard details.
      - **Error Codes:** 400 (Validation Error), 404 (Not Found), 401 (Unauthorized).
 
-5. **Delete Flashcard**
+6. **Delete Flashcard**
+
    - **Method:** DELETE
    - **URL:** `/api/flashcards/{id}`
    - **Description:** Deletes a specified flashcard.
@@ -132,7 +142,8 @@
      - **204 No Content:** Indicates successful deletion.
      - **Error Codes:** 404 (Not Found), 401 (Unauthorized).
 
-6. **Auto-Generate Flashcards via AI**
+7. **Auto-Generate Flashcards via AI**
+
    - **Method:** POST
    - **URL:** `/api/flashcards/generate`
    - **Description:** Accepts a long text input and processes it through an AI service to generate flashcards candidate.
@@ -146,16 +157,16 @@
      - **200 OK:** Returns a list of generated flashcards candidates (each with `source` set to "AI" and `candidate` set to 'true').
      - **Error Codes:** 400 (Input Validation Error), 401 (Unauthorized), 500 (Internal Server Error if AI service fails).
 
-7. **Accept AI-Generated Flashcard**
+8. **Accept AI-Generated Flashcard**
    - **Method:** PATCH
    - **URL:** `/api/flashcards/:id/accept`
    - **Description:** Accepts an AI-generated flashcard by updating its `candidate` flag to `false`, marking it as accepted.
    - **Response:**
      - **200 OK:** Returns the updated flashcard details.
-     - **Error Codes:** 
-         - **404 Not Found:** If the flashcard with the given id does not exist.
-         - **401 Unauthorized:** If the user is not authenticated.
-         - **400 Bad Request:** In case of validation errors.
+     - **Error Codes:**
+       - **404 Not Found:** If the flashcard with the given id does not exist.
+       - **401 Unauthorized:** If the user is not authenticated.
+       - **400 Bad Request:** In case of validation errors.
 
 ### C. Statistics
 
@@ -170,11 +181,13 @@
 ## 4. Validation and Business Logic
 
 - **Data Validation:**
+
   - Flashcard `front` must not exceed 200 characters; `back` must not exceed 500 characters.
   - AI-generated text must be between 1000 and 10000 characters.
   - The `source` field is restricted to `AI`, `AI_EDITED`, or `MANUAL`.
 
 - **Business Logic Mapping:**
+
   - **Manual Flashcard Creation & Updating:** Enforces character limits and returns appropriate error messages if violated.
   - **Automatic Flashcard Generation:** Processes long text via an AI API. Generated flashcards candidates are generated with the `source` set to "AI" and `candidate` set to 'true' and also must adhere to length restrictions.
   - **Pagination, Filtering, and Sorting:** Implemented in list endpoints to efficiently handle large datasets.
@@ -186,9 +199,11 @@
 ## 5. Performance and Security Considerations
 
 - **Rate Limiting:**
+
   - Implement rate limiting on critical endpoints, especially the flashcard generation endpoint.
 
 - **Database Optimization:**
+
   - Leverage existing indexes (e.g., on `user_id` in the `flashcards` table) to optimize query performance.
 
 - **Additional Security Measures:**
@@ -200,4 +215,4 @@
 
 - The API server will be built using Astro 5 with client interactivity provided by React components.
 - Integration with the external AI service is abstracted, and its failures are managed gracefully.
-- The API is designed with extensibility in mind, allowing for future enhancements such as advanced filtering or additional endpoints. 
+- The API is designed with extensibility in mind, allowing for future enhancements such as advanced filtering or additional endpoints.

@@ -1,10 +1,13 @@
 # Status Migracji UI
 
 ## Aktualny Status
+
 🟡 W trakcie - Faza 2: Migracja komponentów statycznych
 
 ## Ukończone Kroki
+
 ### Faza 1: Przygotowanie i konfiguracja
+
 - [x] Utworzenie nowej struktury katalogów dla komponentów (react, astro, ui)
 - [x] Konfiguracja podstawowego routingu z View Transitions
 - [x] Utworzenie głównej strony z podstawowym layoutem
@@ -12,6 +15,7 @@
 - [x] Wykorzystanie istniejącego middleware do autoryzacji (src/middleware/index.ts)
 
 ### Faza 2: Migracja komponentów statycznych
+
 - [x] Adaptacja komponentu WelcomeScreen
   - [x] Wykorzystanie istniejących komponentów modalnych (LoginModal, RegisterModal, ForgotPasswordModal)
   - [x] Implementacja treści marketingowej (MarketingContent)
@@ -58,13 +62,16 @@
     - [ ] Implementacja systemu powtórek
 
 ## W Trakcie
+
 ### Faza 2: Migracja komponentów statycznych
+
 - [ ] Adaptacja sekcji nauki
   - [ ] Implementacja logiki sesji nauki:
     - [ ] Implementacja zapisywania postępów nauki
     - [ ] Implementacja systemu powtórek
 
 ## Następne Kroki
+
 1. Implementacja zapisywania postępów nauki:
    - Utworzenie endpointów API do zapisywania postępów
    - Integracja z bazą danych
@@ -81,6 +88,7 @@
    - Audyt wydajności i dostępności
 
 ## Notatki
+
 - Start migracji: 2024-03-19
 - Ostatnia aktualizacja: 2024-03-19
 - Ukończono podstawową konfigurację routingu
@@ -95,7 +103,8 @@
 - Pozostało do zrobienia: system zapisywania postępów i powtórek
 
 ## Metryki i cele jakościowe (do osiągnięcia po implementacji)
+
 - [ ] Lighthouse score > 90
 - [ ] FCP < 1.5s
 - [ ] TTI < 3.5s
-- [ ] Pokrycie testami > 80% 
+- [ ] Pokrycie testami > 80%

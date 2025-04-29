@@ -75,7 +75,10 @@ export const PreviewSection = ({
       ]);
     } catch (err) {
       showToast("Błąd aktualizacji", "error", {
-        description: "Wystąpił problem podczas aktualizacji fiszki. Sprawdź wprowadzone dane i spróbuj ponownie.",
+        description:
+          err instanceof Error
+            ? err.message
+            : "Wystąpił problem podczas aktualizacji fiszki. Sprawdź wprowadzone dane i spróbuj ponownie.",
       });
     } finally {
       setIsEditModalOpen(false);
@@ -97,7 +100,8 @@ export const PreviewSection = ({
         }
       } catch (err) {
         showToast("Błąd usuwania", "error", {
-          description: "Wystąpił problem podczas usuwania fiszki. Spróbuj ponownie później.",
+          description:
+            err instanceof Error ? err.message : "Wystąpił problem podczas usuwania fiszki. Spróbuj ponownie później.",
         });
       }
     }
@@ -115,7 +119,10 @@ export const PreviewSection = ({
       ]);
     } catch (err) {
       showToast("Błąd akceptacji", "error", {
-        description: "Wystąpił problem podczas akceptowania fiszki. Spróbuj ponownie później.",
+        description:
+          err instanceof Error
+            ? err.message
+            : "Wystąpił problem podczas akceptowania fiszki. Spróbuj ponownie później.",
       });
     }
   };
@@ -132,7 +139,8 @@ export const PreviewSection = ({
       ]);
     } catch (err) {
       showToast("Błąd odrzucania", "error", {
-        description: "Wystąpił problem podczas odrzucania fiszki. Spróbuj ponownie później.",
+        description:
+          err instanceof Error ? err.message : "Wystąpił problem podczas odrzucania fiszki. Spróbuj ponownie później.",
       });
     }
   };

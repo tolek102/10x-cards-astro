@@ -64,7 +64,9 @@ export const ExportModal = ({ isOpen, onClose, flashcards }: ExportModalProps) =
     } catch (err) {
       showToast("Błąd eksportu", "error", {
         description:
-          "Wystąpił problem podczas eksportu fiszek. Sprawdź uprawnienia do zapisu plików i spróbuj ponownie.",
+          err instanceof Error
+            ? err.message
+            : "Wystąpił problem podczas eksportu fiszek. Sprawdź uprawnienia do zapisu plików i spróbuj ponownie.",
       });
     } finally {
       setIsExporting(false);

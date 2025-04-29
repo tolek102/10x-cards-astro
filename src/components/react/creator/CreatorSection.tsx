@@ -46,7 +46,10 @@ export const CreatorSection = ({
       });
     } catch (err) {
       showToast("Błąd generowania fiszek", "error", {
-        description: "Wystąpił problem podczas generowania fiszek. Sprawdź wprowadzony tekst i spróbuj ponownie.",
+        description:
+          err instanceof Error
+            ? err.message
+            : "Wystąpił problem podczas generowania fiszek. Sprawdź wprowadzony tekst i spróbuj ponownie.",
       });
     } finally {
       setIsLoading(false);
@@ -63,7 +66,10 @@ export const CreatorSection = ({
       });
     } catch (err) {
       showToast("Błąd tworzenia fiszki", "error", {
-        description: "Wystąpił problem podczas tworzenia fiszki. Sprawdź wprowadzone dane i spróbuj ponownie.",
+        description:
+          err instanceof Error
+            ? err.message
+            : "Wystąpił problem podczas tworzenia fiszki. Sprawdź wprowadzone dane i spróbuj ponownie.",
       });
     } finally {
       setIsLoading(false);

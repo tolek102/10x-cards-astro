@@ -21,7 +21,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return new Response(null, {
       status: 200,
     });
-  } catch (err) {
+  } catch (error) {
+    console.error("Logout error:", error);
     return new Response(
       JSON.stringify({
         error: "Wystąpił nieoczekiwany błąd podczas wylogowywania",

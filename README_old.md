@@ -7,6 +7,7 @@
 ## Tech Stack
 
 - **Frontend:**
+
   - Astro 5
   - React 19
   - TypeScript 5
@@ -14,6 +15,7 @@
   - Shadcn/ui
 
 - **Backend:**
+
   - Supabase (for database, authentication, and API integration)
 
 - **Runtime:**
@@ -22,17 +24,20 @@
 ## Getting Started Locally
 
 1. **Clone the repository:**
+
    ```sh
    git clone <repository-url>
    cd 10x-cards-astro
    ```
 
 2. **Install dependencies:**
+
    ```sh
    npm install
    ```
 
 3. **Ensure you are using Node version specified in .nvmrc:**
+
    ```sh
    nvm use
    ```
@@ -61,14 +66,17 @@ In the project directory, you can run:
 The project focuses on the following features:
 
 - **Automatic Flashcard Generation:**
+
   - Paste text and let the AI generate flashcard suggestions.
   - Review, edit, and accept generated flashcards.
 
 - **Manual Flashcard Management:**
+
   - Create, edit, and delete flashcards manually.
   - Manage a personal set of flashcards in the "My Flashcards" view.
 
 - **Learning Sessions:**
+
   - Engage in learning sessions using spaced repetition algorithms.
   - Interactive flashcard review to support effective learning.
 
@@ -82,40 +90,40 @@ This project is currently in the MVP stage, where core functionalities are imple
 
 ## License
 
-This project is licensed under the MIT License. 
+This project is licensed under the MIT License.
 
 ## Project structure
 
 src/
 ├── middleware/
-│   └── index.ts
-│       ├── defineMiddleware (from astro:middleware)
-│       └── createSupabaseServerInstance (from ../db/supabase.client)
+│ └── index.ts
+│ ├── defineMiddleware (from astro:middleware)
+│ └── createSupabaseServerInstance (from ../db/supabase.client)
 │
 ├── components/
-│   ├── ui/ (shadcn components)
-│   ├── providers/
-│   ├── react/
-│   ├── astro/
-│   ├── layouts/
-│   ├── modals/
-│   └──  NavigationBar.tsx
+│ ├── ui/ (shadcn components)
+│ ├── providers/
+│ ├── react/
+│ ├── astro/
+│ ├── layouts/
+│ ├── modals/
+│ └── NavigationBar.tsx
 │
 ├── pages/
-│   ├── api/
-│   │   └── flashcards/
-│   │       ├── index.ts
-│   │       └── __tests__/
-│   │           └── index.test.ts
-│   └── [other pages]
+│ ├── api/
+│ │ └── flashcards/
+│ │ ├── index.ts
+│ │ └── **tests**/
+│ │ └── index.test.ts
+│ └── [other pages]
 │
 ├── lib/
-│   └── services/
-│       └── openrouter/
-│           └── index.ts
+│ └── services/
+│ └── openrouter/
+│ └── index.ts
 │
 ├── db/
-│   └── supabase.client.ts
+│ └── supabase.client.ts
 │
 ├── layouts/
 ├── styles/
@@ -123,6 +131,7 @@ src/
 └── types.ts
 
 Key Dependencies:
+
 - Astro 5
 - TypeScript 5
 - React 19
@@ -138,9 +147,9 @@ Protected Routes:
 Public Routes:
 └── /
 └── /auth/
-    ├── login
-    ├── register
-    └── reset-password
+├── login
+├── register
+└── reset-password
 
 - **This structure shows:**
 - The main application entry points through middleware/index.ts

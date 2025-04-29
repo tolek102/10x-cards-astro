@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import type { FlashcardDto, FlashcardCreateDto, GenerateFlashcardsCommand, PaginationDto } from "@/types";
 import { FlashcardsService } from "@/lib/services/flashcards";
 import { showToast } from "@/lib/toast";
@@ -80,7 +80,7 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
         setLoading(false);
       }
     },
-    [state.pagination.limit]
+    [state.pagination.limit, setLoading, setError]
   );
 
   const loadCandidatesPage = useCallback(
@@ -103,188 +103,206 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
         setCandidatesLoading(false);
       }
     },
-    [state.candidatesPagination.limit]
+    [state.candidatesPagination.limit, setCandidatesLoading, setError]
   );
 
-  const generateFlashcards = useCallback(async (text: string): Promise<FlashcardDto[]> => {
-    setLoading(true);
-    try {
-      const command: GenerateFlashcardsCommand = { text };
-      const generatedFlashcards = await FlashcardsService.generateFlashcards(command);
+  const generateFlashcards = useCallback(
+    async (text: string): Promise<FlashcardDto[]> => {
+      setLoading(true);
+      try {
+        const command: GenerateFlashcardsCommand = { text };
+        const generatedFlashcards = await FlashcardsService.generateFlashcards(command);
 
-      setState((prev) => ({
-        ...prev,
-        candidates: [...prev.candidates, ...generatedFlashcards],
-        candidatesPagination: {
-          ...prev.candidatesPagination,
-          total: prev.candidatesPagination.total + generatedFlashcards.length,
-        },
-      }));
+        setState((prev) => ({
+          ...prev,
+          candidates: [...prev.candidates, ...generatedFlashcards],
+          candidatesPagination: {
+            ...prev.candidatesPagination,
+            total: prev.candidatesPagination.total + generatedFlashcards.length,
+          },
+        }));
 
-      showToast("Wygenerowano nowe fiszki", "success", {
-        description: `Pomyślnie utworzono ${generatedFlashcards.length} nowych kandydatów na fiszki.`,
-      });
+        showToast("Wygenerowano nowe fiszki", "success", {
+          description: `Pomyślnie utworzono ${generatedFlashcards.length} nowych kandydatów na fiszki.`,
+        });
 
-      return generatedFlashcards;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to generate flashcards");
-      setError(error);
-      showToast("Nie udało się wygenerować fiszek", "error", {
-        description: "Wystąpił problem podczas generowania fiszek. Sprawdź wprowadzony tekst i spróbuj ponownie.",
-      });
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        return generatedFlashcards;
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("Failed to generate flashcards");
+        setError(error);
+        showToast("Nie udało się wygenerować fiszek", "error", {
+          description: "Wystąpił problem podczas generowania fiszek. Sprawdź wprowadzony tekst i spróbuj ponownie.",
+        });
+        return [];
+      } finally {
+        setLoading(false);
+      }
+    },
+    [setLoading, setError]
+  );
 
-  const createFlashcard = useCallback(async (flashcard: FlashcardCreateDto): Promise<FlashcardDto> => {
-    setLoading(true);
-    try {
-      const [newFlashcard] = await FlashcardsService.createFlashcards({
-        flashcards: [flashcard],
-      });
+  const createFlashcard = useCallback(
+    async (flashcard: FlashcardCreateDto): Promise<FlashcardDto> => {
+      setLoading(true);
+      try {
+        const [newFlashcard] = await FlashcardsService.createFlashcards({
+          flashcards: [flashcard],
+        });
 
-      setState((prev) => ({
-        ...prev,
-        candidates: [...prev.candidates, newFlashcard],
-        candidatesPagination: {
-          ...prev.candidatesPagination,
-          total: prev.candidatesPagination.total + 1,
-        },
-      }));
+        setState((prev) => ({
+          ...prev,
+          candidates: [...prev.candidates, newFlashcard],
+          candidatesPagination: {
+            ...prev.candidatesPagination,
+            total: prev.candidatesPagination.total + 1,
+          },
+        }));
 
-      showToast("Utworzono nową fiszkę", "success", {
-        description: "Nowa fiszka została dodana do listy kandydatów.",
-      });
+        showToast("Utworzono nową fiszkę", "success", {
+          description: "Nowa fiszka została dodana do listy kandydatów.",
+        });
 
-      return newFlashcard;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to create flashcard");
-      setError(error);
-      showToast("Nie udało się utworzyć fiszki", "error", {
-        description: "Wystąpił problem podczas tworzenia fiszki. Sprawdź wprowadzone dane i spróbuj ponownie.",
-      });
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        return newFlashcard;
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("Failed to create flashcard");
+        setError(error);
+        showToast("Nie udało się utworzyć fiszki", "error", {
+          description: "Wystąpił problem podczas tworzenia fiszki. Sprawdź wprowadzone dane i spróbuj ponownie.",
+        });
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [setLoading, setError]
+  );
 
-  const updateFlashcard = useCallback(async (id: string, flashcard: Partial<FlashcardDto>): Promise<void> => {
-    setLoading(true);
-    try {
-      const updatedFlashcard = await FlashcardsService.updateFlashcard(id, flashcard);
+  const updateFlashcard = useCallback(
+    async (id: string, flashcard: Partial<FlashcardDto>): Promise<void> => {
+      setLoading(true);
+      try {
+        const updatedFlashcard = await FlashcardsService.updateFlashcard(id, flashcard);
 
-      setState((prev) => ({
-        ...prev,
-        flashcards: prev.flashcards.map((card) => (card.id === id ? updatedFlashcard : card)),
-        candidates: prev.candidates.map((card) => (card.id === id ? updatedFlashcard : card)),
-      }));
+        setState((prev) => ({
+          ...prev,
+          flashcards: prev.flashcards.map((card) => (card.id === id ? updatedFlashcard : card)),
+          candidates: prev.candidates.map((card) => (card.id === id ? updatedFlashcard : card)),
+        }));
 
-      showToast("Zaktualizowano fiszkę", "success", {
-        description: "Pomyślnie zaktualizowano zawartość fiszki.",
-      });
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to update flashcard");
-      setError(error);
-      showToast("Nie udało się zaktualizować fiszki", "error", {
-        description: "Wystąpił problem podczas aktualizacji fiszki. Sprawdź wprowadzone dane i spróbuj ponownie.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        showToast("Zaktualizowano fiszkę", "success", {
+          description: "Pomyślnie zaktualizowano zawartość fiszki.",
+        });
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("Failed to update flashcard");
+        setError(error);
+        showToast("Nie udało się zaktualizować fiszki", "error", {
+          description: "Wystąpił problem podczas aktualizacji fiszki. Sprawdź wprowadzone dane i spróbuj ponownie.",
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [setLoading, setError]
+  );
 
-  const deleteFlashcard = useCallback(async (id: string): Promise<void> => {
-    setLoading(true);
-    try {
-      await FlashcardsService.deleteFlashcard(id);
+  const deleteFlashcard = useCallback(
+    async (id: string): Promise<void> => {
+      setLoading(true);
+      try {
+        await FlashcardsService.deleteFlashcard(id);
 
-      setState((prev) => ({
-        ...prev,
-        flashcards: prev.flashcards.filter((card) => card.id !== id),
-        candidates: prev.candidates.filter((card) => card.id !== id),
-        pagination: {
-          ...prev.pagination,
-          total: prev.pagination.total - 1,
-        },
-      }));
+        setState((prev) => ({
+          ...prev,
+          flashcards: prev.flashcards.filter((card) => card.id !== id),
+          candidates: prev.candidates.filter((card) => card.id !== id),
+          pagination: {
+            ...prev.pagination,
+            total: prev.pagination.total - 1,
+          },
+        }));
 
-      showToast("Usunięto fiszkę", "success", {
-        description: "Pomyślnie usunięto fiszkę z systemu.",
-      });
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to delete flashcard");
-      setError(error);
-      showToast("Nie udało się usunąć fiszki", "error", {
-        description: "Wystąpił problem podczas usuwania fiszki. Spróbuj ponownie później.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        showToast("Usunięto fiszkę", "success", {
+          description: "Pomyślnie usunięto fiszkę z systemu.",
+        });
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("Failed to delete flashcard");
+        setError(error);
+        showToast("Nie udało się usunąć fiszki", "error", {
+          description: "Wystąpił problem podczas usuwania fiszki. Spróbuj ponownie później.",
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [setLoading, setError]
+  );
 
-  const acceptFlashcard = useCallback(async (id: string): Promise<void> => {
-    setLoading(true);
-    try {
-      const updatedFlashcard = await FlashcardsService.acceptFlashcard(id);
+  const acceptFlashcard = useCallback(
+    async (id: string): Promise<void> => {
+      setLoading(true);
+      try {
+        const updatedFlashcard = await FlashcardsService.acceptFlashcard(id);
 
-      setState((prev) => ({
-        ...prev,
-        candidates: prev.candidates.filter((f) => f.id !== id),
-        flashcards: [...prev.flashcards, updatedFlashcard],
-        candidatesPagination: {
-          ...prev.candidatesPagination,
-          total: prev.candidatesPagination.total - 1,
-        },
-        pagination: {
-          ...prev.pagination,
-          total: prev.pagination.total + 1,
-        },
-      }));
+        setState((prev) => ({
+          ...prev,
+          candidates: prev.candidates.filter((f) => f.id !== id),
+          flashcards: [...prev.flashcards, updatedFlashcard],
+          candidatesPagination: {
+            ...prev.candidatesPagination,
+            total: prev.candidatesPagination.total - 1,
+          },
+          pagination: {
+            ...prev.pagination,
+            total: prev.pagination.total + 1,
+          },
+        }));
 
-      showToast("Zaakceptowano fiszkę", "success", {
-        description: "Fiszka została przeniesiona do głównej kolekcji.",
-      });
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to accept flashcard");
-      setError(error);
-      showToast("Nie udało się zaakceptować fiszki", "error", {
-        description: "Wystąpił problem podczas akceptowania fiszki. Spróbuj ponownie później.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        showToast("Zaakceptowano fiszkę", "success", {
+          description: "Fiszka została przeniesiona do głównej kolekcji.",
+        });
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("Failed to accept flashcard");
+        setError(error);
+        showToast("Nie udało się zaakceptować fiszki", "error", {
+          description: "Wystąpił problem podczas akceptowania fiszki. Spróbuj ponownie później.",
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [setLoading, setError]
+  );
 
-  const discardFlashcard = useCallback(async (id: string): Promise<void> => {
-    setLoading(true);
-    try {
-      await FlashcardsService.discardFlashcard(id);
+  const discardFlashcard = useCallback(
+    async (id: string): Promise<void> => {
+      setLoading(true);
+      try {
+        await FlashcardsService.discardFlashcard(id);
 
-      setState((prev) => ({
-        ...prev,
-        candidates: prev.candidates.filter((f) => f.id !== id),
-        candidatesPagination: {
-          ...prev.candidatesPagination,
-          total: prev.candidatesPagination.total - 1,
-        },
-      }));
+        setState((prev) => ({
+          ...prev,
+          candidates: prev.candidates.filter((f) => f.id !== id),
+          candidatesPagination: {
+            ...prev.candidatesPagination,
+            total: prev.candidatesPagination.total - 1,
+          },
+        }));
 
-      showToast("Odrzucono fiszkę", "success", {
-        description: "Pomyślnie odrzucono fiszkę z listy kandydatów.",
-      });
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to discard flashcard");
-      setError(error);
-      showToast("Nie udało się odrzucić fiszki", "error", {
-        description: "Wystąpił problem podczas odrzucania fiszki. Spróbuj ponownie później.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        showToast("Odrzucono fiszkę", "success", {
+          description: "Pomyślnie odrzucono fiszkę z listy kandydatów.",
+        });
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("Failed to discard flashcard");
+        setError(error);
+        showToast("Nie udało się odrzucić fiszki", "error", {
+          description: "Wystąpił problem podczas odrzucania fiszki. Spróbuj ponownie później.",
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [setLoading, setError]
+  );
 
   return {
     ...state,

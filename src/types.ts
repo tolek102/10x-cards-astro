@@ -3,7 +3,7 @@ import type { SupabaseClient } from "./db/supabase.client";
 
 // Extract database table rows for type derivation
 
-type FlashcardRow = Database["public"]["Tables"]["flashcards"]["Row"];
+// type FlashcardRow = Database["public"]["Tables"]["flashcards"]["Row"];
 type StatisticsRow = Database["public"]["Tables"]["statistics"]["Row"];
 
 /**
@@ -33,12 +33,15 @@ export interface LoginUserResponseDto {
   user: UserDto;
 }
 
+export interface AppLocals {
+  user: UserDto | null;
+  supabase: SupabaseClient;
+}
+
+// Declare the App namespace for global augmentation
 declare global {
-  namespace App {
-    interface Locals {
-      user: UserDto | null;
-      supabase: SupabaseClient;
-    }
+  interface App {
+    Locals: AppLocals;
   }
 }
 

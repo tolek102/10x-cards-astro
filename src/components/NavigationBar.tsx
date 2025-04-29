@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 import type { UserDto } from "@/types";
@@ -29,6 +28,7 @@ export const NavigationBar = ({ user, activeSection }: NavigationBarProps) => {
 
       window.location.href = "/";
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error("Błąd podczas wylogowywania:", error);
       showToast("Błąd wylogowania", "error", {
         description: "Nie udało się wylogować. Spróbuj ponownie za chwilę.",

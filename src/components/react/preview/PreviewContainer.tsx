@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect } from "react";
 import { PreviewSection } from "./PreviewSection";
 import { useFlashcards } from "@/lib/hooks/useFlashcards";
 
@@ -23,6 +23,7 @@ export const PreviewContainer = () => {
       try {
         await Promise.all([loadPage(1), loadCandidatesPage(1)]);
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error("Error loading initial data:", error);
       }
     };

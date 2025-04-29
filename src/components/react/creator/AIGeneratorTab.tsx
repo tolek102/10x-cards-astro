@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import type { FlashcardCreateDto } from "@/types";
 
 interface AIGeneratorTabProps {
   onGenerate: (text: string) => Promise<void>;

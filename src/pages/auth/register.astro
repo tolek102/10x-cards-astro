@@ -8,7 +8,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       <div>
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Utwórz nowe konto</h2>
         <p class="mt-2 text-center text-sm text-gray-600">
-          Lub{" "}
+          Lub
           <a href="/auth/login" class="font-medium text-indigo-600 hover:text-indigo-500">
             zaloguj się do istniejącego konta
           </a>
@@ -57,14 +57,12 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 <script>
   import { showToast } from "../../lib/toast";
 
-  // Funkcja do wyświetlania toastów
   const displayToast = (message: string, type: "success" | "error" = "error") => {
-    // Upewnij się, że wiadomość nie jest pusta i że toast jest dostępny
     if (message?.trim() && typeof showToast === "function") {
-      console.log("Wyświetlam toast:", { message, type });
+      console.log("Displaying toast:", { message, type });
       showToast(message, type);
     } else {
-      console.error("Nie można wyświetlić toastu:", {
+      console.error("Cannot display toast:", {
         message,
         type,
         showToastAvailable: typeof showToast === "function",
@@ -72,7 +70,6 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     }
   };
 
-  // Sprawdź parametry URL przy załadowaniu strony
   document.addEventListener("DOMContentLoaded", () => {
     const urlParams = new URLSearchParams(window.location.search);
     const error = urlParams.get("error");
@@ -82,10 +79,8 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     }
   });
 
-  // Obsługa formularza rejestracji
   document.getElementById("registerForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
-
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
     const email = formData.get("email")?.toString();
@@ -109,7 +104,6 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 
       if (!response.ok) {
         let errorMessage = data.error || "Wystąpił błąd podczas rejestracji";
-        // Mapowanie komunikatów błędów z Supabase na przyjazne dla użytkownika
         if (errorMessage.includes("User already registered")) {
           errorMessage = "Użytkownik o tym adresie email jest już zarejestrowany";
         }
@@ -118,14 +112,9 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       }
 
       displayToast("Konto zostało utworzone pomyślnie", "success");
-
-      // Poczekaj chwilę, aby toast był widoczny
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Użyj View Transitions API do płynnego przekierowania
       const loginUrl = new URL("/creator", window.location.origin);
-      //   const loginUrl = new URL('/auth/login', window.location.origin);
-      //   loginUrl.searchParams.set('registered', 'true');
 
       if (document.startViewTransition) {
         document.startViewTransition(() => {
@@ -135,7 +124,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         window.location.href = loginUrl.toString();
       }
     } catch (error) {
-      console.error("Błąd podczas rejestracji:", error);
+      console.error("Registration error:", error);
       displayToast(error instanceof Error ? error.message : "Wystąpił nieoczekiwany błąd");
     }
   });

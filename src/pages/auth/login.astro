@@ -8,7 +8,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       <div>
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Zaloguj się do swojego konta</h2>
         <p class="mt-2 text-center text-sm text-gray-600">
-          Lub{" "}
+          Lub
           <a href="/auth/register" class="font-medium text-indigo-600 hover:text-indigo-500">
             zarejestruj się za darmo
           </a>
@@ -66,15 +66,12 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 <script>
   import { showToast } from "../../lib/toast";
 
-  // Funkcja do wyświetlania toastów
   const displayToast = (message: string, type: "success" | "error" = "error") => {
-    // Upewnij się, że toast nie jest pusty
     if (message && message.trim()) {
       showToast(message, type);
     }
   };
 
-  // Sprawdź parametry URL przy załadowaniu strony
   document.addEventListener("DOMContentLoaded", () => {
     const urlParams = new URLSearchParams(window.location.search);
     const error = urlParams.get("error");
@@ -89,10 +86,8 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     }
   });
 
-  // Obsługa formularza logowania
   document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
-
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
 
@@ -112,7 +107,6 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 
       if (!response.ok) {
         let errorMessage = data.error || "Wystąpił błąd podczas logowania";
-        // Mapowanie komunikatów błędów z Supabase na przyjazne dla użytkownika
         if (errorMessage.includes("Invalid login credentials")) {
           errorMessage = "Nieprawidłowe dane logowania";
         }
@@ -121,10 +115,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       }
 
       displayToast("Zalogowano pomyślnie", "success");
-
-      // Poczekaj chwilę, aby toast był widoczny
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
       window.location.href = "/creator";
     } catch (error) {
       displayToast(error instanceof Error ? error.message : "Wystąpił nieoczekiwany błąd");

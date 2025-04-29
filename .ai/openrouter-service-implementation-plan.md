@@ -10,11 +10,11 @@ Usługa OpenRouter będzie działać jako warstwa pośrednia (middleware) międz
 class OpenRouterService {
   constructor(config: OpenRouterConfig) {
     // Parametry konfiguracyjne
-    apiKey: string;           // Klucz API OpenRouter
-    model: string;           // Model LLM (domyślnie google/gemini-2.0-flash-exp:free)
-    maxRetries: number;       // Maksymalna liczba prób ponownego wykonania żądania
-    timeout: number;          // Limit czasu żądania w milisekundach
-    baseUrl: string;         // Bazowy URL API OpenRouter
+    apiKey: string; // Klucz API OpenRouter
+    model: string; // Model LLM (domyślnie google/gemini-2.0-flash-exp:free)
+    maxRetries: number; // Maksymalna liczba prób ponownego wykonania żądania
+    timeout: number; // Limit czasu żądania w milisekundach
+    baseUrl: string; // Bazowy URL API OpenRouter
   }
 }
 ```
@@ -22,6 +22,7 @@ class OpenRouterService {
 ## 3. Metody i Pola Publiczne
 
 ### 3.1 Metoda Generowania Fiszek
+
 ```typescript
 async generateFlashcards(text: string): Promise<FlashcardCreateDto[]>
 ```
@@ -29,6 +30,7 @@ async generateFlashcards(text: string): Promise<FlashcardCreateDto[]>
 ## 4. Metody i Pola Prywatne
 
 ### 4.1 Komunikacja z AI
+
 ```typescript
 private async makeRequest(text: string): Promise<OpenRouterResponse>
 private async parseAIResponse(response: OpenRouterResponse): FlashcardCreateDto[]
@@ -36,12 +38,14 @@ private async validateGeneratedFlashcards(flashcards: FlashcardCreateDto[]): Fla
 ```
 
 ### 4.2 Obsługa Błędów
+
 ```typescript
 private handleApiError(error: Error): void
 private async retryRequest(fn: Function, retries: number): Promise<any>
 ```
 
 ### 4.3 Formatowanie Żądań i Odpowiedzi
+
 ```typescript
 // Format żądania
 private formatPrompt(text: string): {
@@ -97,6 +101,7 @@ interface FlashcardCreateDto {
 ```
 
 ### 4.4 Przykład Odpowiedzi
+
 ```typescript
 // Przykładowa odpowiedź z OpenRouter
 const openRouterResponse = {
@@ -108,22 +113,22 @@ const openRouterResponse = {
         content: JSON.stringify([
           {
             front: "Co to jest TypeScript?",
-            back: "TypeScript to typowany nadzbiór JavaScript, który kompiluje się do czystego JavaScript."
+            back: "TypeScript to typowany nadzbiór JavaScript, który kompiluje się do czystego JavaScript.",
           },
           {
             front: "Jakie są główne zalety TypeScript?",
-            back: "Statyczne typowanie, wsparcie dla nowoczesnych funkcji JS, lepsze wsparcie IDE, wykrywanie błędów podczas kompilacji."
-          }
-        ])
+            back: "Statyczne typowanie, wsparcie dla nowoczesnych funkcji JS, lepsze wsparcie IDE, wykrywanie błędów podczas kompilacji.",
+          },
+        ]),
       },
-      finish_reason: "stop"
-    }
+      finish_reason: "stop",
+    },
   ],
   usage: {
     prompt_tokens: 100,
     completion_tokens: 150,
-    total_tokens: 250
-  }
+    total_tokens: 250,
+  },
 };
 
 // Zmapowana odpowiedź na format aplikacji
@@ -132,36 +137,38 @@ const mappedFlashcards: FlashcardCreateDto[] = [
     front: "Co to jest TypeScript?",
     back: "TypeScript to typowany nadzbiór JavaScript, który kompiluje się do czystego JavaScript.",
     source: "AI",
-    candidate: true
+    candidate: true,
   },
   {
     front: "Jakie są główne zalety TypeScript?",
     back: "Statyczne typowanie, wsparcie dla nowoczesnych funkcji JS, lepsze wsparcie IDE, wykrywanie błędów podczas kompilacji.",
     source: "AI",
-    candidate: true
-  }
+    candidate: true,
+  },
 ];
 ```
 
 ## 5. Obsługa Błędów
 
 ### 5.1 Typy Błędów
+
 ```typescript
 enum OpenRouterErrorType {
-  AUTHENTICATION_ERROR = 'błąd_uwierzytelniania',
-  RATE_LIMIT_ERROR = 'błąd_limitu_żądań',
-  MODEL_ERROR = 'błąd_modelu',
-  VALIDATION_ERROR = 'błąd_walidacji',
-  GENERATION_ERROR = 'błąd_generowania_fiszek',
-  NETWORK_ERROR = 'błąd_sieci',
-  TIMEOUT_ERROR = 'błąd_przekroczenia_czasu',
-  UNKNOWN_ERROR = 'błąd_nieznany'
+  AUTHENTICATION_ERROR = "błąd_uwierzytelniania",
+  RATE_LIMIT_ERROR = "błąd_limitu_żądań",
+  MODEL_ERROR = "błąd_modelu",
+  VALIDATION_ERROR = "błąd_walidacji",
+  GENERATION_ERROR = "błąd_generowania_fiszek",
+  NETWORK_ERROR = "błąd_sieci",
+  TIMEOUT_ERROR = "błąd_przekroczenia_czasu",
+  UNKNOWN_ERROR = "błąd_nieznany",
 }
 ```
 
 ## 6. Kwestie Bezpieczeństwa
 
 1. Zarządzanie Kluczami API
+
    - Przechowywanie kluczy API w zmiennych środowiskowych
    - Nigdy nie ujawniać kluczy w kodzie po stronie klienta
 
@@ -173,6 +180,7 @@ enum OpenRouterErrorType {
 ## 7. Kroki Implementacji
 
 ### Krok 1: Konfiguracja Początkowa
+
 1. Utworzenie struktury katalogów usługi w `src/lib/openrouter`
 2. Konfiguracja zmiennych środowiskowych:
    ```env
@@ -183,16 +191,19 @@ enum OpenRouterErrorType {
    ```
 
 ### Krok 2: Implementacja Rdzenia Usługi
+
 1. Implementacja klasy OpenRouterService
 2. Integracja z istniejącym systemem logowania
 3. Implementacja podstawowej metody komunikacji API
 
 ### Krok 3: Implementacja Generowania Fiszek
+
 1. Utworzenie szablonu promptu dla generowania fiszek
 2. Implementacja logiki parsowania odpowiedzi AI
 3. Dodanie walidacji wygenerowanych fiszek
 
 ### Krok 4: Integracja z FlashcardService
+
 1. Modyfikacja metody `generateFlashcards` w `FlashcardService`
 2. Implementacja mapowania odpowiedzi na format `FlashcardCreateDto`
 3. Dodanie obsługi błędów
@@ -200,31 +211,34 @@ enum OpenRouterErrorType {
 ## 8. Przykłady Użycia
 
 ### Podstawowe Generowanie Fiszek
+
 ```typescript
 const openRouter = new OpenRouterService({
   apiKey: process.env.OPENROUTER_API_KEY,
-  model: process.env.OPENROUTER_MODEL
+  model: process.env.OPENROUTER_MODEL,
 });
 
-const flashcards = await openRouter.generateFlashcards(
-  "Tekst do przetworzenia na fiszki..."
-);
+const flashcards = await openRouter.generateFlashcards("Tekst do przetworzenia na fiszki...");
 ```
 
 ## 9. Integracja z Astro i React
 
 ### Integracja z Astro
+
 1. Modyfikacja endpointu `/api/flashcards/generate`
 2. Implementacja obsługi długich żądań
 3. Konfiguracja timeoutów
 
 ### Integracja z React
+
 1. Integracja z istniejącym komponentem `AIGeneratorTab`:
+
    - Podłączenie nowej usługi OpenRouter do props `onGenerate`
    - Wykorzystanie istniejącego stanu `isGenerating` do pokazywania statusu generowania
    - Zachowanie obecnej walidacji długości tekstu (1000-10000 znaków)
 
 2. Obsługa błędów w `CreatorSection`:
+
    - Integracja z istniejącym systemem powiadomień (`showToast`)
    - Mapowanie błędów z OpenRouter na odpowiednie komunikaty dla użytkownika
    - Zachowanie obecnej logiki zarządzania stanem ładowania

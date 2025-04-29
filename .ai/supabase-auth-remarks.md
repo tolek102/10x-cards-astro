@@ -7,6 +7,7 @@ Niniejszy dokument opisuje integrację Supabase Auth w aplikacji Astro, dostosow
 ## Struktura Endpointów API
 
 Dla spójności z planem API zaleca się umieszczenie endpointów autentykacji bez dedykowanego segmentu `/auth` w ścieżce. W związku z tym nasze endpointy powinny mieć następujące ścieżki:
+
 - Logowanie: `/api/login`
 - Rejestracja: `/api/register`
 - Wylogowanie: `/api/logout`
@@ -19,57 +20,50 @@ Wdrożenie powyższych ścieżek można zrealizować poprzez utworzenie lub mody
 Upewnij się, że tworzysz instancję klienta Supabase z wykorzystaniem `@supabase/ssr` oraz właściwej konfiguracji ciasteczek przy użyciu metod `getAll` i `setAll`. Przykład implementacji:
 
 ```typescript
-import { createServerClient, type CookieOptionsWithName } from '@supabase/ssr';
-import type { Database } from '../db/database.types.ts';
+import { createServerClient, type CookieOptionsWithName } from "@supabase/ssr";
+import type { Database } from "../db/database.types.ts";
 
 export const cookieOptions: CookieOptionsWithName = {
-  path: '/',
+  path: "/",
   secure: true,
   httpOnly: true,
-  sameSite: 'lax',
+  sameSite: "lax",
 };
 
-export const createSupabaseServerInstance = (context: {
-  headers: Headers;
-  cookies: AstroCookies;
-}) => {
-  const supabase = createServerClient<Database>(
-    import.meta.env.SUPABASE_URL,
-    import.meta.env.SUPABASE_KEY,
-    {
-      cookieOptions,
-      cookies: {
-        getAll() {
-          return (context.headers.get('Cookie') ?? '').split('; ').map(cookieStr => {
-            const [name, value] = cookieStr.split('=');
-            return { name, value };
-          });
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            context.cookies.set(name, value, options),
-          );
-        },
+export const createSupabaseServerInstance = (context: { headers: Headers; cookies: AstroCookies }) => {
+  const supabase = createServerClient<Database>(import.meta.env.SUPABASE_URL, import.meta.env.SUPABASE_KEY, {
+    cookieOptions,
+    cookies: {
+      getAll() {
+        return (context.headers.get("Cookie") ?? "").split("; ").map((cookieStr) => {
+          const [name, value] = cookieStr.split("=");
+          return { name, value };
+        });
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => context.cookies.set(name, value, options));
       },
     },
-  );
+  });
 
   return supabase;
 };
 ```
-*(Powyższy kod może wymagać dostosowania do lokalnego środowiska.)*
+
+_(Powyższy kod może wymagać dostosowania do lokalnego środowiska.)_
 
 ## Middleware i Zarządzanie Sesją
 
 Dla stron chronionych zaleca się stosowanie middleware, które:
+
 - Używa funkcji `createSupabaseServerInstance` do pobrania danych użytkownika.
 - W przypadku braku aktywnej sesji nie wykonuje automatycznego przekierowania, lecz pozwala na dynamiczne otwieranie modalnych komponentów logowania (np. LoginModal).
 
 Przykładowa implementacja middleware:
 
 ```typescript
-import { createSupabaseServerInstance } from '../db/supabase.client.ts';
-import { defineMiddleware } from 'astro:middleware';
+import { createSupabaseServerInstance } from "../db/supabase.client.ts";
+import { defineMiddleware } from "astro:middleware";
 
 const PUBLIC_PATHS = [
   "/auth/login",
@@ -80,33 +74,31 @@ const PUBLIC_PATHS = [
   "/api/reset-password",
 ];
 
-export const onRequest = defineMiddleware(
-  async ({ locals, cookies, url, request, redirect }, next) => {
-    if (PUBLIC_PATHS.includes(url.pathname)) {
-      return next();
-    }
-    const supabase = createSupabaseServerInstance({
-      cookies,
-      headers: request.headers,
-    });
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (user) {
-      locals.user = {
-        email: user.email,
-        id: user.id,
-      };
-    } else {
-      // Zamiast przekierowania, możesz tu zainicjować logikę otwierania modalnego komponentu logowania
-      // return redirect('/auth/login');
-    }
-
+export const onRequest = defineMiddleware(async ({ locals, cookies, url, request, redirect }, next) => {
+  if (PUBLIC_PATHS.includes(url.pathname)) {
     return next();
-  },
-);
+  }
+  const supabase = createSupabaseServerInstance({
+    cookies,
+    headers: request.headers,
+  });
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    locals.user = {
+      email: user.email,
+      id: user.id,
+    };
+  } else {
+    // Zamiast przekierowania, możesz tu zainicjować logikę otwierania modalnego komponentu logowania
+    // return redirect('/auth/login');
+  }
+
+  return next();
+});
 ```
 
 ## Endpointy Autentykacji
@@ -116,8 +108,8 @@ export const onRequest = defineMiddleware(
 Endpoint `/api/login` (np. `login.ts`):
 
 ```typescript
-import type { APIRoute } from 'astro';
-import { createSupabaseServerInstance } from '../../db/supabase.client.ts';
+import type { APIRoute } from "astro";
+import { createSupabaseServerInstance } from "../../db/supabase.client.ts";
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   // Walidacja danych przy użyciu np. Zod powinna być zaimplementowana tutaj
@@ -205,7 +197,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
   }
 
-  return new Response(JSON.stringify({ message: 'Instrukcje resetowania hasła wysłane.' }), {
+  return new Response(JSON.stringify({ message: "Instrukcje resetowania hasła wysłane." }), {
     status: 200,
   });
 };
@@ -218,6 +210,7 @@ Zaleca się użycie biblioteki Zod do walidacji wejściowych danych użytkownika
 ## Integracja z UI
 
 W warstwie frontend, zamiast dedykowanych stron logowania/rejestracji, należy:
+
 - Wykorzystać modalne komponenty: `LoginModal`, `RegisterModal` oraz `ForgotPasswordModal` znajdujące się w katalogu `/src/components/auth`.
 - Rozszerzyć kontekst autentykacji (`<AuthProvider />`) o metody logowania, rejestracji, wylogowywania oraz resetowania hasła.
 - Upewnić się, że logika middleware nie wymusza przekierowania, lecz umożliwia dynamiczne otwieranie modalnych komponentów autentykacyjnych.
@@ -225,6 +218,7 @@ W warstwie frontend, zamiast dedykowanych stron logowania/rejestracji, należy:
 ## Podsumowanie
 
 Dokument ten został uaktualniony, aby:
+
 - Ujednolicić ścieżki endpointów API zgodnie z planem API.
 - Dodać niezbędny endpoint do resetowania hasła.
 - Wprowadzić przykładowe fragmenty kodu z walidacją (z użyciem Zod).

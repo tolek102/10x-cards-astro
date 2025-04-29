@@ -61,7 +61,10 @@ export const EditModal = ({ isOpen, onClose, onSave, flashcard }: EditModalProps
       onClose();
     } catch (error) {
       showToast("Błąd zapisywania", "error", {
-        description: "Wystąpił problem podczas zapisywania zmian. Sprawdź wprowadzone dane i spróbuj ponownie.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Wystąpił problem podczas zapisywania zmian. Sprawdź wprowadzone dane i spróbuj ponownie.",
       });
     } finally {
       setIsSubmitting(false);

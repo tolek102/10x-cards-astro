@@ -1,5 +1,4 @@
 import type {
-  FlashcardCreateDto,
   FlashcardDto,
   FlashcardsCreateCommand,
   FlashcardsListResponseDto,
@@ -8,6 +7,7 @@ import type {
 
 const API_BASE_URL = "/api";
 
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class FlashcardsService {
   static async generateFlashcards(command: GenerateFlashcardsCommand): Promise<FlashcardDto[]> {
     const response = await fetch(`${API_BASE_URL}/flashcards/generate`, {
@@ -56,7 +56,7 @@ export class FlashcardsService {
     const response = await fetch(`${API_BASE_URL}/flashcards/candidates?page=${page}&limit=${limit}`);
 
     if (!response.ok) {
-      throw new Error("Failed to fetch candidate flashcards");
+      throw new Error("Wystąpił problem podczas pobierania kandydatów na fiszki. Spróbuj odświeżyć stronę.");
     }
 
     return response.json();
@@ -94,7 +94,7 @@ export class FlashcardsService {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to accept flashcard");
+      throw new Error("Wystąpił problem podczas akceptowania fiszki. Spróbuj ponownie później.");
     }
 
     return response.json();

@@ -29,7 +29,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const supabase = createSupabaseServerInstance({ cookies, headers: request.headers });
   const {
     data: { user },
-    error,
   } = await supabase.auth.getUser();
 
   // Ustawienie user i supabase w locals

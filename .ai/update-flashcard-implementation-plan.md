@@ -1,11 +1,14 @@
 # API Endpoint Implementation Plan: Update Flashcard
 
 ## 1. Przegląd punktu końcowego
+
 Celem punktu końcowego jest umożliwienie zaktualizowania istniejącej fiszki przez uwierzytelnionego użytkownika. Podczas aktualizacji:
+
 - Jeśli fiszka jest kandydatem (candidate = true), zostanie automatycznie zaakceptowana (candidate zostanie ustawione na false).
 - Jeśli źródłem fiszki jest "AI", po edycji zostanie zmienione na "AI_EDITED".
 
 ## 2. Szczegóły żądania
+
 - **Metoda HTTP:** PATCH
 - **Struktura URL:** /api/flashcards/{id}
 - **Parametry:**
@@ -18,6 +21,7 @@ Celem punktu końcowego jest umożliwienie zaktualizowania istniejącej fiszki p
   - **Opcjonalne:** Brak
 
 ## 3. Wykorzystywane typy
+
 - **DTO:**
   - `FlashcardDto` – zawiera: id, front, back, source, candidate, created_at, updated_at
 - **Command Model:**
@@ -25,6 +29,7 @@ Celem punktu końcowego jest umożliwienie zaktualizowania istniejącej fiszki p
 - Walidacja wejściowych danych powinna być realizowana przy użyciu schematu Zod.
 
 ## 4. Szczegóły odpowiedzi
+
 - **200 OK:** Zwraca zaktualizowane szczegóły fiszki w formacie JSON.
 - **Kody błędów:**
   - 400: Błąd walidacji (np. przekroczenie limitu długości pól)
@@ -33,6 +38,7 @@ Celem punktu końcowego jest umożliwienie zaktualizowania istniejącej fiszki p
   - 500: Błąd serwera
 
 ## 5. Przepływ danych
+
 1. Odbiór żądania i weryfikacja uwierzytelnienia użytkownika (np. za pomocą Supabase Auth wykorzystując `context.locals`).
 2. Walidacja struktury żądania przy użyciu Zod, sprawdzenie ograniczeń długości dla `front` i `back`.
 3. Pobranie fiszki z bazy danych przy użyciu podanego id i weryfikacja, czy należy do zalogowanego użytkownika.
@@ -43,6 +49,7 @@ Celem punktu końcowego jest umożliwienie zaktualizowania istniejącej fiszki p
 6. Zwrócenie zaktualizowanych danych fiszki w odpowiedzi.
 
 ## 6. Względy bezpieczeństwa
+
 - **Uwierzytelnianie i autoryzacja:**
   - Sprawdzenie poprawności sesji użytkownika.
   - Weryfikacja przynależności fiszki (flashcard.user_id) do bieżącego użytkownika.
@@ -52,6 +59,7 @@ Celem punktu końcowego jest umożliwienie zaktualizowania istniejącej fiszki p
   - Sanitizacja danych wejściowych, aby zapobiec atakom typu injection.
 
 ## 7. Obsługa błędów
+
 - **400 Bad Request:**
   - Nieprawidłowa struktura danych lub przekroczenie limitu długości (np. `front` > 200 znaków, `back` > 500 znaków).
 - **401 Unauthorized:**
@@ -63,11 +71,13 @@ Celem punktu końcowego jest umożliwienie zaktualizowania istniejącej fiszki p
 - Rejestrowanie błędów oraz kluczowych operacji dla dalszej diagnostyki i audytu.
 
 ## 8. Rozważania dotyczące wydajności
+
 - Wykorzystanie indeksu na kolumnie `user_id` poprawiającego szybkość zapytań.
 - Ograniczenie liczby zapytań do bazy danych i użycie transakcji dla zapewnienia spójności operacji.
 - Optymalizacja walidacji danych po stronie aplikacji przed wykonaniem operacji na bazie.
 
 ## 9. Etapy wdrożenia
+
 1. Utworzenie schematu walidacji przy użyciu Zod dla request body (sprawdzenie długości i typów pól).
 2. Implementacja kontrolera endpointa (np. `/src/pages/api/flashcards/[id].ts`) z obsługą metody PUT.
 3. Weryfikacja uwierzytelnienia użytkownika oraz autoryzacji dostępu do konkretnej fiszki.
@@ -78,4 +88,4 @@ Celem punktu końcowego jest umożliwienie zaktualizowania istniejącej fiszki p
 6. Aktualizacja rekordu fiszki w bazie danych.
 7. Rejestracja operacji i ewentualnych błędów w systemie logowania.
 8. Testowanie endpointa przy użyciu narzędzi takich jak Postman oraz pisanie testów jednostkowych/integracyjnych.
-9. Code review oraz wdrożenie do środowiska produkcyjnego. 
+9. Code review oraz wdrożenie do środowiska produkcyjnego.

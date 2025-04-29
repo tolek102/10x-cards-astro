@@ -16,6 +16,7 @@ export const POST: APIRoute = async ({ request, redirect }) => {
 
     return redirect("/auth/forgot-password?success=true");
   } catch (error) {
+    console.error("Password reset error:", error);
     return redirect("/auth/forgot-password?error=Wystąpił nieoczekiwany błąd");
   }
 };
