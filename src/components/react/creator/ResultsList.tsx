@@ -1,5 +1,15 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { FlashcardDto, PaginationDto } from "@/types";
 import { FlashcardCard } from "../preview/FlashcardCard";
 import { EditModal } from "../preview/EditModal";
@@ -26,6 +36,12 @@ export const ResultsList = ({
   showTimeFilter = false,
 }: ResultsListProps) => {
   const [editingFlashcard, setEditingFlashcard] = useState<FlashcardDto | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
+  const [flashcardToDelete, setFlashcardToDelete] = useState<string | null>(null);
+  const [flashcardToDiscard, setFlashcardToDiscard] = useState<string | null>(null);
+
+  const isCandidate = Boolean(onDiscard);
 
   if (flashcards.length === 0) {
     return (
@@ -44,6 +60,38 @@ export const ResultsList = ({
 
   const handleCloseEdit = () => {
     setEditingFlashcard(null);
+  };
+
+  const handleDelete = (id: string) => {
+    setFlashcardToDelete(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!flashcardToDelete) return;
+
+    try {
+      await onDelete(flashcardToDelete);
+    } finally {
+      setFlashcardToDelete(null);
+      setIsDeleteDialogOpen(false);
+    }
+  };
+
+  const handleDiscard = (id: string) => {
+    setFlashcardToDiscard(id);
+    setIsDiscardDialogOpen(true);
+  };
+
+  const confirmDiscard = async () => {
+    if (!flashcardToDiscard || !onDiscard) return;
+
+    try {
+      await onDiscard(flashcardToDiscard);
+    } finally {
+      setFlashcardToDiscard(null);
+      setIsDiscardDialogOpen(false);
+    }
   };
 
   const totalPages = Math.ceil(pagination.total / pagination.limit);
@@ -68,9 +116,9 @@ export const ResultsList = ({
             key={flashcard.id || `${flashcard.front}-${flashcard.back}`}
             flashcard={flashcard}
             onEdit={handleEdit}
-            onDelete={onDelete}
+            onDelete={isCandidate ? undefined : handleDelete}
             onAccept={onAccept}
-            onDiscard={onDiscard}
+            onDiscard={handleDiscard}
           />
         ))}
       </div>
@@ -95,6 +143,36 @@ export const ResultsList = ({
           </Button>
         </div>
       )}
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Czy na pewno chcesz usunąć tę fiszkę?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ta operacja jest nieodwracalna. Fiszka zostanie trwale usunięta z systemu.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setFlashcardToDelete(null)}>Anuluj</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Usuń</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isDiscardDialogOpen} onOpenChange={setIsDiscardDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Czy na pewno chcesz odrzucić tę fiszkę?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Fiszka zostanie usunięta z listy kandydatów. Będziesz mógł ją później wygenerować ponownie.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setFlashcardToDiscard(null)}>Anuluj</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDiscard}>Odrzuć</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

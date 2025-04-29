@@ -4,6 +4,16 @@ import { EditModal } from "./EditModal";
 import { ExportModal } from "./ExportModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { FlashcardDto, FlashcardUpdateDto, PaginationDto } from "@/types";
 import { showToast } from "@/lib/toast";
 
@@ -43,6 +53,10 @@ export const PreviewSection = ({
   const [selectedFlashcard, setSelectedFlashcard] = useState<FlashcardDto | null>(null);
   const [activeTab, setActiveTab] = useState<"accepted" | "candidates">("accepted");
   const [selectedPageSize, setSelectedPageSize] = useState<number>(pagination.limit);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
+  const [flashcardToDelete, setFlashcardToDelete] = useState<string | null>(null);
+  const [flashcardToDiscard, setFlashcardToDiscard] = useState<string | null>(null);
 
   const handlePageSizeChange = async (newLimit: number) => {
     setSelectedPageSize(newLimit);
@@ -87,23 +101,31 @@ export const PreviewSection = ({
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Czy na pewno chcesz usunąć tę fiszkę?")) {
-      try {
-        await deleteFlashcard(id);
-        showToast("Pomyślnie usunięto fiszkę", "success", {
-          description: "Fiszka została trwale usunięta z systemu. Tej operacji nie można cofnąć.",
-        });
-        if (activeTab === "accepted") {
-          await loadPage(pagination.page, pagination.limit);
-        } else {
-          await loadCandidatesPage(candidatesPagination.page, candidatesPagination.limit);
-        }
-      } catch (err) {
-        showToast("Błąd usuwania", "error", {
-          description:
-            err instanceof Error ? err.message : "Wystąpił problem podczas usuwania fiszki. Spróbuj ponownie później.",
-        });
+    setFlashcardToDelete(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!flashcardToDelete) return;
+
+    try {
+      await deleteFlashcard(flashcardToDelete);
+      showToast("Pomyślnie usunięto fiszkę", "success", {
+        description: "Fiszka została trwale usunięta z systemu. Tej operacji nie można cofnąć.",
+      });
+      if (activeTab === "accepted") {
+        await loadPage(pagination.page, pagination.limit);
+      } else {
+        await loadCandidatesPage(candidatesPagination.page, candidatesPagination.limit);
       }
+    } catch (err) {
+      showToast("Błąd usuwania", "error", {
+        description:
+          err instanceof Error ? err.message : "Wystąpił problem podczas usuwania fiszki. Spróbuj ponownie później.",
+      });
+    } finally {
+      setFlashcardToDelete(null);
+      setIsDeleteDialogOpen(false);
     }
   };
 
@@ -128,8 +150,15 @@ export const PreviewSection = ({
   };
 
   const handleDiscard = async (id: string) => {
+    setFlashcardToDiscard(id);
+    setIsDiscardDialogOpen(true);
+  };
+
+  const confirmDiscard = async () => {
+    if (!flashcardToDiscard) return;
+
     try {
-      await discardFlashcard(id);
+      await discardFlashcard(flashcardToDiscard);
       showToast("Pomyślnie odrzucono fiszkę", "success", {
         description: "Fiszka została usunięta z listy kandydatów. Możesz ją później wygenerować ponownie.",
       });
@@ -142,6 +171,9 @@ export const PreviewSection = ({
         description:
           err instanceof Error ? err.message : "Wystąpił problem podczas odrzucania fiszki. Spróbuj ponownie później.",
       });
+    } finally {
+      setFlashcardToDiscard(null);
+      setIsDiscardDialogOpen(false);
     }
   };
 
@@ -211,6 +243,36 @@ export const PreviewSection = ({
       />
 
       <ExportModal isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} flashcards={flashcards} />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Czy na pewno chcesz usunąć tę fiszkę?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ta operacja jest nieodwracalna. Fiszka zostanie trwale usunięta z systemu.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setFlashcardToDelete(null)}>Anuluj</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Usuń</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isDiscardDialogOpen} onOpenChange={setIsDiscardDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Czy na pewno chcesz odrzucić tę fiszkę?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Fiszka zostanie usunięta z listy kandydatów. Będziesz mógł ją później wygenerować ponownie.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setFlashcardToDiscard(null)}>Anuluj</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDiscard}>Odrzuć</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -29,6 +29,9 @@ export const FlashcardList = ({
   pagination,
   onPageChange,
 }: FlashcardListProps) => {
+  // Jeśli mamy onDiscard, to znaczy że to lista kandydatów
+  const isCandidate = Boolean(onDiscard);
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -65,7 +68,7 @@ export const FlashcardList = ({
             key={flashcard.id}
             flashcard={flashcard}
             onEdit={onEdit}
-            onDelete={onDelete}
+            onDelete={isCandidate ? undefined : onDelete}
             onAccept={onAccept}
             onDiscard={onDiscard}
           />

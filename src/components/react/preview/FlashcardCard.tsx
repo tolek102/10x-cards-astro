@@ -63,8 +63,8 @@ export const FlashcardCard = ({ flashcard, onEdit, onDelete, onAccept, onDiscard
         {/* Front side */}
         <div className="absolute w-full h-full backface-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
           <div className="flex flex-col items-center justify-center h-full">
-            {onEdit && onDelete && (
-              <div className="absolute top-4 right-4">
+            <div className="absolute top-4 right-4 flex">
+              {onEdit && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -75,6 +75,8 @@ export const FlashcardCard = ({ flashcard, onEdit, onDelete, onAccept, onDiscard
                 >
                   ✏️
                 </button>
+              )}
+              {onDelete && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -85,8 +87,8 @@ export const FlashcardCard = ({ flashcard, onEdit, onDelete, onAccept, onDiscard
                 >
                   🗑️
                 </button>
-              </div>
-            )}
+              )}
+            </div>
             <div className="max-h-[320px] overflow-y-auto">
               <h2 className="text-[20px] leading-[1.4] font-bold text-center">{flashcard.front}</h2>
             </div>
