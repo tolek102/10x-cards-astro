@@ -164,7 +164,7 @@ _(Note: Authentication endpoints under `/api/auth` are implemented but not inclu
 The project includes core functionalities for flashcard creation, management, and learning, along with user authentication and AI integration. Tests are included for backend services and API routes, indicating ongoing development and maintenance.
 
 ## Project Structure
-
+```
 └── src/
 ├── env.d.ts # TypeScript definitions for environment variables
 ├── types.ts # Core application DTOs and types
@@ -198,7 +198,7 @@ The project includes core functionalities for flashcard creation, management, an
 │ └── \*.astro # Main application pages (index, creator, preview, learning)
 └── styles/ # Global styles
 └── global.css # Tailwind CSS setup and global styling rules
-
+```
 ## License
 
 This project is licensed under the MIT License.

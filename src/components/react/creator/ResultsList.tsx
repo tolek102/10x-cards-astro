@@ -41,8 +41,6 @@ export const ResultsList = ({
   const [flashcardToDelete, setFlashcardToDelete] = useState<string | null>(null);
   const [flashcardToDiscard, setFlashcardToDiscard] = useState<string | null>(null);
 
-  const isCandidate = Boolean(onDiscard);
-
   if (flashcards.length === 0) {
     return (
       <div className="text-center py-12">
@@ -116,9 +114,9 @@ export const ResultsList = ({
             key={flashcard.id || `${flashcard.front}-${flashcard.back}`}
             flashcard={flashcard}
             onEdit={handleEdit}
-            onDelete={isCandidate ? undefined : handleDelete}
-            onAccept={onAccept}
-            onDiscard={handleDiscard}
+            onDelete={!flashcard.candidate ? handleDelete : undefined}
+            onAccept={flashcard.candidate ? onAccept : undefined}
+            onDiscard={flashcard.candidate ? handleDiscard : undefined}
           />
         ))}
       </div>

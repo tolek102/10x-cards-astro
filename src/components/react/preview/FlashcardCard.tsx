@@ -1,5 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { FlashcardDto } from "@/types";
 
 interface FlashcardCardProps {
@@ -65,28 +71,46 @@ export const FlashcardCard = ({ flashcard, onEdit, onDelete, onAccept, onDiscard
           <div className="flex flex-col items-center justify-center h-full">
             <div className="absolute top-4 right-4 flex">
               {onEdit && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(flashcard.id);
-                  }}
-                  className="mr-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                  aria-label="Edit flashcard"
-                >
-                  ✏️
-                </button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(flashcard.id);
+                        }}
+                        className="mr-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                        aria-label="Edit flashcard"
+                      >
+                        ✏️
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Edytuj</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
               {onDelete && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(flashcard.id);
-                  }}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                  aria-label="Delete flashcard"
-                >
-                  🗑️
-                </button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(flashcard.id);
+                        }}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                        aria-label="Delete flashcard"
+                      >
+                        🗑️
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Usuń</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
             <div className="max-h-[320px] overflow-y-auto">
@@ -118,30 +142,48 @@ export const FlashcardCard = ({ flashcard, onEdit, onDelete, onAccept, onDiscard
           <>
             <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700">Kandydat</span>
             <div className="flex space-x-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAccept?.(flashcard.id);
-                }}
-                className="text-green-600 hover:text-green-700"
-                aria-label="Zaakceptuj fiszkę"
-              >
-                ✓
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDiscard?.(flashcard.id);
-                }}
-                className="text-red-600 hover:text-red-700"
-                aria-label="Odrzuć fiszkę"
-              >
-                ✕
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAccept?.(flashcard.id);
+                      }}
+                      className="text-green-600 hover:text-green-700"
+                      aria-label="Zaakceptuj fiszkę"
+                    >
+                      ✓
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Zaakceptuj</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDiscard?.(flashcard.id);
+                      }}
+                      className="text-red-600 hover:text-red-700"
+                      aria-label="Odrzuć fiszkę"
+                    >
+                      ✕
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Odrzuć</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </>
         )}
