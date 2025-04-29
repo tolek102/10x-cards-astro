@@ -58,7 +58,7 @@ export interface Database {
             isOneToOne: false;
             referencedRelation: "auth.users";
             referencedColumns: ["id"];
-          }
+          },
         ];
       };
       statistics: {
@@ -90,7 +90,7 @@ export interface Database {
             isOneToOne: true;
             referencedRelation: "auth.users";
             referencedColumns: ["id"];
-          }
+          },
         ];
       };
     };

@@ -1,5 +1,5 @@
-import { CreatorSection } from './CreatorSection';
-import { useFlashcards } from '@/lib/hooks/useFlashcards';
+import { CreatorSection } from "./CreatorSection";
+import { useFlashcards } from "@/lib/hooks/useFlashcards";
 
 export const CreatorContainer = () => {
   const {
@@ -25,4 +25,4 @@ export const CreatorContainer = () => {
       onLoadCandidatesPage={loadCandidatesPage}
     />
   );
-}; 
+};

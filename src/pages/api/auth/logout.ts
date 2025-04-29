@@ -1,5 +1,5 @@
-import type { APIRoute } from 'astro';
-import { createSupabaseServerInstance } from '../../../db/supabase.client';
+import type { APIRoute } from "astro";
+import { createSupabaseServerInstance } from "../../../db/supabase.client";
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
@@ -13,23 +13,24 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         }),
         {
           status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        },
+          headers: { "Content-Type": "application/json" },
+        }
       );
     }
 
     return new Response(null, {
       status: 200,
     });
-  } catch (err) {
+  } catch (error) {
+    console.error("Logout error:", error);
     return new Response(
       JSON.stringify({
-        error: 'Wystąpił nieoczekiwany błąd podczas wylogowywania',
+        error: "Wystąpił nieoczekiwany błąd podczas wylogowywania",
       }),
       {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      },
+        headers: { "Content-Type": "application/json" },
+      }
     );
   }
-}; 
+};

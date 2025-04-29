@@ -129,7 +129,9 @@ describe("FlashcardService", () => {
       mockSupabaseChain.data = null;
       mockSupabaseChain.error = mockError;
 
-      await expect(service.generateFlashcards(mockUserId, mockCommand)).rejects.toThrow("Failed to store generated flashcards");
+      await expect(service.generateFlashcards(mockUserId, mockCommand)).rejects.toThrow(
+        "Failed to store generated flashcards"
+      );
     });
 
     it("should handle empty response from database", async () => {
@@ -478,12 +480,14 @@ describe("FlashcardService", () => {
       const result = await service.updateFlashcard(mockUserId, mockFlashcardId, updateCommand);
 
       expect(result).toEqual(expectedUpdate);
-      expect(mockSupabaseChain.update).toHaveBeenCalledWith(expect.objectContaining({
-        front: updateCommand.front,
-        back: updateCommand.back,
-        source: "AI_EDITED",
-        updated_at: expect.any(String)
-      }));
+      expect(mockSupabaseChain.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          front: updateCommand.front,
+          back: updateCommand.back,
+          source: "AI_EDITED",
+          updated_at: expect.any(String),
+        })
+      );
     });
 
     it("should preserve candidate status if not explicitly set to false", async () => {

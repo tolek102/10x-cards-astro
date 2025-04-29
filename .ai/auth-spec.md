@@ -7,16 +7,17 @@ Aplikacja 10x-cards-astro umożliwia użytkownikom tworzenie oraz zarządzanie f
 - Frontend: Astro 5, React 19, TypeScript 5, Tailwind 4, Shadcn/ui
 - Backend: Supabase (w tym Supabase Auth)
 
-
 ## 1. ARCHITEKTURA INTERFEJSU UŻYTKOWNIKA
 
 ### 1.1. Warstwa Frontendu (Komponenty, Layouty i Modale)
 
 - **Komponenty modularne i modalne**:
+
   - Aplikacja wykorzystuje istniejące komponenty modalne do autentykacji: `LoginModal`, `RegisterModal` oraz `ForgotPasswordModal`. Te modale zawierają formularze logowania, rejestracji oraz odzyskiwania hasła, które znajdują się w katalogu `src/components/auth`.
   - Aktualnie używany kontekst uwierzytelniania (`AuthProvider.tsx`) zostanie rozszerzony o integrację z rzeczywistą logiką Supabase Auth, zamiast używania stałego `DEFAULT_USER_ID`.
 
 - **Layouty**:
+
   - Layouty dla użytkowników zalogowanych i niezalogowanych pozostają, jednak zamiast dedykowanych stron autentykacji, formularze i modale są wywoływane na żądanie, co upraszcza nawigację.
   - Layout publiczny zawiera nawigację, stopkę oraz miejsce na interaktywne modale, a layout chroniony dodaje dodatkowe elementy (np. przycisk wylogowania) oraz kontroluje dostęp do chronionych treści.
 
@@ -28,6 +29,7 @@ Aplikacja 10x-cards-astro umożliwia użytkownikom tworzenie oraz zarządzanie f
 ### 1.2. Odpowiedzialności i Integracja
 
 - Formularze React:
+
   - Pobierają dane wejściowe i wykonują walidację po stronie klienta (np. sprawdzanie poprawności formatu email, minimalnej długości hasła).
   - Realizują wywołania API do backendu w celu rejestracji, logowania lub odzyskania hasła, wykorzystując metody Supabase Auth.
 
@@ -39,6 +41,7 @@ Aplikacja 10x-cards-astro umożliwia użytkownikom tworzenie oraz zarządzanie f
 ### 1.3. Walidacja i Komunikaty Błędów
 
 - Walidacja po stronie klienta (React):
+
   - Sprawdzanie poprawności formatu email, niepustości pól oraz spełnienia ograniczeń (np. minimalna długość hasła).
   - Wyświetlanie komunikatów o błędach (np. "Podaj poprawny adres email", "Hasło musi zawierać minimum 6 znaków").
 
@@ -53,7 +56,6 @@ Aplikacja 10x-cards-astro umożliwia użytkownikom tworzenie oraz zarządzanie f
 - Odzyskiwanie hasła: Użytkownik inicjuje proces odzyskiwania hasła przez modal, a API wysyła wiadomość e-mail z instrukcjami resetu.
 - Wylogowanie: Użytkownik wybiera opcję wylogowania, system czyści stan sesji, a modal logowania staje się dostępny, umożliwiając ponowne logowanie.
 
-
 ## 2. LOGIKA BACKENDOWA
 
 ### 2.1. Struktura Endpointów API
@@ -61,16 +63,19 @@ Aplikacja 10x-cards-astro umożliwia użytkownikom tworzenie oraz zarządzanie f
 Endpointy zostaną zorganizowane w katalogu `/src/pages/api/auth/` i będą obejmowały:
 
 - `register.ts` – rejestracja użytkownika:
+
   - Przyjmowanie danych (email, hasło) i walidacja za pomocą Zod.
   - Wywołanie funkcji Supabase Auth do tworzenia konta (`supabase.auth.signUp`).
   - Zwracanie statusu oraz komunikatów w przypadku sukcesu lub błędu.
 
 - `login.ts` – logowanie użytkownika:
+
   - Przyjmowanie danych logowania (email, hasło) i walidacja.
   - Uwierzytelnienie poprzez wywołanie `supabase.auth.signInWithPassword` lub podobnej metody.
   - Zarządzanie sesją i przekazywanie tokenu.
 
 - `logout.ts` – wylogowanie:
+
   - Usunięcie/zerowanie sesji użytkownika poprzez `supabase.auth.signOut`.
   - Mechanizm czyszczenia ciasteczek i sesji.
 
@@ -92,20 +97,22 @@ Endpointy zostaną zorganizowane w katalogu `/src/pages/api/auth/` i będą obej
 - Wykorzystanie `context.locals.supabase` zdefiniowanego w middleware dla autentykacji i weryfikacji sesji na poziomie serwera.
 - Mechanizm przekierowań – strony chronione sprawdzają, czy istnieje aktywna sesja, i w razie jej braku wywołują modal autentykacyjny.
 
-
 ## 3. SYSTEM AUTENTYKACJI
 
 ### 3.1. Wykorzystanie Supabase Auth
 
 - **Rejestracja**:
+
   - Implementacja metody `supabase.auth.signUp` w endpointzie `register.ts`.
   - Przechwytywanie i walidacja danych użytkownika (email, hasło) oraz obsługa powiadomień e-mail (jeśli Supabase to umożliwia).
 
 - **Logowanie**:
+
   - Użycie `supabase.auth.signInWithPassword` (lub odpowiednika) w endpointzie `login.ts`.
   - Zarządzanie tokenami sesji i przekazywanie ich do klienta (przez ciasteczka lub nagłówki).
 
 - **Wylogowanie**:
+
   - Realizacja funkcjonalności wylogowania przez `supabase.auth.signOut` w endpointzie `logout.ts`.
   - Czyszczenie stanu sesji zarówno po stronie klienta, jak i serwera.
 
@@ -128,7 +135,6 @@ Endpointy zostaną zorganizowane w katalogu `/src/pages/api/auth/` i będą obej
 - Przechowywanie kluczy i tokenów w bezpieczny sposób (zmienne środowiskowe, mechanizmy ciasteczek httpOnly itp.).
 - Regularne logowanie błędów i monitorowanie wyjątków.
 
-
 ## Podsumowanie
 
 Niniejsza specyfikacja definiuje kompleksowy moduł autentykacji, który:
@@ -144,4 +150,4 @@ Kluczowe elementy do implementacji:
 - Serwis autentykacyjny umieszczony w `/src/lib/auth.service.ts` opakowujący wywołania Supabase Auth.
 - Wykorzystanie Zod do walidacji danych wejściowych oraz odpowiedniego zarządzania błędami.
 
-Implementacja tego rozwiązania umożliwi bezpieczną, skalowalną i dobrze zintegrowaną funkcjonalność autentykacyjną, zgodną z wymaganiami projektu oraz najlepszymi praktykami programowania. 
+Implementacja tego rozwiązania umożliwi bezpieczną, skalowalną i dobrze zintegrowaną funkcjonalność autentykacyjną, zgodną z wymaganiami projektu oraz najlepszymi praktykami programowania.

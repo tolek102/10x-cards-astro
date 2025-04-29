@@ -1,4 +1,4 @@
-import { Toaster } from 'sonner';
+import { Toaster } from "sonner";
 
 interface ToastProviderProps {
   children: React.ReactNode;
@@ -11,4 +11,4 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
       <Toaster richColors position="bottom-right" />
     </>
   );
-}; 
+};

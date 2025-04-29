@@ -23,4 +23,4 @@ export const ProgressBar = ({ current, total, className }: ProgressBarProps) => 
       </div>
     </div>
   );
-}; 
+};

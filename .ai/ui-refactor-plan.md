@@ -5,6 +5,7 @@
 Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów użytkownika: niezalogowany i zalogowany. Niezalogowani użytkownicy widzą Welcome Screen z opcjami logowania i rejestracji, podczas gdy zalogowani użytkownicy mają dostęp do głównego interfejsu aplikacji z trzema kluczowymi sekcjami: Creator, Preview i Learning.
 
 ### Główne założenia architektury:
+
 - Modularność: każdy widok jest niezależnym komponentem
 - Lokalne zarządzanie stanem dla modali
 - Integracja z API poprzez React Query
@@ -14,9 +15,10 @@ Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów u
 ## 2. Lista widoków
 
 ### Welcome Screen
+
 - **Ścieżka**: `/`
 - **Cel**: Wprowadzenie niezalogowanych użytkowników
-- **Kluczowe informacje**: 
+- **Kluczowe informacje**:
   - Opis produktu
   - Opcje logowania/rejestracji
   - Demo mode
@@ -30,6 +32,7 @@ Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów u
   - ARIA labels
 
 ### Main App Layout
+
 - **Ścieżka**: `/app`
 - **Cel**: Container dla zalogowanych użytkowników
 - **Kluczowe informacje**:
@@ -46,6 +49,7 @@ Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów u
   - Clear feedback
 
 ### Flashcard Creator
+
 - **Ścieżka**: `/app/creator`
 - **Cel**: Tworzenie nowych fiszek
 - **Kluczowe informacje**:
@@ -63,6 +67,7 @@ Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów u
   - Error handling
 
 ### Flashcard Preview
+
 - **Ścieżka**: `/app/preview`
 - **Cel**: Zarządzanie fiszkami
 - **Kluczowe informacje**:
@@ -80,6 +85,7 @@ Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów u
   - Sort/Filter options
 
 ### Learning Session
+
 - **Ścieżka**: `/app/learning`
 - **Cel**: Nauka z fiszek
 - **Kluczowe informacje**:
@@ -96,7 +102,9 @@ Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów u
   - Clear feedback
 
 ### Modals
+
 #### Login Modal
+
 - **Cel**: Logowanie użytkownika
 - **Komponenty**:
   - LoginForm
@@ -104,6 +112,7 @@ Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów u
   - LoadingSpinner
 
 #### Register Modal
+
 - **Cel**: Rejestracja użytkownika
 - **Komponenty**:
   - RegisterForm
@@ -111,6 +120,7 @@ Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów u
   - LoadingSpinner
 
 #### Forgot Password Modal
+
 - **Cel**: Reset hasła
 - **Komponenty**:
   - ForgotPasswordForm
@@ -118,6 +128,7 @@ Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów u
   - LoadingSpinner
 
 #### Edit Modal
+
 - **Cel**: Edycja fiszki
 - **Komponenty**:
   - EditForm
@@ -125,6 +136,7 @@ Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów u
   - ValidationMessages
 
 #### Export Modal
+
 - **Cel**: Eksport fiszek
 - **Komponenty**:
   - ExportOptions
@@ -133,12 +145,14 @@ Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów u
 ## 3. Mapa podróży użytkownika
 
 ### Ścieżka rejestracji/logowania:
+
 1. Welcome Screen
 2. Register/Login Modal
 3. Main App Layout
 4. Flashcard Creator
 
 ### Ścieżka tworzenia fiszek:
+
 1. Flashcard Creator
 2. Wybór metody (AI/Manual)
 3. Wprowadzenie danych
@@ -146,6 +160,7 @@ Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów u
 5. Zatwierdzenie/Edycja
 
 ### Ścieżka nauki:
+
 1. Learning Session
 2. Przeglądanie fiszki
 3. Sprawdzenie odpowiedzi
@@ -155,16 +170,19 @@ Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów u
 ## 4. Układ i struktura nawigacji
 
 ### Główna nawigacja (zalogowani):
+
 - Creator
 - Preview
 - Learning
 
 ### Modalne przejścia:
+
 - Edycja fiszki
 - Eksport
 - Ustawienia konta
 
 ### Zachowanie:
+
 - Persistent navigation bar
 - Breadcrumbs dla lokalizacji
 - Back button support
@@ -173,51 +191,60 @@ Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów u
 ## 5. Kluczowe komponenty
 
 ### AuthGuard
+
 - Ochrona routów dla zalogowanych
 - Redirect do logowania
 - Obsługa sesji
 
 ### FlashcardCard
+
 - Display fiszki
 - Flip animation
 - Action buttons
 - Status indicators
 
 ### LoadingSpinner
+
 - Consistent loading UI
 - Accessibility support
 - Multiple sizes
 
 ### Toast
+
 - System powiadomień
 - Success/Error/Info variants
 - Auto-dismiss
 - Accessibility
 
 ### Modal
+
 - Backdrop
 - Close button
 - Keyboard support
 - Focus trap
 
 ### Tabs
+
 - Przełączanie widoków
 - Active indicators
 - Keyboard navigation
 
 ### Button
+
 - Multiple variants
 - Loading state
 - Disabled state
 - Icon support
 
 ### TextArea
+
 - Character counter
 - Validation
 - Auto-resize
 - Max length
 
 ### CharCounter
+
 - Current/Max display
 - Color indicators
 - Accessibility
@@ -225,8 +252,9 @@ Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów u
 ## 6. Integracja z API
 
 ### Endpoints:
+
 - Auth: `/api/register`, `/api/login`, `/api/me`
-- Flashcards: 
+- Flashcards:
   - GET `/api/flashcards`
   - GET `/api/flashcards/candidates`
   - POST `/api/flashcards`
@@ -236,12 +264,14 @@ Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów u
 - Stats: GET `/api/statistics`
 
 ### Obsługa błędów:
+
 - Network errors
 - Validation errors
 - Server errors
 - Timeout handling
 
 ### Caching:
+
 - React Query setup
 - Invalidation rules
 - Optimistic updates
@@ -250,12 +280,14 @@ Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów u
 ## 7. Bezpieczeństwo i wydajność
 
 ### Bezpieczeństwo:
+
 - Protected routes
 - Token management
 - XSS prevention
 - CSRF protection
 
 ### Wydajność:
+
 - Lazy loading
 - Pagination
 - Debouncing
@@ -264,13 +296,15 @@ Architektura UI 10x-cards jest zorganizowana wokół dwóch głównych stanów u
 ## 8. Dostępność
 
 ### Podstawowe wymagania:
+
 - ARIA labels
 - Keyboard navigation
 - Focus management
 - Screen reader support
 
 ### Dodatkowe usprawnienia:
+
 - High contrast mode
 - Font size controls
 - Motion reduction
-- Error announcements 
+- Error announcements

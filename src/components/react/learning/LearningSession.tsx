@@ -16,7 +16,7 @@ export const LearningSession = ({ flashcards }: LearningSessionProps) => {
     canGoNext,
     handleNext,
     handlePrevious,
-    resetSession
+    resetSession,
   } = useFlashcardsLearning({ flashcards });
 
   if (stats.totalCards === 0) {
@@ -71,4 +71,3 @@ export const LearningSession = ({ flashcards }: LearningSessionProps) => {
     </div>
   );
 };
-

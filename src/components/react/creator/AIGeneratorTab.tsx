@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import type { FlashcardCreateDto } from "@/types";
 
 interface AIGeneratorTabProps {
   onGenerate: (text: string) => Promise<void>;
@@ -40,7 +39,7 @@ export const AIGeneratorTab = ({ onGenerate, isGenerating }: AIGeneratorTabProps
       </div>
 
       <div className="flex justify-end space-x-4">
-      <Button
+        <Button
           type="button"
           variant="outline"
           onClick={() => {
@@ -63,4 +62,4 @@ export const AIGeneratorTab = ({ onGenerate, isGenerating }: AIGeneratorTabProps
       </div>
     </form>
   );
-}; 
+};

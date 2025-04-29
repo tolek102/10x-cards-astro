@@ -1,16 +1,14 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import BaseLayout from "../../layouts/BaseLayout.astro";
 ---
 
 <BaseLayout title="Logowanie - 10x Cards">
   <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
       <div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Zaloguj się do swojego konta
-        </h2>
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Zaloguj się do swojego konta</h2>
         <p class="mt-2 text-center text-sm text-gray-600">
-          Lub{" "}
+          Lub
           <a href="/auth/register" class="font-medium text-indigo-600 hover:text-indigo-500">
             zarejestruj się za darmo
           </a>
@@ -66,72 +64,61 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 </BaseLayout>
 
 <script>
-  import { showToast } from '../../lib/toast';
+  import { showToast } from "../../lib/toast";
 
-  // Funkcja do wyświetlania toastów
-  const displayToast = (message: string, type: 'success' | 'error' = 'error') => {
-    // Upewnij się, że toast nie jest pusty
+  const displayToast = (message: string, type: "success" | "error" = "error") => {
     if (message && message.trim()) {
       showToast(message, type);
     }
   };
 
-  // Sprawdź parametry URL przy załadowaniu strony
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener("DOMContentLoaded", () => {
     const urlParams = new URLSearchParams(window.location.search);
-    const error = urlParams.get('error');
-    const registered = urlParams.get('registered');
+    const error = urlParams.get("error");
+    const registered = urlParams.get("registered");
 
     if (error) {
       displayToast(error);
     }
     if (registered) {
-      displayToast('Konto zostało utworzone. Możesz się teraz zalogować.', 'success');
-      console.log('Konto zostało utworzone. Możesz się teraz zalogować.');
+      displayToast("Konto zostało utworzone. Możesz się teraz zalogować.", "success");
+      console.log("Konto zostało utworzone. Możesz się teraz zalogować.");
     }
   });
 
-  // Obsługa formularza logowania
-  document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+  document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
-    
+
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: formData.get('email'),
-          password: formData.get('password'),
+          email: formData.get("email"),
+          password: formData.get("password"),
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        let errorMessage = data.error || 'Wystąpił błąd podczas logowania';
-        // Mapowanie komunikatów błędów z Supabase na przyjazne dla użytkownika
-        if (errorMessage.includes('Invalid login credentials')) {
-          errorMessage = 'Nieprawidłowe dane logowania';
+        let errorMessage = data.error || "Wystąpił błąd podczas logowania";
+        if (errorMessage.includes("Invalid login credentials")) {
+          errorMessage = "Nieprawidłowe dane logowania";
         }
         displayToast(errorMessage);
         return;
       }
 
-      displayToast('Zalogowano pomyślnie', 'success');
-      
-      // Poczekaj chwilę, aby toast był widoczny
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      window.location.href = '/creator';
+      displayToast("Zalogowano pomyślnie", "success");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      window.location.href = "/creator";
     } catch (error) {
-      displayToast(
-        error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd'
-      );
+      displayToast(error instanceof Error ? error.message : "Wystąpił nieoczekiwany błąd");
     }
   });
-</script> 
+</script>

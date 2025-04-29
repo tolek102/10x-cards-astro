@@ -24,38 +24,38 @@ paths:
           required: false
           description: Page number for pagination (defaults to 1)
           schema:
-            $ref: '#/components/schemas/PaginationPage'
+            $ref: "#/components/schemas/PaginationPage"
         - name: limit
           in: query
           required: false
           description: Number of items per page (defaults to 20, maximum 100)
           schema:
-            $ref: '#/components/schemas/PaginationLimit'
+            $ref: "#/components/schemas/PaginationLimit"
         - name: sort
           in: query
           required: false
           description: Sorting order for flashcards
           schema:
-            $ref: '#/components/schemas/SortOrder'
+            $ref: "#/components/schemas/SortOrder"
       responses:
-        '200':
+        "200":
           description: Successfully retrieved flashcards
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FlashcardsListResponse'
-        '400':
+                $ref: "#/components/schemas/FlashcardsListResponse"
+        "400":
           description: Invalid query parameters
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
     post:
       summary: Create a manual flashcard
@@ -70,26 +70,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateManualFlashcardCommand'
+              $ref: "#/components/schemas/CreateManualFlashcardCommand"
       responses:
-        '201':
+        "201":
           description: Successfully created flashcard
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FlashcardDto'
-        '400':
+                $ref: "#/components/schemas/FlashcardDto"
+        "400":
           description: Invalid input
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /flashcards/candidates:
     get:
@@ -107,38 +107,38 @@ paths:
           required: false
           description: Page number for pagination (defaults to 1)
           schema:
-            $ref: '#/components/schemas/PaginationPage'
+            $ref: "#/components/schemas/PaginationPage"
         - name: limit
           in: query
           required: false
           description: Number of items per page (defaults to 20, maximum 100)
           schema:
-            $ref: '#/components/schemas/PaginationLimit'
+            $ref: "#/components/schemas/PaginationLimit"
         - name: sort
           in: query
           required: false
           description: Sorting order for flashcards
           schema:
-            $ref: '#/components/schemas/SortOrder'
+            $ref: "#/components/schemas/SortOrder"
       responses:
-        '200':
+        "200":
           description: Successfully retrieved candidate flashcards
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FlashcardsListResponse'
-        '400':
+                $ref: "#/components/schemas/FlashcardsListResponse"
+        "400":
           description: Invalid query parameters
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /flashcards/generate:
     post:
@@ -155,26 +155,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GenerateFlashcardsCommand'
+              $ref: "#/components/schemas/GenerateFlashcardsCommand"
       responses:
-        '200':
+        "200":
           description: Successfully generated flashcards
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GeneratedFlashcardsResponse'
-        '400':
+                $ref: "#/components/schemas/GeneratedFlashcardsResponse"
+        "400":
           description: Invalid input
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /flashcards/{id}:
     get:
@@ -194,30 +194,30 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Successfully retrieved flashcard
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FlashcardDto'
-        '400':
+                $ref: "#/components/schemas/FlashcardDto"
+        "400":
           description: Invalid flashcard ID format
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Flashcard not found or belongs to another user
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
     patch:
       summary: Update flashcard by ID
@@ -242,32 +242,32 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateFlashcardCommand'
+              $ref: "#/components/schemas/UpdateFlashcardCommand"
       responses:
-        '200':
+        "200":
           description: Successfully updated flashcard
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FlashcardDto'
-        '400':
+                $ref: "#/components/schemas/FlashcardDto"
+        "400":
           description: Invalid flashcard ID format or invalid input data
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Flashcard not found or belongs to another user
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
     delete:
       summary: Delete flashcard by ID
@@ -287,26 +287,26 @@ paths:
             type: string
             format: uuid
       responses:
-        '204':
+        "204":
           description: Flashcard successfully deleted
-        '400':
+        "400":
           description: Invalid flashcard ID format
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Flashcard not found or belongs to another user
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /flashcards/{id}/accept:
     patch:
@@ -327,30 +327,30 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Successfully accepted flashcard
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FlashcardDto'
-        '400':
+                $ref: "#/components/schemas/FlashcardDto"
+        "400":
           description: Invalid flashcard ID format
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Flashcard not found, belongs to another user, or is not a candidate
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
 components:
   schemas:
@@ -410,7 +410,7 @@ components:
     GeneratedFlashcardsResponse:
       type: array
       items:
-        $ref: '#/components/schemas/FlashcardDto'
+        $ref: "#/components/schemas/FlashcardDto"
       description: List of generated flashcards
 
     ErrorResponse:
@@ -484,7 +484,7 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/FlashcardDto'
+            $ref: "#/components/schemas/FlashcardDto"
           description: List of flashcards for the current page
         pagination:
           type: object
@@ -545,4 +545,4 @@ components:
           default: false
           example: false
       minProperties: 1
-      description: At least one field must be provided for update 
+      description: At least one field must be provided for update

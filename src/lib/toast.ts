@@ -35,4 +35,4 @@ export const showToast = (message: string, type: ToastType = "info", options: To
         duration,
       });
   }
-}; 
+};

@@ -1,8 +1,7 @@
-import { useState } from "react";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 import type { UserDto } from "@/types";
-import { showToast } from '../lib/toast';
+import { showToast } from "../lib/toast";
 import { Logo } from "./Logo";
 
 interface NavigationBarProps {
@@ -19,17 +18,18 @@ export const NavigationBar = ({ user, activeSection }: NavigationBarProps) => {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
       });
 
       if (!response.ok) {
-        throw new Error('Błąd podczas wylogowywania');
+        throw new Error("Błąd podczas wylogowywania");
       }
 
-      window.location.href = '/';
+      window.location.href = "/";
     } catch (error) {
-      console.error('Błąd podczas wylogowywania:', error);
+      // eslint-disable-next-line no-console
+      console.error("Błąd podczas wylogowywania:", error);
       showToast("Błąd wylogowania", "error", {
         description: "Nie udało się wylogować. Spróbuj ponownie za chwilę.",
       });

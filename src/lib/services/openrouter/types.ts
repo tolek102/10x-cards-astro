@@ -9,12 +9,12 @@ export interface OpenRouterConfig {
 export interface FlashcardCreateDto {
   front: string;
   back: string;
-  source: 'AI';
+  source: "AI";
   candidate: true;
 }
 
 export interface OpenRouterMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: "system" | "user" | "assistant";
   content: string;
 }
 
@@ -22,7 +22,7 @@ export interface OpenRouterRequest {
   model: string;
   messages: OpenRouterMessage[];
   response_format: {
-    type: 'json_schema';
+    type: "json_schema";
     json_schema: {
       name: string;
       strict: boolean;
@@ -43,13 +43,13 @@ export interface OpenRouterRequest {
 
 export interface OpenRouterResponse {
   id: string;
-  choices: Array<{
+  choices: {
     message: {
-      role: 'assistant';
+      role: "assistant";
       content: string;
     };
-    finish_reason: 'stop' | 'length' | 'content_filter';
-  }>;
+    finish_reason: "stop" | "length" | "content_filter";
+  }[];
   usage: {
     prompt_tokens: number;
     completion_tokens: number;
@@ -58,14 +58,14 @@ export interface OpenRouterResponse {
 }
 
 export enum OpenRouterErrorType {
-  AUTHENTICATION_ERROR = 'błąd_uwierzytelniania',
-  RATE_LIMIT_ERROR = 'błąd_limitu_żądań',
-  MODEL_ERROR = 'błąd_modelu',
-  VALIDATION_ERROR = 'błąd_walidacji',
-  GENERATION_ERROR = 'błąd_generowania_fiszek',
-  NETWORK_ERROR = 'błąd_sieci',
-  TIMEOUT_ERROR = 'błąd_przekroczenia_czasu',
-  UNKNOWN_ERROR = 'błąd_nieznany'
+  AUTHENTICATION_ERROR = "błąd_uwierzytelniania",
+  RATE_LIMIT_ERROR = "błąd_limitu_żądań",
+  MODEL_ERROR = "błąd_modelu",
+  VALIDATION_ERROR = "błąd_walidacji",
+  GENERATION_ERROR = "błąd_generowania_fiszek",
+  NETWORK_ERROR = "błąd_sieci",
+  TIMEOUT_ERROR = "błąd_przekroczenia_czasu",
+  UNKNOWN_ERROR = "błąd_nieznany",
 }
 
 export class OpenRouterError extends Error {
@@ -75,6 +75,6 @@ export class OpenRouterError extends Error {
     public originalError?: unknown
   ) {
     super(message);
-    this.name = 'OpenRouterError';
+    this.name = "OpenRouterError";
   }
-} 
+}

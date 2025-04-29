@@ -58,12 +58,15 @@ export const ExportModal = ({ isOpen, onClose, flashcards }: ExportModalProps) =
       URL.revokeObjectURL(url);
 
       showToast("Pomyślnie wyeksportowano fiszki", "success", {
-        description: `Wyeksportowano ${flashcards.length} fiszek do pliku ${filename}. Plik został pobrany na Twój komputer.`
+        description: `Wyeksportowano ${flashcards.length} fiszek do pliku ${filename}. Plik został pobrany na Twój komputer.`,
       });
       onClose();
     } catch (err) {
       showToast("Błąd eksportu", "error", {
-        description: "Wystąpił problem podczas eksportu fiszek. Sprawdź uprawnienia do zapisu plików i spróbuj ponownie."
+        description:
+          err instanceof Error
+            ? err.message
+            : "Wystąpił problem podczas eksportu fiszek. Sprawdź uprawnienia do zapisu plików i spróbuj ponownie.",
       });
     } finally {
       setIsExporting(false);
@@ -101,4 +104,4 @@ export const ExportModal = ({ isOpen, onClose, flashcards }: ExportModalProps) =
       </DialogContent>
     </Dialog>
   );
-}; 
+};

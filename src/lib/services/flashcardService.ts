@@ -38,7 +38,7 @@ export class FlashcardService {
         ...flashcard,
         user_id: userId,
         source: "AI" as Source,
-        candidate: true
+        candidate: true,
       }));
 
       // Store flashcards in database
@@ -292,7 +292,7 @@ export class FlashcardService {
         // If flashcard was a candidate or is AI-generated being edited, set it to false only if explicitly requested
         candidate: command.candidate === false ? false : existingFlashcard.candidate,
         // If source was AI, change to AI_EDITED
-        source: existingFlashcard.source === "AI" ? "AI_EDITED" as Source : existingFlashcard.source,
+        source: existingFlashcard.source === "AI" ? ("AI_EDITED" as Source) : existingFlashcard.source,
         updated_at: new Date().toISOString(),
       };
 

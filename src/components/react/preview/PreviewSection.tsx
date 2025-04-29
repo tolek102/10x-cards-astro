@@ -66,7 +66,7 @@ export const PreviewSection = ({
     try {
       await updateFlashcard(id, update);
       showToast("Pomyślnie zaktualizowano fiszkę", "success", {
-        description: "Zapisano zmiany w treści fiszki. Możesz teraz kontynuować przeglądanie."
+        description: "Zapisano zmiany w treści fiszki. Możesz teraz kontynuować przeglądanie.",
       });
       // Refresh both lists since editing a candidate moves it to accepted
       await Promise.all([
@@ -75,7 +75,10 @@ export const PreviewSection = ({
       ]);
     } catch (err) {
       showToast("Błąd aktualizacji", "error", {
-        description: "Wystąpił problem podczas aktualizacji fiszki. Sprawdź wprowadzone dane i spróbuj ponownie."
+        description:
+          err instanceof Error
+            ? err.message
+            : "Wystąpił problem podczas aktualizacji fiszki. Sprawdź wprowadzone dane i spróbuj ponownie.",
       });
     } finally {
       setIsEditModalOpen(false);
@@ -88,7 +91,7 @@ export const PreviewSection = ({
       try {
         await deleteFlashcard(id);
         showToast("Pomyślnie usunięto fiszkę", "success", {
-          description: "Fiszka została trwale usunięta z systemu. Tej operacji nie można cofnąć."
+          description: "Fiszka została trwale usunięta z systemu. Tej operacji nie można cofnąć.",
         });
         if (activeTab === "accepted") {
           await loadPage(pagination.page, pagination.limit);
@@ -97,7 +100,8 @@ export const PreviewSection = ({
         }
       } catch (err) {
         showToast("Błąd usuwania", "error", {
-          description: "Wystąpił problem podczas usuwania fiszki. Spróbuj ponownie później."
+          description:
+            err instanceof Error ? err.message : "Wystąpił problem podczas usuwania fiszki. Spróbuj ponownie później.",
         });
       }
     }
@@ -107,7 +111,7 @@ export const PreviewSection = ({
     try {
       await acceptFlashcard(id);
       showToast("Pomyślnie zaakceptowano fiszkę", "success", {
-        description: "Fiszka została przeniesiona do zestawu zaakceptowanych i jest gotowa do nauki."
+        description: "Fiszka została przeniesiona do zestawu zaakceptowanych i jest gotowa do nauki.",
       });
       await Promise.all([
         loadPage(pagination.page, pagination.limit),
@@ -115,7 +119,10 @@ export const PreviewSection = ({
       ]);
     } catch (err) {
       showToast("Błąd akceptacji", "error", {
-        description: "Wystąpił problem podczas akceptowania fiszki. Spróbuj ponownie później."
+        description:
+          err instanceof Error
+            ? err.message
+            : "Wystąpił problem podczas akceptowania fiszki. Spróbuj ponownie później.",
       });
     }
   };
@@ -124,7 +131,7 @@ export const PreviewSection = ({
     try {
       await discardFlashcard(id);
       showToast("Pomyślnie odrzucono fiszkę", "success", {
-        description: "Fiszka została usunięta z listy kandydatów. Możesz ją później wygenerować ponownie."
+        description: "Fiszka została usunięta z listy kandydatów. Możesz ją później wygenerować ponownie.",
       });
       await Promise.all([
         loadPage(pagination.page, pagination.limit),
@@ -132,7 +139,8 @@ export const PreviewSection = ({
       ]);
     } catch (err) {
       showToast("Błąd odrzucania", "error", {
-        description: "Wystąpił problem podczas odrzucania fiszki. Spróbuj ponownie później."
+        description:
+          err instanceof Error ? err.message : "Wystąpił problem podczas odrzucania fiszki. Spróbuj ponownie później.",
       });
     }
   };
@@ -205,4 +213,4 @@ export const PreviewSection = ({
       <ExportModal isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} flashcards={flashcards} />
     </div>
   );
-}; 
+};

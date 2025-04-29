@@ -146,4 +146,4 @@ export const FlashcardCard = ({ flashcard, onEdit, onDelete, onAccept, onDiscard
       </div>
     </div>
   );
-}; 
+};

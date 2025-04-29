@@ -29,7 +29,7 @@ export const EditModal = ({ isOpen, onClose, onSave, flashcard }: EditModalProps
     e.preventDefault();
     if (!flashcard) {
       showToast("Błąd edycji", "error", {
-        description: "Nie można edytować fiszki. Wybierz fiszkę do edycji i spróbuj ponownie."
+        description: "Nie można edytować fiszki. Wybierz fiszkę do edycji i spróbuj ponownie.",
       });
       return;
     }
@@ -39,14 +39,14 @@ export const EditModal = ({ isOpen, onClose, onSave, flashcard }: EditModalProps
 
     if (!trimmedFront || !trimmedBack) {
       showToast("Błąd walidacji", "error", {
-        description: "Przód i tył fiszki nie mogą być puste. Wprowadź treść dla obu stron fiszki przed zapisaniem."
+        description: "Przód i tył fiszki nie mogą być puste. Wprowadź treść dla obu stron fiszki przed zapisaniem.",
       });
       return;
     }
 
     if (trimmedFront === flashcard.front && trimmedBack === flashcard.back) {
       showToast("Brak zmian", "info", {
-        description: "Nie wprowadzono żadnych zmian w treści fiszki. Edycja została anulowana."
+        description: "Nie wprowadzono żadnych zmian w treści fiszki. Edycja została anulowana.",
       });
       onClose();
       return;
@@ -56,12 +56,15 @@ export const EditModal = ({ isOpen, onClose, onSave, flashcard }: EditModalProps
     try {
       await onSave(flashcard.id, { front, back });
       showToast("Pomyślnie zaktualizowano fiszkę", "success", {
-        description: "Zapisano nową treść fiszki. Możesz teraz kontynuować przeglądanie."
+        description: "Zapisano nową treść fiszki. Możesz teraz kontynuować przeglądanie.",
       });
       onClose();
     } catch (error) {
       showToast("Błąd zapisywania", "error", {
-        description: "Wystąpił problem podczas zapisywania zmian. Sprawdź wprowadzone dane i spróbuj ponownie."
+        description:
+          error instanceof Error
+            ? error.message
+            : "Wystąpił problem podczas zapisywania zmian. Sprawdź wprowadzone dane i spróbuj ponownie.",
       });
     } finally {
       setIsSubmitting(false);
@@ -116,4 +119,4 @@ export const EditModal = ({ isOpen, onClose, onSave, flashcard }: EditModalProps
       </DialogContent>
     </Dialog>
   );
-}; 
+};

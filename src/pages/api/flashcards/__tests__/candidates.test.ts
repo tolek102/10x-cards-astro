@@ -67,12 +67,13 @@ describe("GET /api/flashcards/candidates", () => {
 
   const createMockAPIContext = (searchParams?: Record<string, string>, requestInit?: RequestInit): APIContext => ({
     request: new Request(
-      "http://localhost/api/flashcards/candidates" + (searchParams ? "?" + new URLSearchParams(searchParams).toString() : ""),
+      "http://localhost/api/flashcards/candidates" +
+        (searchParams ? "?" + new URLSearchParams(searchParams).toString() : ""),
       requestInit
     ),
-    locals: { 
+    locals: {
       supabase: mockSupabase,
-      user: { id: "test-user-id", email: "test@example.com" }
+      user: { id: "test-user-id", email: "test@example.com" },
     },
     cookies: {
       get: vi.fn(),
@@ -81,7 +82,10 @@ describe("GET /api/flashcards/candidates", () => {
       delete: vi.fn(),
       headers: () => new Headers(),
     } as unknown as AstroCookies,
-    url: new URL("http://localhost/api/flashcards/candidates" + (searchParams ? "?" + new URLSearchParams(searchParams).toString() : "")),
+    url: new URL(
+      "http://localhost/api/flashcards/candidates" +
+        (searchParams ? "?" + new URLSearchParams(searchParams).toString() : "")
+    ),
     site: new URL("http://localhost"),
     generator: "test",
     params: {},
