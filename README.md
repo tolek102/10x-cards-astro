@@ -83,3 +83,73 @@ This project is currently in the MVP stage, where core functionalities are imple
 ## License
 
 This project is licensed under the MIT License. 
+
+## Project structure
+
+src/
+├── middleware/
+│   └── index.ts
+│       ├── defineMiddleware (from astro:middleware)
+│       └── createSupabaseServerInstance (from ../db/supabase.client)
+│
+├── components/
+│   ├── ui/ (shadcn components)
+│   ├── providers/
+│   ├── react/
+│   ├── astro/
+│   ├── layouts/
+│   ├── modals/
+│   ├── NavigationBar.tsx
+│   └── ToastContainer.astro
+│
+├── pages/
+│   ├── api/
+│   │   └── flashcards/
+│   │       ├── index.ts
+│   │       └── __tests__/
+│   │           └── index.test.ts
+│   └── [other pages]
+│
+├── lib/
+│   └── services/
+│       └── openrouter/
+│           └── index.ts
+│
+├── db/
+│   └── supabase.client.ts
+│
+├── layouts/
+├── styles/
+├── openapi/
+└── types.ts
+
+Key Dependencies:
+- Astro 5
+- TypeScript 5
+- React 19
+- Tailwind 4
+- Shadcn/ui
+- Supabase
+
+Protected Routes:
+└── /learning
+└── /preview
+└── /creator
+
+Public Routes:
+└── /
+└── /auth/
+    ├── login
+    ├── register
+    └── reset-password
+
+- **This structure shows:**
+- The main application entry points through middleware/index.ts
+- Clear separation of components by type (React, Astro, UI)
+- API routes under pages/api
+- Service layer under lib/services
+- Database interactions through Supabase client
+- Protected and public routes as defined in middleware
+- Clear component organization following the project structure rules
+
+The middleware/index.ts serves as a central authentication and routing control, managing access to protected and public routes while initializing Supabase for each request.
