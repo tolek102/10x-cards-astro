@@ -1,4 +1,3 @@
-
 # 10x Cards
 
 ## Table of Contents
@@ -173,8 +172,7 @@ The project includes core functionalities for flashcard creation, management, an
     │   └── ui/              # Base UI elements (Button, Dialog, Input, etc.)
     ├── db/                  # Database related files
     │   ├── database.types.ts # Auto-generated Supabase schema types
-    │   ├── supabase.client.ts # Supabase client setup (browser & server)
-    │   └── supabase.ts      # Simplified Supabase client instance (usage might vary)
+    │   └── supabase.client.ts # Supabase client setup with SSR support and type safety
     ├── layouts/             # Astro layout components
     │   ├── README.md        # Internal layout documentation
     │   └── BaseLayout.astro # Main page layout
