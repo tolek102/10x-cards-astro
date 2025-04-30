@@ -1,0 +1,157 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches: [ master ]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  lint:
+    name: Lint Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run linting
+        id: lint
+        continue-on-error: true
+        run: |
+          npm run lint > lint_results.txt 2>&1 || echo "Linting failed"
+          echo "LINT_OUTPUT<<EOF" >> $GITHUB_ENV
+          cat lint_results.txt >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Upload lint results
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-results
+          path: lint_results.txt
+          retention-days: 1
+
+  test:
+    name: Unit Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run tests with coverage
+        id: test
+        continue-on-error: true
+        run: |
+          npm run test:coverage > test_results.txt 2>&1 || echo "Tests failed"
+          echo "TEST_OUTPUT<<EOF" >> $GITHUB_ENV
+          cat test_results.txt >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+        
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            test_results.txt
+            coverage/
+          retention-days: 1
+
+  status-comment:
+    name: PR Status Comment
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Status Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Read test results
+            const testOutput = fs.readFileSync('./artifacts/test-results/test_results.txt', 'utf8');
+            const coverageSummary = JSON.parse(fs.readFileSync('./artifacts/test-results/coverage/coverage-summary.json', 'utf8'));
+            
+            // Read lint results
+            const lintOutput = fs.readFileSync('./artifacts/lint-results/lint_results.txt', 'utf8');
+            
+            // Parse test results
+            const failedTests = (testOutput.match(/✕.*$/gm) || []).map(test => test.trim());
+            const skippedTests = (testOutput.match(/○.*$/gm) || []).map(test => test.trim());
+            const passedTests = (testOutput.match(/✓.*$/gm) || []).map(test => test.trim());
+            
+            // Parse lint results
+            const lintErrors = lintOutput.split('\n')
+              .filter(line => line.includes('error'))
+              .map(error => error.trim());
+            
+            const lintWarnings = lintOutput.split('\n')
+              .filter(line => line.includes('warning'))
+              .map(warning => warning.trim());
+            
+            // Calculate status
+            const hasLintErrors = lintErrors.length > 0;
+            const hasTestFailures = failedTests.length > 0;
+            const overallStatus = !hasLintErrors && !hasTestFailures;
+            
+            const icon = overallStatus ? '✅' : '❌';
+            const lintIcon = !hasLintErrors ? '✅' : '❌';
+            const testIcon = !hasTestFailures ? '✅' : '❌';
+            
+            const body = `## Pull Request Status ${icon}
+
+            ### Lint Results ${lintIcon}
+            ${hasLintErrors ? '#### Errors ❌\n' + lintErrors.map(err => `- ${err}`).join('\n') : '✅ No linting errors'}
+            
+            ${lintWarnings.length > 0 ? '#### Warnings ⚠️\n' + lintWarnings.map(warn => `- ${warn}`).join('\n') : '✅ No linting warnings'}
+
+            ### Test Results ${testIcon}
+            
+            #### Coverage Summary
+            - Statements: ${coverageSummary.total.statements.pct}%
+            - Branches: ${coverageSummary.total.branches.pct}%
+            - Functions: ${coverageSummary.total.functions.pct}%
+            - Lines: ${coverageSummary.total.lines.pct}%
+            
+            #### Test Statistics
+            - ✅ Passed Tests: ${passedTests.length}
+            - ❌ Failed Tests: ${failedTests.length}
+            - ⚠️ Skipped Tests: ${skippedTests.length}
+            
+            ${failedTests.length > 0 ? '#### Failed Tests ❌\n' + failedTests.map(test => `- ${test}`).join('\n') : ''}
+            ${skippedTests.length > 0 ? '#### Skipped Tests ⚠️\n' + skippedTests.map(test => `- ${test}`).join('\n') : ''}
+            
+            ### Overall Status
+            ${overallStatus 
+              ? '✅ All checks have passed successfully! 🎉' 
+              : '❌ Some checks have failed. Please review the details above. ⚠️'}`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            }); 

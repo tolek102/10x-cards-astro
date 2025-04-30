@@ -1,0 +1,122 @@
+name: Test and Build
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        id: lint
+        run: |
+          npm run lint > lint_output.txt 2>&1 || echo "::set-output name=lint_failed::true"
+          echo "LINT_RESULTS<<EOF" >> $GITHUB_ENV
+          cat lint_output.txt >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Run tests with coverage
+        id: test
+        run: |
+          # Run tests and capture full output
+          npm run test:coverage | tee test_output.txt
+          echo "TEST_RESULTS<<EOF" >> $GITHUB_ENV
+          cat test_output.txt >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
+          # Extract test summary
+          TOTAL_TESTS=$(grep "total" test_output.txt | awk '{print $2}')
+          PASSED_TESTS=$(grep "passed" test_output.txt | awk '{print $2}')
+          FAILED_TESTS=$(grep "failed" test_output.txt | awk '{print $2}')
+          SKIPPED_TESTS=$(grep "skipped" test_output.txt | awk '{print $2}')
+          
+          echo "TOTAL_TESTS=$TOTAL_TESTS" >> $GITHUB_ENV
+          echo "PASSED_TESTS=$PASSED_TESTS" >> $GITHUB_ENV
+          echo "FAILED_TESTS=$FAILED_TESTS" >> $GITHUB_ENV
+          echo "SKIPPED_TESTS=$SKIPPED_TESTS" >> $GITHUB_ENV
+          
+          # Extract failed test names
+          echo "FAILED_TESTS_NAMES<<EOF" >> $GITHUB_ENV
+          grep -A 1 "FAIL " test_output.txt | grep -v "FAIL " | grep -v "\-\-" >> $GITHUB_ENV || true
+          echo "EOF" >> $GITHUB_ENV
+          
+          # Extract skipped test names
+          echo "SKIPPED_TESTS_NAMES<<EOF" >> $GITHUB_ENV
+          grep -A 1 "SKIP " test_output.txt | grep -v "SKIP " | grep -v "\-\-" >> $GITHUB_ENV || true
+          echo "EOF" >> $GITHUB_ENV
+          
+          # Extract coverage data
+          COVERAGE=$(grep "All files" coverage/coverage-summary.txt | awk '{print $3}' || echo "N/A")
+          STATEMENTS=$(grep "All files" coverage/coverage-summary.txt | awk '{print $4}' || echo "N/A")
+          BRANCHES=$(grep "All files" coverage/coverage-summary.txt | awk '{print $5}' || echo "N/A")
+          FUNCTIONS=$(grep "All files" coverage/coverage-summary.txt | awk '{print $6}' || echo "N/A")
+          
+          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+          echo "STATEMENTS_COV=$STATEMENTS" >> $GITHUB_ENV
+          echo "BRANCHES_COV=$BRANCHES" >> $GITHUB_ENV
+          echo "FUNCTIONS_COV=$FUNCTIONS" >> $GITHUB_ENV
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+      - name: Build production
+        run: npm run build
+
+      - name: Status Info
+        run: |
+          echo "✨ Workflow Summary ✨"
+          echo "===================="
+          echo "🔍 Build Information:"
+          echo "Branch: ${{ github.ref }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Triggered by: ${{ github.actor }}"
+          echo ""
+          echo "🧪 Test Results:"
+          echo "Total Tests: ${{ env.TOTAL_TESTS }}"
+          echo "✅ Passed: ${{ env.PASSED_TESTS }}"
+          echo "❌ Failed: ${{ env.FAILED_TESTS }}"
+          if [[ -n "${{ env.FAILED_TESTS_NAMES }}" ]]; then
+            echo "   Failed Tests:"
+            echo "${{ env.FAILED_TESTS_NAMES }}" | sed 's/^/   - /'
+          fi
+          echo "⏭️ Skipped: ${{ env.SKIPPED_TESTS }}"
+          if [[ -n "${{ env.SKIPPED_TESTS_NAMES }}" ]]; then
+            echo "   Skipped Tests:"
+            echo "${{ env.SKIPPED_TESTS_NAMES }}" | sed 's/^/   - /'
+          fi
+          echo ""
+          echo "📊 Coverage Report:"
+          echo "Overall Coverage: ${{ env.COVERAGE }}"
+          echo "Statements: ${{ env.STATEMENTS_COV }}"
+          echo "Branches: ${{ env.BRANCHES_COV }}"
+          echo "Functions: ${{ env.FUNCTIONS_COV }}"
+          echo ""
+          echo "🔎 Linting Results:"
+          echo "-------------------"
+          echo "${{ env.LINT_RESULTS }}"
+          echo ""
+          if [[ "${{ steps.lint.outputs.lint_failed }}" == "true" ]]; then
+            echo "⚠️ Linting issues were found"
+          else
+            echo "✅ Linting passed successfully"
+          fi 
