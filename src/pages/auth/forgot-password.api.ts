@@ -1,22 +1,25 @@
 import type { APIRoute } from "astro";
-import { authService } from "../../lib/services/auth.service";
+import { createSupabaseServerInstance } from "../../db/supabase.client";
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request, redirect }) => {
+export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   try {
     const data = await request.formData();
     const email = data.get("email")?.toString() || "";
 
-    const result = await authService.resetPassword(email, request.url);
+    const supabase = createSupabaseServerInstance({ cookies, headers: request.headers });
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: new URL("/auth/reset-password", request.url).toString(),
+    });
 
-    if ("error" in result) {
-      return redirect(`/auth/forgot-password?error=${encodeURIComponent(result.error)}`);
+    if (error) {
+      return redirect(`/auth/forgot-password?error=${encodeURIComponent(error.message)}`);
     }
 
     return redirect("/auth/forgot-password?success=true");
   } catch (error) {
-    console.error("Password reset error:", error);
+    console.error("Failed to reset password:", error);
     return redirect("/auth/forgot-password?error=Wystąpił nieoczekiwany błąd");
   }
 };

@@ -56,7 +56,6 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 
 <script>
   import { showToast } from "../../lib/toast";
-
   const displayToast = (message: string, type: "success" | "error" = "error") => {
     if (message?.trim() && typeof showToast === "function") {
       console.log("Displaying toast:", { message, type });
@@ -124,7 +123,6 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         window.location.href = loginUrl.toString();
       }
     } catch (error) {
-      console.error("Registration error:", error);
       displayToast(error instanceof Error ? error.message : "Wystąpił nieoczekiwany błąd");
     }
   });
