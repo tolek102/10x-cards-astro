@@ -16,7 +16,7 @@ export const useCurrentUser = () => {
           setUser(null);
         }
       } catch (error) {
-        console.error("Error fetching user:", error);
+        console.error("Failed to check authentication status:", error);
         setUser(null);
       } finally {
         setIsLoading(false);

@@ -65,7 +65,6 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 
 <script>
   import { showToast } from "../../lib/toast";
-
   const displayToast = (message: string, type: "success" | "error" = "error") => {
     if (message && message.trim()) {
       showToast(message, type);
@@ -82,7 +81,6 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     }
     if (registered) {
       displayToast("Konto zostało utworzone. Możesz się teraz zalogować.", "success");
-      console.log("Konto zostało utworzone. Możesz się teraz zalogować.");
     }
   });
 

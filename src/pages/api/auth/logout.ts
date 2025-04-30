@@ -22,7 +22,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       status: 200,
     });
   } catch (error) {
-    console.error("Logout error:", error);
+    console.error("Failed to logout:", error);
     return new Response(
       JSON.stringify({
         error: "Wystąpił nieoczekiwany błąd podczas wylogowywania",
