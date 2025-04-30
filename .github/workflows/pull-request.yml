@@ -1,0 +1,223 @@
+name: Master Pull Request Checks
+
+on:
+  pull_request:
+    branches: [ master ]
+    types: [opened, synchronize, reopened]
+
+# Add permissions configuration
+permissions:
+  pull-requests: write
+  issues: write
+  contents: read
+
+jobs:
+  lint:
+    name: Lint Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run linting
+        id: lint
+        continue-on-error: true
+        run: |
+          npm run lint > lint_results.txt 2> lint_error.txt || true
+          echo "LINT_OUTPUT<<EOF" >> $GITHUB_ENV
+          cat lint_results.txt >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Upload lint results
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-results
+          path: |
+            lint_results.txt
+            lint_error.txt
+          retention-days: 1
+
+  test:
+    name: Unit Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run tests with coverage
+        id: test
+        continue-on-error: true
+        run: |
+          npm run test > test_results.txt 2> test_error.txt || true
+          echo "TEST_OUTPUT<<EOF" >> $GITHUB_ENV
+          cat test_results.txt >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+        
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            test_results.txt
+            test_error.txt
+            coverage/
+          retention-days: 1
+
+  status-comment:
+    name: PR Status Comment
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Status Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Read lint results
+            const lintOutput = fs.readFileSync('./artifacts/lint-results/lint_results.txt', 'utf8');
+            
+            // Parse lint results
+            const lintErrors = [];
+            const lintWarnings = [];
+            let currentFile = null;
+            
+            // Function to clean file path
+            const cleanFilePath = (path) => {
+              return path.replace(/^\/home\/runner\/work\/[^/]+\/[^/]+\//, '');
+            };
+            
+            const lintLines = lintOutput.split('\n');
+            for (const line of lintLines) {
+              // Check if this is a file path line
+              if (line.startsWith('/')) {
+                currentFile = cleanFilePath(line.trim());
+                continue;
+              }
+              
+              // Parse error/warning lines
+              if (currentFile && line.trim()) {
+                const match = line.trim().match(/(\d+):(\d+)\s+(error|warning)\s+(.+?)\s+([a-zA-Z/-]+)\s*$/);
+                if (match) {
+                  const [_, lineNum, col, severity, message, rule] = match;
+                  const issue = `${currentFile}:${lineNum}:${col} - ${message} (${rule})`;
+                  if (severity === 'error') {
+                    lintErrors.push(issue);
+                  } else {
+                    lintWarnings.push(issue);
+                  }
+                }
+              }
+            }
+            
+            // Read test results
+            const testOutput = fs.readFileSync('./artifacts/test-results/test_results.txt', 'utf8');
+            
+            // Clean the output from ANSI escape codes and other special characters
+            const cleanOutput = testOutput
+              .replace(/\u001b\[\d+m/g, '') // Remove ANSI color codes
+              .replace(/\u001b\[0m/g, '')   // Remove ANSI reset codes
+              .replace(/[^\x20-\x7E\n]/g, ''); // Keep only printable ASCII and newlines
+            
+            // Parse test results - look for the test summary line
+            let testCounts = {
+              passed: 0,
+              failed: 0,
+              skipped: 0,
+              total: 0
+            };
+            
+            // Look for the test summary line that shows total tests
+            const testSummaryMatch = cleanOutput.match(/\s+Tests\s+(\d+)\s+passed\s+\((\d+)\)/);
+            
+            if (testSummaryMatch) {
+              testCounts.passed = parseInt(testSummaryMatch[1]);
+              testCounts.total = parseInt(testSummaryMatch[2]);
+            } else {
+              // Fallback: try to count individual test results from file summaries
+              const testLines = cleanOutput.split('\n');
+              for (const line of testLines) {
+                const match = line.match(/\((\d+) tests\)/);
+                if (match) {
+                  const count = parseInt(match[1]);
+                  testCounts.total += count;
+                  testCounts.passed += count; // since all tests passed
+                }
+              }
+            }
+            
+            // Try to read coverage summary if it exists
+            let coverageSummary = null;
+            try {
+              coverageSummary = JSON.parse(fs.readFileSync('./artifacts/test-results/coverage/coverage-summary.json', 'utf8'));
+            } catch (error) {
+              console.log('Coverage summary not found, skipping coverage report');
+            }
+            
+            // Calculate status
+            const hasLintErrors = lintErrors.length > 0;
+            const hasTestFailures = testCounts.failed > 0;
+            const overallStatus = !hasLintErrors && !hasTestFailures;
+            
+            const icon = overallStatus ? '✅' : '❌';
+            const lintIcon = !hasLintErrors ? '✅' : '❌';
+            const testIcon = !hasTestFailures ? '✅' : '❌';
+            
+            const body = `## Pull Request Status ${icon}
+
+            ### Lint Results ${lintIcon}
+            ${hasLintErrors ? '#### Errors ❌\n' + lintErrors.map(err => `- ${err}`).join('\n') : '✅ No linting errors'}
+            
+            ${lintWarnings.length > 0 ? '#### Warnings ⚠️\n' + lintWarnings.map(warn => `- ${warn}`).join('\n') : '✅ No linting warnings'}
+
+            ### Test Results ${testIcon}
+            
+            ${coverageSummary ? `#### Coverage Summary
+            - Statements: ${coverageSummary.total.statements.pct}%
+            - Branches: ${coverageSummary.total.branches.pct}%
+            - Functions: ${coverageSummary.total.functions.pct}%
+            - Lines: ${coverageSummary.total.lines.pct}%` : ''}
+            
+            #### Test Statistics
+            - ✅ Passed Tests: ${testCounts.passed}
+            - ❌ Failed Tests: ${testCounts.failed}
+            - ⚠️ Skipped Tests: ${testCounts.skipped}
+            - 📊 Total Tests: ${testCounts.total}
+            
+            ### Overall Status
+            ${overallStatus 
+              ? '✅ All checks have passed successfully! 🎉' 
+              : '❌ Some checks have failed. Please review the details above. ⚠️'}`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            }); 

@@ -3,7 +3,6 @@ import type { OpenRouterConfig } from "./types";
 function validateEnvConfig() {
   const apiKey = import.meta.env.PUBLIC_OPENROUTER_API_KEY;
   if (!apiKey) {
-    console.error("Configuration Error: PUBLIC_OPENROUTER_API_KEY is not set in environment variables");
     throw new Error("PUBLIC_OPENROUTER_API_KEY is not set in environment variables");
   }
 
