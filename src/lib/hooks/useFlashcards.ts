@@ -159,7 +159,7 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
         }));
 
         showToast("Utworzono nową fiszkę", "success", {
-          description: "Nowa fiszka została dodana do listy kandydatów.",
+          description: "Nowa fiszka została poprawnie dodana do listy fiszek.",
         });
 
         return newFlashcard;

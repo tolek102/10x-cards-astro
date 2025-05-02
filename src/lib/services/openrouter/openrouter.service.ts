@@ -10,7 +10,7 @@ export class OpenRouterService {
 
   constructor(config: OpenRouterConfig) {
     this.apiKey = config.apiKey;
-    this.model = config.model ?? "google/gemini-2.0-flash-exp:free";
+    this.model = config.model ?? "meta-llama/llama-4-maverick:free";
     this.maxRetries = config.maxRetries ?? 3;
     this.timeout = config.timeout ?? 30000;
     this.baseUrl = config.baseUrl ?? "https://openrouter.ai/api/v1";
@@ -29,7 +29,6 @@ export class OpenRouterService {
 
   private async makeRequest(text: string): Promise<OpenRouterResponse> {
     const request = this.formatPrompt(text);
-
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
@@ -45,9 +44,10 @@ export class OpenRouterService {
       });
 
       if (!response.ok) {
+        const responseText = await response.text();
         throw new OpenRouterError(
           this.getErrorTypeFromStatus(response.status),
-          `API request failed with status ${response.status}: ${response.statusText}`
+          `API request failed with status ${response.status}: ${response.statusText}. Response: ${responseText}`
         );
       }
 
@@ -67,12 +67,48 @@ export class OpenRouterService {
 
   private async parseAIResponse(response: OpenRouterResponse): Promise<FlashcardCreateDto[]> {
     try {
-      const content = response.choices[0]?.message?.content;
-      if (!content) {
-        throw new OpenRouterError(OpenRouterErrorType.GENERATION_ERROR, "Empty response from AI");
+
+      if (!response.choices || !Array.isArray(response.choices) || response.choices.length === 0) {
+        throw new OpenRouterError(
+          OpenRouterErrorType.GENERATION_ERROR,
+          `Invalid response structure: missing or empty choices array. Response: ${JSON.stringify(response)}`
+        );
       }
 
-      const parsedContent = JSON.parse(content) as { front: string; back: string }[];
+      const firstChoice = response.choices[0];
+      if (!firstChoice.message || typeof firstChoice.message.content !== 'string') {
+        throw new OpenRouterError(
+          OpenRouterErrorType.GENERATION_ERROR,
+          `Invalid message structure in first choice. Choice: ${JSON.stringify(firstChoice)}`
+        );
+      }
+
+      const content = firstChoice.message.content;
+      if (!content) {
+        throw new OpenRouterError(
+          OpenRouterErrorType.GENERATION_ERROR,
+          "Empty content in AI response"
+        );
+      }
+
+      let parsedContent;
+      try {
+        parsedContent = JSON.parse(content) as { front: string; back: string }[];
+      } catch (parseError) {
+        throw new OpenRouterError(
+          OpenRouterErrorType.GENERATION_ERROR,
+          `Failed to parse content as JSON: ${content}`,
+          parseError
+        );
+      }
+
+      if (!Array.isArray(parsedContent)) {
+        throw new OpenRouterError(
+          OpenRouterErrorType.GENERATION_ERROR,
+          `Expected array of flashcards, got: ${typeof parsedContent}`
+        );
+      }
+
       return parsedContent.map((card) => ({
         ...card,
         source: "AI" as const,
@@ -82,7 +118,11 @@ export class OpenRouterService {
       if (error instanceof OpenRouterError) {
         throw error;
       }
-      throw new OpenRouterError(OpenRouterErrorType.GENERATION_ERROR, "Failed to parse AI response", error);
+      throw new OpenRouterError(
+        OpenRouterErrorType.GENERATION_ERROR,
+        "Failed to parse AI response",
+        error
+      );
     }
   }
 
@@ -118,7 +158,21 @@ export class OpenRouterService {
         {
           role: "system",
           content:
-            "You are a helpful AI that creates high-quality educational flashcards. Generate concise, clear, and accurate flashcards from the provided text. Each flashcard should have a clear question on the front and a comprehensive answer on the back.",
+            "You are a helpful AI that creates high-quality educational flashcards. " +
+            "Generate concise, clear, and accurate flashcards from the provided text. " +
+            "Each flashcard should have a clear question on the front and a comprehensive answer on the back. " +
+            "Return the flashcards only in requested JSON response format without any other text or thinking section. " 
+            // "Don`t put response in ```json``` tags. " +
+            // "Only allowed format is: " +
+            // "{" +
+            // "  \"flashcards\": [" +
+            // "    {" +
+            // "      \"front\": \"Question\"," +
+            // "      \"back\": \"Answer\"" +
+            // "    }" +
+            // "  ]" +
+            // "}"
+            ,
         },
         {
           role: "user",
