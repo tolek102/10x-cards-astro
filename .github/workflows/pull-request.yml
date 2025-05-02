@@ -1,11 +1,9 @@
 # .github/workflows/pull-request.yml
 name: Pull Request Checks
 
-# Uruchamiaj workflow dla Pull Requestów kierowanych do gałęzi 'master'
-# dla zdarzeń: otwarcie, synchronizacja (nowy commit), ponowne otwarcie
 on:
   pull_request:
-    branches: [ master ] # Upewnij się, że nazwa gałęzi głównej jest poprawna (master/main)
+    branches: [ master ] # Upewnij się, że nazwa gałęzi głównej jest poprawna
     types: [ opened, synchronize, reopened ]
 
 jobs:
@@ -19,23 +17,23 @@ jobs:
       - name: Set up Node.js from .nvmrc
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc' # Używa wersji Node.js z pliku .nvmrc
-          cache: 'npm' # Włącza cache'owanie zależności npm
+          node-version-file: '.nvmrc'
+          cache: 'npm'
 
       - name: Install Dependencies
-        run: npm ci # Używaj 'ci' dla czystej instalacji w CI/CD
+        run: npm ci
 
       - name: Run ESLint
-        id: lint-step # Nadajemy ID krokowi, aby sprawdzić jego wynik później
-        # Uruchamia lintowanie. Pozwalamy na kontynuację nawet jeśli są błędy,
-        # aby móc uruchomić testy i finalny komentarz.
-        run: npm run lint
-        continue-on-error: true # Nie zatrzymuj workflow, jeśli lintowanie zawiedzie
+        # ID nie jest już krytycznie potrzebne, ale może zostać
+        # WAŻNE: Usunięto continue-on-error: true
+        run: npm run lint # Pozwól jobowi zawieść, jeśli lintowanie zwróci błąd
 
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
-    needs: lint # Uruchom ten job dopiero po zakończeniu joba 'lint' (nawet jeśli się nie powiedzie)
+    needs: lint # Uruchamiaj tylko jeśli lint przejdzie (standardowe zachowanie 'needs')
+                # LUB zmień na 'needs: [lint]' i dodaj 'if: always()' jeśli chcesz testować nawet po błędzie linta
+                # Poniżej zakładam standardowe zachowanie (test po sukcesie linta)
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -50,72 +48,70 @@ jobs:
         run: npm ci
 
       - name: Run Unit Tests with Coverage
-        id: test-step # Nadajemy ID krokowi
-        # Uruchamia testy z coverage. Dodajemy reportera JSON, aby łatwo sparsować wyniki.
-        # Flaga '--' przekazuje argumenty bezpośrednio do vitest.
-        run: npm run test:coverage -- --reporter=json --outputFile=vitest-summary.json
-        continue-on-error: true # Nie zatrzymuj workflow, jeśli testy zawiodą
+        # WAŻNE: Usunięto continue-on-error: true
+        run: npm run test:coverage -- --reporter=json --outputFile=vitest-summary.json # Pozwól jobowi zawieść, jeśli testy nie przejdą
 
       - name: Upload Test Summary Artifact
-        # Zapisuje podsumowanie testów jako artefakt, aby job z komentarzem mógł je odczytać
         uses: actions/upload-artifact@v4
-        if: always() # Zawsze próbuj zapisać artefakt, nawet jeśli krok testów się nie powiódł
+        # Uruchom ten krok tylko jeśli poprzedni (testy) się powiódł
+        # LUB użyj 'if: always()' jeśli chcesz artefakt nawet przy błędzie testów
+        # Poniżej zakładam zapis tylko przy sukcesie testów
+        # if: success() # Można dodać dla jasności, ale jest domyślne
         with:
           name: test-summary
           path: vitest-summary.json
-          retention-days: 1 # Przechowuj artefakt tylko przez 1 dzień
+          retention-days: 1
 
       - name: Upload Coverage Artifact
-        # Zapisuje pełny raport coverage jako artefakt (opcjonalne, ale przydatne)
         uses: actions/upload-artifact@v4
-        if: always() # Zawsze próbuj zapisać artefakt
+        # Uruchom ten krok tylko jeśli testy się powiodły
+        # if: success() # Można dodać dla jasności
         with:
           name: coverage-report
-          path: coverage/ # Domyślny katalog dla raportów coverage Vitest
+          path: coverage/
           retention-days: 5
 
   status-comment:
     name: Post Status Comment
     runs-on: ubuntu-latest
-    needs: [lint, test] # Uruchom ten job po zakończeniu 'lint' i 'test'
-    # Uruchamiaj ten job zawsze, nawet jeśli poprzednie zawiodły, aby podsumować status
+    # Zależy od wyników LINT i TEST
+    needs: [lint, test]
+    # WAŻNE: Uruchamiaj ten job ZAWSZE, nawet jeśli poprzednie zawiodły
     if: always()
     permissions:
-      pull-requests: write # Wymagane uprawnienia do dodawania komentarzy do PR
+      pull-requests: write
 
     steps:
       - name: Download Test Summary Artifact
         uses: actions/download-artifact@v4
         with:
           name: test-summary
-        # Ignoruj błąd, jeśli artefakt nie istnieje (np. job testowy zawiódł bardzo wcześnie)
+        # Ignoruj błąd, jeśli artefakt nie istnieje (np. job testowy zawiódł i nie zapisał)
         continue-on-error: true
 
       - name: Create Status Comment
         uses: actions/github-script@v7
-        # Uruchamiamy zawsze, bo warunek if: always() jest na poziomie joba
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          # Przekazujemy wyniki 'needs' jako stringi do wnętrza skryptu
+          # Skrypt pozostaje taki sam jak w poprzedniej poprawnej wersji
+          # Teraz będzie otrzymywał poprawne 'failure' dla needs.lint.result / needs.test.result
           script: |
             const fs = require('fs');
             const prNumber = context.issue.number;
 
             if (!prNumber) {
-              core.setFailed('Could not get PR number from context.'); // Używamy globalnie dostępnego 'core'
+              core.setFailed('Could not get PR number from context.');
               return;
             }
 
-            // --- Pobieranie wyników z 'needs' przekazanych jako stringi ---
-            const lintResult = "${{ needs.lint.result }}"; // Interpolacja YAML -> string JS
-            const testResult = "${{ needs.test.result }}"; // Interpolacja YAML -> string JS
+            // --- Pobieranie wyników z 'needs' ---
+            const lintResult = "${{ needs.lint.result }}"; // Teraz powinno być 'failure' jeśli lint zawiódł
+            const testResult = "${{ needs.test.result }}"; // Teraz powinno być 'failure' jeśli test zawiódł
 
             // --- Status Lintowania ---
             const lintStatus = lintResult === 'success' ? '✅' : '❌';
             let lintComment = `Lint Results ${lintStatus}\n`;
             if (lintResult !== 'success') {
-              // Uwaga: Nadal nie mamy tu dokładnej liczby błędów/ostrzeżeń z lintowania bez parsowania logów.
-              // Można by zmodyfikować krok lintujący, aby zapisywał wynik do pliku JSON, podobnie jak testy.
               lintComment += `❌ Linting failed. Please check the 'Lint Code' job logs for details.\n`;
             } else {
                lintComment += `✅ Linting passed.\n`;
@@ -123,75 +119,74 @@ jobs:
 
             // --- Status Testów ---
             const testStatus = testResult === 'success' ? '✅' : '❌';
-            let testComment = `\nTest Results ${testStatus}\n`;
+            let testComment = `\nTest Results ${testStatus}\n`; // Ta linijka teraz pokaże ❌ jeśli testy zawiodły
+
+            // Reszta logiki parsowania JSON pozostaje bez zmian...
             let passedTests = 0;
             let failedTests = 0;
             let skippedTests = 0;
             let totalTests = 0;
             let testStatsAvailable = false;
-            const summaryPath = './vitest-summary.json'; // Ścieżka do pobranego artefaktu
+            const summaryPath = './vitest-summary.json';
 
-            try {
-              if (fs.existsSync(summaryPath)) {
-                const summaryRaw = fs.readFileSync(summaryPath, 'utf8');
-                const summary = JSON.parse(summaryRaw);
+            // Tylko próbuj parsować jeśli job testowy się powiódł LUB jeśli plik istnieje
+            // (plik może istnieć nawet jeśli job testowy ostatecznie zawiódł, jeśli został wygenerowany przed błędem)
+            if (fs.existsSync(summaryPath)) {
+               try {
+                  const summaryRaw = fs.readFileSync(summaryPath, 'utf8');
+                  const summary = JSON.parse(summaryRaw);
+                 // ... (ta sama logika parsowania co poprzednio) ...
+                  if (summary && summary.testResults && Array.isArray(summary.testResults)) {
+                      summary.testResults.forEach(fileResult => {
+                        if (fileResult && fileResult.assertionResults && Array.isArray(fileResult.assertionResults)) {
+                          passedTests += fileResult.assertionResults.filter(r => r && r.status === 'passed').length;
+                          failedTests += fileResult.assertionResults.filter(r => r && r.status === 'failed').length;
+                          skippedTests += fileResult.assertionResults.filter(r => r && (r.status === 'pending' || r.status === 'todo' || r.status === 'skipped')).length;
+                          totalTests += fileResult.assertionResults.length;
+                        } else { console.warn('Unexpected structure within testResults item:', fileResult); }
+                      });
+                      testStatsAvailable = true;
+                   } else if (summary && typeof summary.numTotalTests !== 'undefined') {
+                      passedTests = summary.numPassedTests ?? 0;
+                      failedTests = summary.numFailedTests ?? 0;
+                      skippedTests = (summary.numPendingTests ?? 0) + (summary.numTodoTests ?? 0) + (summary.numSkippedTests ?? 0) ;
+                      totalTests = summary.numTotalTests ?? 0;
+                      testStatsAvailable = true;
+                   } else { console.warn('Unexpected vitest summary JSON structure:', summary); }
 
-                // Parsowanie wyników z pliku JSON (tak jak wcześniej)
-                if (summary && summary.testResults && Array.isArray(summary.testResults)) {
-                    summary.testResults.forEach(fileResult => {
-                      if (fileResult && fileResult.assertionResults && Array.isArray(fileResult.assertionResults)) {
-                        passedTests += fileResult.assertionResults.filter(r => r && r.status === 'passed').length;
-                        failedTests += fileResult.assertionResults.filter(r => r && r.status === 'failed').length;
-                        skippedTests += fileResult.assertionResults.filter(r => r && (r.status === 'pending' || r.status === 'todo' || r.status === 'skipped')).length;
-                        totalTests += fileResult.assertionResults.length;
-                      } else {
-                         console.warn('Unexpected structure within testResults item:', fileResult);
-                      }
-                    });
-                    testStatsAvailable = true;
-                 } else if (summary && typeof summary.numTotalTests !== 'undefined') {
-                    passedTests = summary.numPassedTests ?? 0;
-                    failedTests = summary.numFailedTests ?? 0;
-                    skippedTests = (summary.numPendingTests ?? 0) + (summary.numTodoTests ?? 0) + (summary.numSkippedTests ?? 0) ;
-                    totalTests = summary.numTotalTests ?? 0;
-                    testStatsAvailable = true;
-                 } else {
-                    console.warn('Unexpected vitest summary JSON structure:', summary);
+                  if (testStatsAvailable) {
+                     testComment += `Test Statistics\n`;
+                     testComment += `✅ Passed Tests: ${passedTests}\n`;
+                     // Poprawka: Pokazuj ❌ obok Failed Tests jeśli są > 0
+                     testComment += failedTests > 0 ? `❌ Failed Tests: ${failedTests}\n` : `✅ Failed Tests: 0\n`;
+                     testComment += skippedTests > 0 ? `⚠️ Skipped Tests: ${skippedTests}\n` : `✅ Skipped Tests: 0\n`;
+                     testComment += `📊 Total Tests Run: ${totalTests}\n`;
+                  } else if (testResult === 'success') {
+                    testComment += `✅ Tests passed, but failed to parse detailed statistics from vitest-summary.json.\n`;
+                  } else {
+                     testComment += `❌ Tests failed. Failed to parse detailed statistics. Check the 'Unit Tests' job logs.\n`;
+                  }
+               } catch (error) {
+                 console.error("Error processing test summary:", error);
+                 testComment += `⚠️ Error processing test results.\n`;
+                 if (testResult !== 'success') {
+                    testComment += `❌ Tests failed status confirmed. Check the 'Unit Tests' job logs.\n`;
                  }
-
-                if (testStatsAvailable) {
-                  testComment += `Test Statistics\n`;
-                  testComment += `✅ Passed Tests: ${passedTests}\n`;
-                  testComment += failedTests > 0 ? `❌ Failed Tests: ${failedTests}\n` : `✅ Failed Tests: 0\n`;
-                  testComment += skippedTests > 0 ? `⚠️ Skipped Tests: ${skippedTests}\n` : `✅ Skipped Tests: 0\n`;
-                  testComment += `📊 Total Tests Run: ${totalTests}\n`;
-                } else if (testResult === 'success') {
-                  testComment += `✅ Tests passed, but failed to parse detailed statistics from vitest-summary.json.\n`;
-                } else {
-                  // Jeśli testy zawiodły i nie udało się sparsować statystyk
-                   testComment += `❌ Tests failed. Failed to parse detailed statistics. Check the 'Unit Tests' job logs.\n`;
-                }
-
-              } else {
+               }
+            } else {
                  // Plik nie istnieje
                  testComment += `⚠️ Could not find test summary file (${summaryPath}).\n`;
                  if (testResult !== 'success') {
-                   testComment += `❌ Tests failed. Check the 'Unit Tests' job logs for details.\n`;
+                   testComment += `❌ Tests failed status confirmed. Check the 'Unit Tests' job logs.\n`;
                  } else {
-                   testComment += `🤔 Tests job reported success, but the summary artifact is missing.\n`;
+                    // Rzadki przypadek: job 'test' sukces, ale artefakt nie istnieje
+                    testComment += `🤔 Tests job reported success, but the summary artifact is missing.\n`;
                  }
-              }
-            } catch (error) {
-              console.error("Error processing test summary:", error);
-              testComment += `⚠️ Error processing test results.\n`;
-               if (testResult !== 'success') {
-                 testComment += `❌ Tests failed. Check the 'Unit Tests' job logs for details.\n`;
-               }
             }
 
              // --- Status Ogólny ---
             let overallStatus = '\nOverall Status\n';
-            // Używamy zmiennych 'lintResult' i 'testResult' pobranych przez interpolację
+            // Teraz 'lintResult' i 'testResult' będą miały poprawne wartości 'success' lub 'failure'
             if (lintResult === 'success' && testResult === 'success') {
               overallStatus += '✅ All checks passed successfully!';
             } else {
@@ -202,7 +197,6 @@ jobs:
             const finalComment = `${lintComment}${testComment}${overallStatus}`;
 
             // --- Publikacja komentarza ---
-            // Używamy globalnie dostępnego 'github' i 'context'
             try {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -212,5 +206,10 @@ jobs:
               });
             } catch (commentError) {
                console.error("Failed to create comment:", commentError);
-               core.setFailed('Failed to post status comment.'); // Używamy globalnego 'core'
+               core.setFailed('Failed to post status comment.');
             }
+
+      - name: Fail workflow if checks failed
+        # Ten krok jawnie oznacza workflow jako nieudany w UI GitHuba, jeśli któryś z kluczowych jobów zawiódł.
+        if: needs.lint.result != 'success' || needs.test.result != 'success'
+        run: exit 1
