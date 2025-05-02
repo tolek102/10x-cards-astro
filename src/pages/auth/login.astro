@@ -104,19 +104,13 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       const data = await response.json();
 
       if (!response.ok) {
-        let errorMessage = data.error || "Wystąpił błąd podczas logowania";
-        if (errorMessage.includes("Invalid login credentials")) {
-          errorMessage = "Nieprawidłowe dane logowania";
-        }
-        displayToast(errorMessage);
         return;
       }
 
-      displayToast("Zalogowano pomyślnie", "success");
       await new Promise((resolve) => setTimeout(resolve, 1000));
       window.location.href = "/creator";
     } catch (error) {
-      displayToast(error instanceof Error ? error.message : "Wystąpił nieoczekiwany błąd");
+      console.error("Login error:", error);
     }
   });
 </script>

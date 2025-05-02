@@ -102,15 +102,9 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       const data = await response.json();
 
       if (!response.ok) {
-        let errorMessage = data.error || "Wystąpił błąd podczas rejestracji";
-        if (errorMessage.includes("User already registered")) {
-          errorMessage = "Użytkownik o tym adresie email jest już zarejestrowany";
-        }
-        displayToast(errorMessage);
         return;
       }
 
-      displayToast("Konto zostało utworzone pomyślnie", "success");
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const loginUrl = new URL("/creator", window.location.origin);
@@ -123,7 +117,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         window.location.href = loginUrl.toString();
       }
     } catch (error) {
-      displayToast(error instanceof Error ? error.message : "Wystąpił nieoczekiwany błąd");
+      console.error("Registration error:", error);
     }
   });
 </script>

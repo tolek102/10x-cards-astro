@@ -28,10 +28,7 @@ export const NavigationBar = ({ user, activeSection }: NavigationBarProps) => {
 
       window.location.href = "/";
     } catch (error) {
-      console.error("Failed to check authentication status:", error);
-      showToast("Błąd wylogowania", "error", {
-        description: "Nie udało się wylogować. Spróbuj ponownie za chwilę.",
-      });
+      console.error("Failed to logout:", error);
     }
   };
 

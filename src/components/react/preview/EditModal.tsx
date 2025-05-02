@@ -55,17 +55,9 @@ export const EditModal = ({ isOpen, onClose, onSave, flashcard }: EditModalProps
     setIsSubmitting(true);
     try {
       await onSave(flashcard.id, { front, back });
-      showToast("Pomyślnie zaktualizowano fiszkę", "success", {
-        description: "Zapisano nową treść fiszki. Możesz teraz kontynuować przeglądanie.",
-      });
       onClose();
     } catch (error) {
-      showToast("Błąd zapisywania", "error", {
-        description:
-          error instanceof Error
-            ? error.message
-            : "Wystąpił problem podczas zapisywania zmian. Sprawdź wprowadzone dane i spróbuj ponownie.",
-      });
+      console.error('Error saving flashcard:', error);
     } finally {
       setIsSubmitting(false);
     }

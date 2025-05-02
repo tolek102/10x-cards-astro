@@ -41,16 +41,8 @@ export const CreatorSection = ({
     try {
       const generatedFlashcards = await generateFlashcards(text);
       setLastGeneratedFlashcards(generatedFlashcards);
-      showToast("Pomyślnie wygenerowano fiszki", "success", {
-        description: `Utworzono ${generatedFlashcards.length} nowych kandydatów na fiszki.`,
-      });
     } catch (err) {
-      showToast("Błąd generowania fiszek", "error", {
-        description:
-          err instanceof Error
-            ? err.message
-            : "Wystąpił problem podczas generowania fiszek. Sprawdź wprowadzony tekst i spróbuj ponownie.",
-      });
+      console.error('Error generating flashcards:', err);
     } finally {
       setIsLoading(false);
     }
@@ -61,16 +53,8 @@ export const CreatorSection = ({
     try {
       const createdFlashcard = await createFlashcard(flashcard);
       setLastCreatedFlashcard([createdFlashcard]);
-      showToast("Pomyślnie utworzono fiszkę", "success", {
-        description: "Nowa fiszka została dodana do listy kandydatów.",
-      });
     } catch (err) {
-      showToast("Błąd tworzenia fiszki", "error", {
-        description:
-          err instanceof Error
-            ? err.message
-            : "Wystąpił problem podczas tworzenia fiszki. Sprawdź wprowadzone dane i spróbuj ponownie.",
-      });
+      console.error('Error creating flashcard:', err);
     } finally {
       setIsLoading(false);
     }
@@ -90,16 +74,8 @@ export const CreatorSection = ({
       if (onLoadPage && onLoadCandidatesPage) {
         await Promise.all([onLoadPage(1), onLoadCandidatesPage(1)]);
       }
-      showToast("Zaktualizowano fiszkę", "success", {
-        description: "Pomyślnie zaktualizowano fiszkę.",
-      });
     } catch (err) {
-      showToast("Błąd aktualizacji fiszki", "error", {
-        description:
-          err instanceof Error
-            ? err.message
-            : "Nie udało się zaktualizować fiszki. Sprawdź wprowadzone zmiany i spróbuj ponownie.",
-      });
+      console.error('Error updating flashcard:', err);
     } finally {
       setIsLoading(false);
     }
@@ -115,13 +91,8 @@ export const CreatorSection = ({
       } else {
         setLastCreatedFlashcard((prev) => prev.filter((card) => card.id !== id));
       }
-      showToast("Usunięto fiszkę", "success", {
-        description: "Pomyślnie usunięto fiszkę.",
-      });
     } catch (err) {
-      showToast("Błąd usuwania fiszki", "error", {
-        description: err instanceof Error ? err.message : "Nie udało się usunąć fiszki. Spróbuj ponownie później.",
-      });
+      console.error('Error deleting flashcard:', err);
     } finally {
       setIsLoading(false);
     }
@@ -139,14 +110,8 @@ export const CreatorSection = ({
       if (onLoadPage && onLoadCandidatesPage) {
         await Promise.all([onLoadPage(1), onLoadCandidatesPage(1)]);
       }
-      showToast("Zaakceptowano fiszkę", "success", {
-        description: "Pomyślnie zaakceptowano fiszkę.",
-      });
     } catch (err) {
-      showToast("Błąd akceptacji fiszki", "error", {
-        description:
-          err instanceof Error ? err.message : "Nie udało się zaakceptować fiszki. Spróbuj ponownie później.",
-      });
+      console.error('Error accepting flashcard:', err);
     } finally {
       setIsLoading(false);
     }
@@ -160,13 +125,8 @@ export const CreatorSection = ({
       if (activeTab === "ai") {
         setLastGeneratedFlashcards((prev) => prev.filter((card) => card.id !== id));
       }
-      showToast("Odrzucono fiszkę", "success", {
-        description: "Pomyślnie odrzucono fiszkę.",
-      });
     } catch (err) {
-      showToast("Błąd odrzucania fiszki", "error", {
-        description: err instanceof Error ? err.message : "Nie udało się odrzucić fiszki. Spróbuj ponownie później.",
-      });
+      // Error handling is done in the hook
     } finally {
       setIsLoading(false);
     }
