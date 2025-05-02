@@ -1,8 +1,8 @@
-name: Pull Request Checks
+name: Pull Request Checks Master
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
     types: [opened, synchronize, reopened] # Uruchamiaj przy otwarciu, aktualizacji lub ponownym otwarciu PR
 
 permissions: # Ustawienie domyślnych uprawnień dla całego workflow
