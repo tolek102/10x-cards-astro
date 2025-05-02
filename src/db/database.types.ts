@@ -1,6 +1,6 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-export interface Database {
+export interface Database { 
   graphql_public: {
     Tables: Record<never, never>;
     Views: Record<never, never>;
