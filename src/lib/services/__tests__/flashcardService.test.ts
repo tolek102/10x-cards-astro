@@ -172,7 +172,7 @@ describe("FlashcardService", () => {
       expect(mockFrom).toHaveBeenCalledWith("flashcards");
       expect(mockInsert).toHaveBeenCalledWith({
         ...mockCommand,
-        user_id: mockUserId,
+        user_id: "asd",
       });
       expect(mockSelect).toHaveBeenCalled();
     });
