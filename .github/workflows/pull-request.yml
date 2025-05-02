@@ -49,6 +49,7 @@ jobs:
         run: npm run test:coverage -- --reporter=json --outputFile=vitest-summary.json # Pozwól jobowi zawieść, jeśli testy nie przejdą
 
       - name: Upload Test Summary Artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-summary
@@ -56,6 +57,7 @@ jobs:
           retention-days: 1
 
       - name: Upload Coverage Artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
