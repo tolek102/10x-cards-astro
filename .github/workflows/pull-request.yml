@@ -152,7 +152,7 @@ jobs:
             if [ "$TESTS_FAILED" -gt 0 ]; then
               TEST_STATUS="❌"
               # Zbierz nazwy failujących testów
-              FAILED_TESTS_LIST=$(jq -r '.testResults[] | .assertionResults[] | select(.status == "failed") | "- `\(.ancestorTitles | join(" > ")) > \(.title)`"' vitest-report.json | sed 's/^/  /')
+              FAILED_TESTS_LIST=$(jq -r '.testResults[] | select(.status == "failed") | .assertionResults[] | select(.status == "failed") | "- `\(.ancestorTitles | join(" > ")) > \(.title)`"' vitest-report.json | sed 's/^/  /')
             fi
 
             if [ "$TESTS_SKIPPED" -gt 0 ]; then
@@ -162,23 +162,24 @@ jobs:
             fi
 
             # --- Process Coverage ---
-            # Sprawdź czy raport zawiera podsumowanie pokrycia (zwykle jest, jeśli testy były uruchomione z --coverage)
-            HAS_COVERAGE=$(jq 'if .coverageMap then true else false end' vitest-report.json)
-            if [ "$HAS_COVERAGE" == "true" ]; then
-              COVERAGE_STATEMENTS=$(jq '.coverageMap.data.total.statements.pct' vitest-report.json)
-              COVERAGE_BRANCHES=$(jq '.coverageMap.data.total.branches.pct' vitest-report.json)
-              COVERAGE_FUNCTIONS=$(jq '.coverageMap.data.total.functions.pct' vitest-report.json)
-              COVERAGE_LINES=$(jq '.coverageMap.data.total.lines.pct' vitest-report.json)
+            # Sprawdź czy raport zawiera podsumowanie pokrycia
+            HAS_COVERAGE_SUMMARY=$(jq 'if .coverageMap and .coverageMap.summary then true else false end' vitest-report.json)
+            if [ "$HAS_COVERAGE_SUMMARY" == "true" ]; then
+              # Użyj // 0 aby zwrócić 0 jeśli wartość jest null lub nie istnieje ścieżka
+              COVERAGE_STATEMENTS=$(jq '.coverageMap.summary.statements.pct // 0' vitest-report.json)
+              COVERAGE_BRANCHES=$(jq '.coverageMap.summary.branches.pct // 0' vitest-report.json)
+              COVERAGE_FUNCTIONS=$(jq '.coverageMap.summary.functions.pct // 0' vitest-report.json)
+              COVERAGE_LINES=$(jq '.coverageMap.summary.lines.pct // 0' vitest-report.json)
               COVERAGE_SUMMARY=$(cat <<EOF
-          ✅ Code Coverage
-          - Statements: ${COVERAGE_STATEMENTS}%
-          - Branches: ${COVERAGE_BRANCHES}%
-          - Functions: ${COVERAGE_FUNCTIONS}%
-          - Lines: ${COVERAGE_LINES}%
-          EOF
-          )
+✅ Code Coverage
+- Statements: ${COVERAGE_STATEMENTS}%
+- Branches: ${COVERAGE_BRANCHES}%
+- Functions: ${COVERAGE_FUNCTIONS}%
+- Lines: ${COVERAGE_LINES}%
+EOF
+)
             else
-              COVERAGE_SUMMARY="⚠️ Code Coverage data not found in test report."
+              COVERAGE_SUMMARY="⚠️ Code Coverage summary not found in test report."
             fi
 
           else
@@ -191,7 +192,7 @@ jobs:
           if [ "${{ needs.lint.outputs.result }}" == "failure" ] || [ "${{ needs.test.outputs.result }}" == "failure" ] || [ "$LINT_STATUS" == "❌" ] || [ "$TEST_STATUS" == "❌" ]; then
               OVERALL_STATUS_ICON="❌"
               OVERALL_STATUS_TEXT="Some checks have failed. Please review the details above."
-          elif [ "${{ needs.lint.outputs.result }}" == "success" ] && [ "${{ needs.test.outputs.result }}" == "success" ] && [ "$LINT_STATUS" == "⚠️" ] || [ "$TEST_STATUS" == "⚠️" ]; then
+          elif [ "$LINT_STATUS" == "⚠️" ] || [ "$TEST_STATUS" == "⚠️" ]; then
               OVERALL_STATUS_ICON="⚠️"
               OVERALL_STATUS_TEXT="Some checks passed with warnings. Please review the details above."
           elif [ "$LINT_STATUS" == "❓" ] || [ "$TEST_STATUS" == "❓" ]; then
@@ -201,36 +202,62 @@ jobs:
 
 
           # --- Construct Comment Body ---
+          # Format failed tests list conditionally
+          FAILED_TESTS_OUTPUT=""
+          if [ "$TESTS_FAILED" -gt 0 ]; then
+            FAILED_TESTS_OUTPUT=$(cat <<EOF
+
+**Failed Tests:**
+\`\`\`
+${FAILED_TESTS_LIST}
+\`\`\`
+EOF
+          )
+          fi
+
+          # Format skipped tests list conditionally
+          SKIPPED_TESTS_OUTPUT=""
+          if [ "$TESTS_SKIPPED" -gt 0 ]; then
+            SKIPPED_TESTS_OUTPUT=$(cat <<EOF
+
+**Skipped Tests:**
+\`\`\`
+${SKIPPED_TESTS_LIST}
+\`\`\`
+EOF
+          )
+          fi
+
           # Używamy heredoc EOF do łatwiejszego formatowania wieloliniowego stringa
           COMMENT_BODY=$(cat <<EOF
-          ## Pull Request Status
+## Pull Request Status
 
-          **Lint Results ${LINT_STATUS}**
-          ${LINT_ERRORS_COUNT} Errors ❌
-          \`\`\`diff
-          $( [ "$LINT_ERRORS_COUNT" -gt 0 ] && echo "$LINT_ERRORS_LIST" || echo "  + No errors found" )
-          \`\`\`
-          ${LINT_WARNINGS_COUNT} Warnings ⚠️
-          \`\`\`diff
-          $( [ "$LINT_WARNINGS_COUNT" -gt 0 ] && echo "$LINT_WARNINGS_LIST" || echo "  + No warnings found" )
-          \`\`\`
+**Lint Results ${LINT_STATUS}**
+${LINT_ERRORS_COUNT} Errors ❌
+\`\`\`diff
+$( [ "$LINT_ERRORS_COUNT" -gt 0 ] && echo "$LINT_ERRORS_LIST" || echo "  + No errors found" )
+\`\`\`
+${LINT_WARNINGS_COUNT} Warnings ⚠️
+\`\`\`diff
+$( [ "$LINT_WARNINGS_COUNT" -gt 0 ] && echo "$LINT_WARNINGS_LIST" || echo "  + No warnings found" )
+\`\`\`
 
-          **Test Results ${TEST_STATUS}**
-          **Test Statistics**
-          ✅ Passed Tests: ${TESTS_PASSED}
-          ❌ Failed Tests: ${TESTS_FAILED}
-          $( [ "$TESTS_FAILED" -gt 0 ] && echo "$FAILED_TESTS_LIST" || echo "" )
-          ⚠️ Skipped Tests: ${TESTS_SKIPPED}
-          $( [ "$TESTS_SKIPPED" -gt 0 ] && echo "$SKIPPED_TESTS_LIST" || echo "" )
-          📊 Total Tests: ${TESTS_TOTAL}
+**Test Results ${TEST_STATUS}**
+**Test Statistics**
+✅ Passed Tests: ${TESTS_PASSED}
+❌ Failed Tests: ${TESTS_FAILED}
+⚠️ Skipped Tests: ${TESTS_SKIPPED}
+📊 Total Tests: ${TESTS_TOTAL}
+${FAILED_TESTS_OUTPUT}
+${SKIPPED_TESTS_OUTPUT}
 
-          ${COVERAGE_SUMMARY}
+${COVERAGE_SUMMARY}
 
-          ---
-          **Overall Status**
-          ${OVERALL_STATUS_ICON} ${OVERALL_STATUS_TEXT}
-          EOF
-          )
+---
+**Overall Status**
+${OVERALL_STATUS_ICON} ${OVERALL_STATUS_TEXT}
+EOF
+)
 
           # --- Output Comment Body for next step ---
           # Zapisz sformatowany komentarz do zmiennej GITHUB_OUTPUT
