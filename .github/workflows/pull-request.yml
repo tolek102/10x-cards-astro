@@ -1,189 +1,282 @@
-- name: Generate Comment Body
-id: generate-comment
-run: |
-  set -xe # Exit on error (-e) and print commands (-x)
+name: Pull Request Checks
 
-  # --- Helper function to run jq and check exit code ---
-  run_jq() {
-    local query="$1"
-    local file="$2"
-    local jq_output
-    echo "+ jq '$query' '$file'" # Mimic set -x output for clarity
-    jq_output=$(jq "$query" "$file")
-    local exit_code=$?
-    if [ $exit_code -ne 0 ]; then
-      echo "Error: jq command failed with exit code $exit_code for query '$query' on file '$file'" >&2
-      # Optionally print jq's stderr if needed, though set -x might show it
-      # jq "$query" "$file" # Uncomment to potentially see jq error directly
-      return 1 # Signal error
-    fi
-    echo "$jq_output"
-    return 0
-  }
-  # Helper function for raw output (-r)
-   run_jq_raw() {
-    local query="$1"
-    local file="$2"
-    local jq_output
-    echo "+ jq -r '$query' '$file'" # Mimic set -x output for clarity
-    jq_output=$(jq -r "$query" "$file")
-    local exit_code=$?
-     if [ $exit_code -ne 0 ]; then
-      echo "Error: jq -r command failed with exit code $exit_code for query '$query' on file '$file'" >&2
-      return 1 # Signal error
-    fi
-    echo "$jq_output"
-    return 0
-  }
+on:
+  pull_request:
+    types: [opened, synchronize, reopened] # Uruchamiaj przy otwarciu, aktualizacji lub ponownym otwarciu PR
 
+permissions: # Wymagane do dodawania komentarzy do PR
+  pull-requests: write
 
-  # --- Initialize Variables ---
-  echo "Initializing variables..."
-  LINT_STATUS="✅"
-  LINT_ERRORS_COUNT=0
-  LINT_WARNINGS_COUNT=0
-  LINT_ERRORS_LIST=""
-  LINT_WARNINGS_LIST=""
-  TEST_STATUS="✅"
-  TESTS_PASSED=0
-  TESTS_FAILED=0
-  TESTS_SKIPPED=0
-  TESTS_TOTAL=0
-  FAILED_TESTS_LIST=""
-  SKIPPED_TESTS_LIST=""
-  COVERAGE_SUMMARY=""
-  COVERAGE_STATEMENTS=0
-  COVERAGE_BRANCHES=0
-  COVERAGE_FUNCTIONS=0
-  COVERAGE_LINES=0
-  OVERALL_STATUS_ICON="✅"
-  OVERALL_STATUS_TEXT="All checks passed successfully."
-  LINT_JOB_RESULT="${{ needs.lint.outputs.result }}"
-  TEST_JOB_RESULT="${{ needs.test.outputs.result }}"
-  COMMENT_BODY=""
+jobs:
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    outputs: # Udostępnij wynik lintowania dla joba status-comment
+      result: ${{ steps.run-lint.outcome }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-  # --- Process Lint Report ---
-  echo "Processing Lint Report..."
-  if [ -f eslint-report.json ]; then
-    LINT_ERRORS_COUNT=$(run_jq '[.[] | .messages[] | select(.severity == 2)] | length' eslint-report.json) || LINT_ERRORS_COUNT=0
-    LINT_WARNINGS_COUNT=$(run_jq '[.[] | .messages[] | select(.severity == 1)] | length' eslint-report.json) || LINT_WARNINGS_COUNT=0
+      - name: Setup Node.js from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc' # Użyj wersji Node.js z pliku .nvmrc
+          cache: 'npm' # Włącz cache dla npm
 
-    if [ "$LINT_ERRORS_COUNT" -gt 0 ]; then
-      LINT_STATUS="❌"
-      # Capture list or set error message
-      LINT_ERRORS_LIST_RAW=$(run_jq_raw '.[] | select(any(.messages[]; .severity == 2)) | .filePath as $path | .messages[] | select(.severity == 2) | "- \($path | sub(".*/src/"; "src/")):\(.line):\(.column) - \(.message) (\(.ruleId // "unknown"))"' eslint-report.json)
-      LINT_ERRORS_LIST=$(echo "$LINT_ERRORS_LIST_RAW" | sed 's/^/  /') || LINT_ERRORS_LIST="  - Error processing error details"
-    fi
+      - name: Install Dependencies
+        run: npm ci # Użyj 'ci' dla czystej instalacji w CI
 
-    if [ "$LINT_WARNINGS_COUNT" -gt 0 ]; then
-      if [ "$LINT_STATUS" == "✅" ]; then LINT_STATUS="⚠️"; fi
-      LINT_WARNINGS_LIST_RAW=$(run_jq_raw '.[] | select(any(.messages[]; .severity == 1)) | .filePath as $path | .messages[] | select(.severity == 1) | "- \($path | sub(".*/src/"; "src/")):\(.line):\(.column) - \(.message) (\(.ruleId // "unknown"))"' eslint-report.json)
-      LINT_WARNINGS_LIST=$(echo "$LINT_WARNINGS_LIST_RAW" | sed 's/^/  /') || LINT_WARNINGS_LIST="  - Error processing warning details"
-    fi
-  else
-    echo "Lint report file (eslint-report.json) not found."
-    LINT_STATUS="❓"
-    LINT_ERRORS_LIST="  - Lint report file (eslint-report.json) not found."
-  fi
+      - name: Run ESLint
+        id: run-lint
+        # Uruchom eslint, zapisz wynik do pliku JSON, kontynuuj nawet jeśli są błędy (`|| true`)
+        run: npx eslint . --format json --output-file eslint-report.json || true
 
-  # --- Process Test Report ---
-  echo "Processing Test Report..."
-   if [ -f vitest-report.json ]; then
-    TESTS_PASSED=$(run_jq '.numPassedTests' vitest-report.json) || TESTS_PASSED=0
-    TESTS_FAILED=$(run_jq '.numFailedTests' vitest-report.json) || TESTS_FAILED=0
-    TESTS_SKIPPED=$(run_jq '.numPendingTests // .numTodoTests // 0' vitest-report.json) || TESTS_SKIPPED=0
-    TESTS_TOTAL=$(run_jq '.numTotalTests' vitest-report.json) || TESTS_TOTAL=0
+      - name: Upload Lint Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report # Nazwa artefaktu
+          path: eslint-report.json # Ścieżka do pliku raportu
 
-    if [ "$TESTS_FAILED" -gt 0 ]; then
-      TEST_STATUS="❌"
-      FAILED_TESTS_LIST_RAW=$(run_jq_raw '.testResults[]? | select(.status == "failed") | .assertionResults[]? | select(.status == "failed") | "- `\(.ancestorTitles | join(" > ")) > \(.title)`"' vitest-report.json)
-      FAILED_TESTS_LIST=$(echo "$FAILED_TESTS_LIST_RAW" | sed 's/^/  /') || FAILED_TESTS_LIST="  - Error processing failed test details"
-    fi
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint # Uruchom ten job po zakończeniu joba 'lint'
+    outputs: # Udostępnij wynik testów dla joba status-comment
+      result: ${{ steps.run-tests.outcome }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    if [ "$TESTS_SKIPPED" -gt 0 ]; then
-      if [ "$TEST_STATUS" == "✅" ]; then TEST_STATUS="⚠️"; fi
-      SKIPPED_TESTS_LIST_RAW=$(run_jq_raw '.testResults[]? | .assertionResults[]? | select(.status == "pending" or .status == "todo") | "- `\(.ancestorTitles | join(" > ")) > \(.title)`"' vitest-report.json)
-      SKIPPED_TESTS_LIST=$(echo "$SKIPPED_TESTS_LIST_RAW" | sed 's/^/  /') || SKIPPED_TESTS_LIST="  - Error processing skipped test details"
-    fi
+      - name: Setup Node.js from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
 
-    # --- Process Coverage ---
-    echo "Processing Coverage..."
-    HAS_COVERAGE_SUMMARY=$(run_jq 'if .coverageMap and .coverageMap.summary then true else false end' vitest-report.json) || HAS_COVERAGE_SUMMARY="false" # Assume false on error
-    if [ "$HAS_COVERAGE_SUMMARY" == "true" ]; then
-      COVERAGE_STATEMENTS=$(run_jq '.coverageMap.summary.statements.pct // 0' vitest-report.json) || COVERAGE_STATEMENTS="?"
-      COVERAGE_BRANCHES=$(run_jq '.coverageMap.summary.branches.pct // 0' vitest-report.json) || COVERAGE_BRANCHES="?"
-      COVERAGE_FUNCTIONS=$(run_jq '.coverageMap.summary.functions.pct // 0' vitest-report.json) || COVERAGE_FUNCTIONS="?"
-      COVERAGE_LINES=$(run_jq '.coverageMap.summary.lines.pct // 0' vitest-report.json) || COVERAGE_LINES="?"
-      # Check if any value failed (contains '?')
-      if [[ "$COVERAGE_STATEMENTS$COVERAGE_BRANCHES$COVERAGE_FUNCTIONS$COVERAGE_LINES" == *'?'* ]]; then
-         COVERAGE_SUMMARY="⚠️ Error reading code coverage details."
-      else
-          COVERAGE_SUMMARY=$(printf '✅ Code Coverage\n- Statements: %s%%\n- Branches: %s%%\n- Functions: %s%%\n- Lines: %s%%' \
-            "$COVERAGE_STATEMENTS" "$COVERAGE_BRANCHES" "$COVERAGE_FUNCTIONS" "$COVERAGE_LINES")
-      fi
-    else
-      COVERAGE_SUMMARY="⚠️ Code Coverage summary not found or error checking report."
-    fi
-  else
-    echo "Test report file (vitest-report.json) not found."
-    TEST_STATUS="❓"
-    FAILED_TESTS_LIST="  - Test report file (vitest-report.json) not found."
-    COVERAGE_SUMMARY="❓ Code Coverage data unavailable."
-  fi
+      - name: Install Dependencies
+        run: npm ci
 
-  # --- Determine Overall Status ---
-  echo "Determining Overall Status..."
-  # (Logic remains the same)
-  if [ "$LINT_JOB_RESULT" == "failure" ] || [ "$TEST_JOB_RESULT" == "failure" ] || [ "$LINT_STATUS" == "❌" ] || [ "$TEST_STATUS" == "❌" ]; then
-      OVERALL_STATUS_ICON="❌"
-      OVERALL_STATUS_TEXT="Some checks have failed. Please review the details above."
-  elif [ "$LINT_STATUS" == "⚠️" ] || [ "$TEST_STATUS" == "⚠️" ]; then
-      OVERALL_STATUS_ICON="⚠️"
-      OVERALL_STATUS_TEXT="Some checks passed with warnings. Please review the details above."
-  elif [ "$LINT_STATUS" == "❓" ] || [ "$TEST_STATUS" == "❓" ]; then
-      OVERALL_STATUS_ICON="❓"
-      OVERALL_STATUS_TEXT="Could not determine the status for all checks."
-  fi
+      - name: Run Vitest with Coverage and JSON Report
+        id: run-tests
+        # Uruchom testy z pokryciem, zapisz wynik do pliku JSON, kontynuuj nawet jeśli testy failują (`|| true`)
+        run: npm run test:coverage -- --reporter=json --outputFile=vitest-report.json || true
 
+      - name: Upload Test Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: vitest-report.json # Ścieżka do pliku raportu z testów i pokrycia
 
-  # --- Construct Comment Body Incrementally ---
-  echo "Constructing Comment Body..."
-  # (Logic remains the same)
-  COMMENT_BODY+=$(printf "## Pull Request Status\n\n")
-  COMMENT_BODY+=$(printf "**Lint Results %s**\n" "$LINT_STATUS")
-  COMMENT_BODY+=$(printf "Errors: %s ❌\n" "$LINT_ERRORS_COUNT")
-  COMMENT_BODY+=$(printf '```diff\n%s\n```\n' "$( [ "$LINT_ERRORS_COUNT" -gt 0 ] && echo "$LINT_ERRORS_LIST" || echo "  + No errors found" )")
-  COMMENT_BODY+=$(printf "Warnings: %s ⚠️\n" "$LINT_WARNINGS_COUNT")
-  COMMENT_BODY+=$(printf '```diff\n%s\n```\n\n' "$( [ "$LINT_WARNINGS_COUNT" -gt 0 ] && echo "$LINT_WARNINGS_LIST" || echo "  + No warnings found" )")
+  status-comment:
+    name: Post Status Comment
+    runs-on: ubuntu-latest
+    needs: [lint, test] # Uruchom ten job po zakończeniu jobów 'lint' i 'test'
+    if: always() # Zawsze uruchamiaj ten job, nawet jeśli poprzednie zawiodły, aby opublikować status
+    steps:
+      - name: Checkout Code # Potrzebne do uzyskania kontekstu PR
+        uses: actions/checkout@v4
 
-  COMMENT_BODY+=$(printf "**Test Results %s**\n" "$TEST_STATUS")
-  COMMENT_BODY+=$(printf "**Test Statistics**\n")
-  COMMENT_BODY+=$(printf "✅ Passed Tests: %s\n" "$TESTS_PASSED")
-  COMMENT_BODY+=$(printf "❌ Failed Tests: %s\n" "$TESTS_FAILED")
-  COMMENT_BODY+=$(printf "⚠️ Skipped Tests: %s\n" "$TESTS_SKIPPED")
-  COMMENT_BODY+=$(printf "📊 Total Tests: %s\n" "$TESTS_TOTAL")
+      - name: Download Lint Report
+        uses: actions/download-artifact@v4
+        with:
+          name: lint-report
+          path: . # Pobierz do bieżącego katalogu
 
-  if [ "$TESTS_FAILED" -gt 0 ]; then
-    COMMENT_BODY+=$(printf "\n**Failed Tests:**\n\`\`\`\n%s\n\`\`\`\n" "$FAILED_TESTS_LIST")
-  fi
-  if [ "$TESTS_SKIPPED" -gt 0 ]; then
-    COMMENT_BODY+=$(printf "\n**Skipped Tests:**\n\`\`\`\n%s\n\`\`\`\n" "$SKIPPED_TESTS_LIST")
-  fi
+      - name: Download Test Report
+        uses: actions/download-artifact@v4
+        with:
+          name: test-report
+          path: .
 
-  COMMENT_BODY+=$(printf "\n%s\n\n" "$COVERAGE_SUMMARY") # Add coverage summary
+      - name: Install jq # Narzędzie do parsowania JSON w linii komend
+        run: sudo apt-get update && sudo apt-get install -y jq
 
-  COMMENT_BODY+=$(printf "---\n") # Separator
-  COMMENT_BODY+=$(printf "**Overall Status**\n")
-  COMMENT_BODY+=$(printf "%s %s\n" "$OVERALL_STATUS_ICON" "$OVERALL_STATUS_TEXT")
-
-
-  # --- Output Comment Body for next step ---
-  echo "Encoding comment for GITHUB_OUTPUT..."
-  # Use parameter expansion to escape special characters for GITHUB_OUTPUT
-  COMMENT_BODY="${COMMENT_BODY//'%'/'%25'}"
-  COMMENT_BODY="${COMMENT_BODY//$'\n'/'%0A'}"
-  COMMENT_BODY="${COMMENT_BODY//$'\r'/'%0D'}"
-  echo "comment=$COMMENT_BODY" >> $GITHUB_OUTPUT
-  echo "Finished script successfully."
-
-# Usunięto jawne shell: /usr/bin/bash -e {0}, ponieważ set -e jest teraz w skrypcie
+      - name: Generate Comment Body
+        id: generate-comment
+        run: |
+            set -xe # Exit on error (-e) and print commands (-x)
+        
+            # --- Helper function to run jq and check exit code ---
+            run_jq() {
+            local query="$1"
+            local file="$2"
+            local jq_output
+            echo "+ jq '$query' '$file'" # Mimic set -x output for clarity
+            jq_output=$(jq "$query" "$file")
+            local exit_code=$?
+            if [ $exit_code -ne 0 ]; then
+                echo "Error: jq command failed with exit code $exit_code for query '$query' on file '$file'" >&2
+                # Optionally print jq's stderr if needed, though set -x might show it
+                # jq "$query" "$file" # Uncomment to potentially see jq error directly
+                return 1 # Signal error
+            fi
+            echo "$jq_output"
+            return 0
+            }
+            # Helper function for raw output (-r)
+            run_jq_raw() {
+            local query="$1"
+            local file="$2"
+            local jq_output
+            echo "+ jq -r '$query' '$file'" # Mimic set -x output for clarity
+            jq_output=$(jq -r "$query" "$file")
+            local exit_code=$?
+                if [ $exit_code -ne 0 ]; then
+                echo "Error: jq -r command failed with exit code $exit_code for query '$query' on file '$file'" >&2
+                return 1 # Signal error
+            fi
+            echo "$jq_output"
+            return 0
+            }
+        
+        
+            # --- Initialize Variables ---
+            echo "Initializing variables..."
+            LINT_STATUS="✅"
+            LINT_ERRORS_COUNT=0
+            LINT_WARNINGS_COUNT=0
+            LINT_ERRORS_LIST=""
+            LINT_WARNINGS_LIST=""
+            TEST_STATUS="✅"
+            TESTS_PASSED=0
+            TESTS_FAILED=0
+            TESTS_SKIPPED=0
+            TESTS_TOTAL=0
+            FAILED_TESTS_LIST=""
+            SKIPPED_TESTS_LIST=""
+            COVERAGE_SUMMARY=""
+            COVERAGE_STATEMENTS=0
+            COVERAGE_BRANCHES=0
+            COVERAGE_FUNCTIONS=0
+            COVERAGE_LINES=0
+            OVERALL_STATUS_ICON="✅"
+            OVERALL_STATUS_TEXT="All checks passed successfully."
+            LINT_JOB_RESULT="${{ needs.lint.outputs.result }}"
+            TEST_JOB_RESULT="${{ needs.test.outputs.result }}"
+            COMMENT_BODY=""
+        
+            # --- Process Lint Report ---
+            echo "Processing Lint Report..."
+            if [ -f eslint-report.json ]; then
+            LINT_ERRORS_COUNT=$(run_jq '[.[] | .messages[] | select(.severity == 2)] | length' eslint-report.json) || LINT_ERRORS_COUNT=0
+            LINT_WARNINGS_COUNT=$(run_jq '[.[] | .messages[] | select(.severity == 1)] | length' eslint-report.json) || LINT_WARNINGS_COUNT=0
+        
+            if [ "$LINT_ERRORS_COUNT" -gt 0 ]; then
+                LINT_STATUS="❌"
+                # Capture list or set error message
+                LINT_ERRORS_LIST_RAW=$(run_jq_raw '.[] | select(any(.messages[]; .severity == 2)) | .filePath as $path | .messages[] | select(.severity == 2) | "- \($path | sub(".*/src/"; "src/")):\(.line):\(.column) - \(.message) (\(.ruleId // "unknown"))"' eslint-report.json)
+                LINT_ERRORS_LIST=$(echo "$LINT_ERRORS_LIST_RAW" | sed 's/^/  /') || LINT_ERRORS_LIST="  - Error processing error details"
+            fi
+        
+            if [ "$LINT_WARNINGS_COUNT" -gt 0 ]; then
+                if [ "$LINT_STATUS" == "✅" ]; then LINT_STATUS="⚠️"; fi
+                LINT_WARNINGS_LIST_RAW=$(run_jq_raw '.[] | select(any(.messages[]; .severity == 1)) | .filePath as $path | .messages[] | select(.severity == 1) | "- \($path | sub(".*/src/"; "src/")):\(.line):\(.column) - \(.message) (\(.ruleId // "unknown"))"' eslint-report.json)
+                LINT_WARNINGS_LIST=$(echo "$LINT_WARNINGS_LIST_RAW" | sed 's/^/  /') || LINT_WARNINGS_LIST="  - Error processing warning details"
+            fi
+            else
+            echo "Lint report file (eslint-report.json) not found."
+            LINT_STATUS="❓"
+            LINT_ERRORS_LIST="  - Lint report file (eslint-report.json) not found."
+            fi
+        
+            # --- Process Test Report ---
+            echo "Processing Test Report..."
+            if [ -f vitest-report.json ]; then
+            TESTS_PASSED=$(run_jq '.numPassedTests' vitest-report.json) || TESTS_PASSED=0
+            TESTS_FAILED=$(run_jq '.numFailedTests' vitest-report.json) || TESTS_FAILED=0
+            TESTS_SKIPPED=$(run_jq '.numPendingTests // .numTodoTests // 0' vitest-report.json) || TESTS_SKIPPED=0
+            TESTS_TOTAL=$(run_jq '.numTotalTests' vitest-report.json) || TESTS_TOTAL=0
+        
+            if [ "$TESTS_FAILED" -gt 0 ]; then
+                TEST_STATUS="❌"
+                FAILED_TESTS_LIST_RAW=$(run_jq_raw '.testResults[]? | select(.status == "failed") | .assertionResults[]? | select(.status == "failed") | "- `\(.ancestorTitles | join(" > ")) > \(.title)`"' vitest-report.json)
+                FAILED_TESTS_LIST=$(echo "$FAILED_TESTS_LIST_RAW" | sed 's/^/  /') || FAILED_TESTS_LIST="  - Error processing failed test details"
+            fi
+        
+            if [ "$TESTS_SKIPPED" -gt 0 ]; then
+                if [ "$TEST_STATUS" == "✅" ]; then TEST_STATUS="⚠️"; fi
+                SKIPPED_TESTS_LIST_RAW=$(run_jq_raw '.testResults[]? | .assertionResults[]? | select(.status == "pending" or .status == "todo") | "- `\(.ancestorTitles | join(" > ")) > \(.title)`"' vitest-report.json)
+                SKIPPED_TESTS_LIST=$(echo "$SKIPPED_TESTS_LIST_RAW" | sed 's/^/  /') || SKIPPED_TESTS_LIST="  - Error processing skipped test details"
+            fi
+        
+            # --- Process Coverage ---
+            echo "Processing Coverage..."
+            HAS_COVERAGE_SUMMARY=$(run_jq 'if .coverageMap and .coverageMap.summary then true else false end' vitest-report.json) || HAS_COVERAGE_SUMMARY="false" # Assume false on error
+            if [ "$HAS_COVERAGE_SUMMARY" == "true" ]; then
+                COVERAGE_STATEMENTS=$(run_jq '.coverageMap.summary.statements.pct // 0' vitest-report.json) || COVERAGE_STATEMENTS="?"
+                COVERAGE_BRANCHES=$(run_jq '.coverageMap.summary.branches.pct // 0' vitest-report.json) || COVERAGE_BRANCHES="?"
+                COVERAGE_FUNCTIONS=$(run_jq '.coverageMap.summary.functions.pct // 0' vitest-report.json) || COVERAGE_FUNCTIONS="?"
+                COVERAGE_LINES=$(run_jq '.coverageMap.summary.lines.pct // 0' vitest-report.json) || COVERAGE_LINES="?"
+                # Check if any value failed (contains '?')
+                if [[ "$COVERAGE_STATEMENTS$COVERAGE_BRANCHES$COVERAGE_FUNCTIONS$COVERAGE_LINES" == *'?'* ]]; then
+                    COVERAGE_SUMMARY="⚠️ Error reading code coverage details."
+                else
+                    COVERAGE_SUMMARY=$(printf '✅ Code Coverage\n- Statements: %s%%\n- Branches: %s%%\n- Functions: %s%%\n- Lines: %s%%' \
+                    "$COVERAGE_STATEMENTS" "$COVERAGE_BRANCHES" "$COVERAGE_FUNCTIONS" "$COVERAGE_LINES")
+                fi
+            else
+                COVERAGE_SUMMARY="⚠️ Code Coverage summary not found or error checking report."
+            fi
+            else
+            echo "Test report file (vitest-report.json) not found."
+            TEST_STATUS="❓"
+            FAILED_TESTS_LIST="  - Test report file (vitest-report.json) not found."
+            COVERAGE_SUMMARY="❓ Code Coverage data unavailable."
+            fi
+        
+            # --- Determine Overall Status ---
+            echo "Determining Overall Status..."
+            # (Logic remains the same)
+            if [ "$LINT_JOB_RESULT" == "failure" ] || [ "$TEST_JOB_RESULT" == "failure" ] || [ "$LINT_STATUS" == "❌" ] || [ "$TEST_STATUS" == "❌" ]; then
+                OVERALL_STATUS_ICON="❌"
+                OVERALL_STATUS_TEXT="Some checks have failed. Please review the details above."
+            elif [ "$LINT_STATUS" == "⚠️" ] || [ "$TEST_STATUS" == "⚠️" ]; then
+                OVERALL_STATUS_ICON="⚠️"
+                OVERALL_STATUS_TEXT="Some checks passed with warnings. Please review the details above."
+            elif [ "$LINT_STATUS" == "❓" ] || [ "$TEST_STATUS" == "❓" ]; then
+                OVERALL_STATUS_ICON="❓"
+                OVERALL_STATUS_TEXT="Could not determine the status for all checks."
+            fi
+        
+        
+            # --- Construct Comment Body Incrementally ---
+            echo "Constructing Comment Body..."
+            # (Logic remains the same)
+            COMMENT_BODY+=$(printf "## Pull Request Status\n\n")
+            COMMENT_BODY+=$(printf "**Lint Results %s**\n" "$LINT_STATUS")
+            COMMENT_BODY+=$(printf "Errors: %s ❌\n" "$LINT_ERRORS_COUNT")
+            COMMENT_BODY+=$(printf '```diff\n%s\n```\n' "$( [ "$LINT_ERRORS_COUNT" -gt 0 ] && echo "$LINT_ERRORS_LIST" || echo "  + No errors found" )")
+            COMMENT_BODY+=$(printf "Warnings: %s ⚠️\n" "$LINT_WARNINGS_COUNT")
+            COMMENT_BODY+=$(printf '```diff\n%s\n```\n\n' "$( [ "$LINT_WARNINGS_COUNT" -gt 0 ] && echo "$LINT_WARNINGS_LIST" || echo "  + No warnings found" )")
+        
+            COMMENT_BODY+=$(printf "**Test Results %s**\n" "$TEST_STATUS")
+            COMMENT_BODY+=$(printf "**Test Statistics**\n")
+            COMMENT_BODY+=$(printf "✅ Passed Tests: %s\n" "$TESTS_PASSED")
+            COMMENT_BODY+=$(printf "❌ Failed Tests: %s\n" "$TESTS_FAILED")
+            COMMENT_BODY+=$(printf "⚠️ Skipped Tests: %s\n" "$TESTS_SKIPPED")
+            COMMENT_BODY+=$(printf "📊 Total Tests: %s\n" "$TESTS_TOTAL")
+        
+            if [ "$TESTS_FAILED" -gt 0 ]; then
+            COMMENT_BODY+=$(printf "\n**Failed Tests:**\n\`\`\`\n%s\n\`\`\`\n" "$FAILED_TESTS_LIST")
+            fi
+            if [ "$TESTS_SKIPPED" -gt 0 ]; then
+            COMMENT_BODY+=$(printf "\n**Skipped Tests:**\n\`\`\`\n%s\n\`\`\`\n" "$SKIPPED_TESTS_LIST")
+            fi
+        
+            COMMENT_BODY+=$(printf "\n%s\n\n" "$COVERAGE_SUMMARY") # Add coverage summary
+        
+            COMMENT_BODY+=$(printf "---\n") # Separator
+            COMMENT_BODY+=$(printf "**Overall Status**\n")
+            COMMENT_BODY+=$(printf "%s %s\n" "$OVERALL_STATUS_ICON" "$OVERALL_STATUS_TEXT")
+        
+        
+            # --- Output Comment Body for next step ---
+            echo "Encoding comment for GITHUB_OUTPUT..."
+            # Use parameter expansion to escape special characters for GITHUB_OUTPUT
+            COMMENT_BODY="${COMMENT_BODY//'%'/'%25'}"
+            COMMENT_BODY="${COMMENT_BODY//$'\n'/'%0A'}"
+            COMMENT_BODY="${COMMENT_BODY//$'\r'/'%0D'}"
+            echo "comment=$COMMENT_BODY" >> $GITHUB_OUTPUT
+            echo "Finished script successfully."
+        
+        # Usunięto jawne shell: /usr/bin/bash -e {0}, ponieważ set -e jest teraz w skrypcie
