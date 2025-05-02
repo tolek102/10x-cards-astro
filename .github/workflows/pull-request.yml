@@ -46,7 +46,7 @@ jobs:
         run: npm ci
 
       - name: Run Unit Tests with Coverage
-        run: npm run test:coverage -- --reporter=json --outputFile=vitest-summary.json # Pozwól jobowi zawieść, jeśli testy nie przejdą
+        run: npm run test:coverage -- --reporter=default --reporter=json --outputFile=vitest-summary.json # Pozwól jobowi zawieść, jeśli testy nie przejdą
 
       - name: Upload Test Summary Artifact
         if: always()
