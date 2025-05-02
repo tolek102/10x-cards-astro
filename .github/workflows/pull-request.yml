@@ -94,6 +94,8 @@ jobs:
       - name: Create Status Comment
         uses: actions/github-script@v7
         id: comment-script
+        # Dostęp do 'needs' jest przez obiekt 'context'
+        # context.needs.<job_id>.result zwraca 'success', 'failure', 'cancelled', or 'skipped'
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -101,75 +103,99 @@ jobs:
             const prNumber = context.issue.number;
             if (!prNumber) {
               console.log('Could not get PR number from context, exiting');
+              core.setFailed('Could not get PR number from context.'); // Oznacz krok jako nieudany
               return;
             }
 
             // --- Status Lintowania ---
-            const lintStatus = needs.lint.result === 'success' ? '✅' : '❌';
+            // Używamy 'context.needs' zamiast 'needs'
+            const lintResult = context.needs.lint.result;
+            const lintStatus = lintResult === 'success' ? '✅' : '❌';
             let lintComment = `Lint Results ${lintStatus}\n`;
-            // Uwaga: Pobranie dokładnej liczby błędów/ostrzeżeń z `npm run lint`
-            // wymagałoby bardziej złożonego parsowania outputu lub użycia formattera JSON dla ESLint.
-            // Dla uproszczenia, pokazujemy tylko ogólny status sukces/porażka.
-            // Jeśli lintowanie zawiodło, dodajemy informację.
-            if (needs.lint.result !== 'success') {
+            if (lintResult !== 'success') {
+              // W przyszłości można dodać parsowanie logów lub outputu JSON z ESLint dla szczegółów
               lintComment += `❌ Linting failed. Please check the 'Lint Code' job logs for details.\n`;
             } else {
                lintComment += `✅ Linting passed.\n`;
             }
 
             // --- Status Testów ---
-            const testStatus = needs.test.result === 'success' ? '✅' : '❌';
+            // Używamy 'context.needs' zamiast 'needs'
+            const testResult = context.needs.test.result;
+            const testStatus = testResult === 'success' ? '✅' : '❌';
             let testComment = `\nTest Results ${testStatus}\n`;
             let passedTests = 0;
             let failedTests = 0;
             let skippedTests = 0; // Vitest oznacza je jako 'pending' lub 'todo'
             let totalTests = 0;
             let testStatsAvailable = false;
+            const summaryPath = './vitest-summary.json'; // Ścieżka do pobranego artefaktu
 
             try {
-              if (fs.existsSync('./vitest-summary.json')) {
-                const summaryRaw = fs.readFileSync('./vitest-summary.json', 'utf8');
+              // Sprawdź, czy plik podsumowania istnieje (mógł nie zostać pobrany, jeśli job testowy zawiódł wcześnie)
+              if (fs.existsSync(summaryPath)) {
+                const summaryRaw = fs.readFileSync(summaryPath, 'utf8');
                 const summary = JSON.parse(summaryRaw);
-                // Sumujemy statystyki ze wszystkich plików testowych w raporcie
-                summary.testResults.forEach(fileResult => {
-                  passedTests += fileResult.assertionResults.filter(r => r.status === 'passed').length;
-                  failedTests += fileResult.assertionResults.filter(r => r.status === 'failed').length;
-                  skippedTests += fileResult.assertionResults.filter(r => r.status === 'pending' || r.status === 'todo').length;
-                  totalTests += fileResult.assertionResults.length;
-                });
-                // Vitest JSON reporter w starszych wersjach mógł mieć inną strukturę.
-                // Alternatywnie, można użyć pól `numPassedTests`, `numFailedTests`, etc. jeśli są na top-level.
-                // Dostosuj logikę parsowania w razie potrzeby do dokładnej struktury Twojego `vitest-summary.json`.
-                // Przykładowe pola z nowszych wersji Vitest (jeśli dostępne):
-                // passedTests = summary.numPassedTests ?? passedTests;
-                // failedTests = summary.numFailedTests ?? failedTests;
-                // skippedTests = summary.numPendingTests ?? skippedTests;
-                // totalTests = summary.numTotalTests ?? totalTests;
 
-                testStatsAvailable = true;
+                // Sprawdź, czy struktura summary jest oczekiwana
+                if (summary && summary.testResults && Array.isArray(summary.testResults)) {
+                    summary.testResults.forEach(fileResult => {
+                      if (fileResult && fileResult.assertionResults && Array.isArray(fileResult.assertionResults)) {
+                        passedTests += fileResult.assertionResults.filter(r => r && r.status === 'passed').length;
+                        failedTests += fileResult.assertionResults.filter(r => r && r.status === 'failed').length;
+                        skippedTests += fileResult.assertionResults.filter(r => r && (r.status === 'pending' || r.status === 'todo')).length;
+                        // Niektóre wersje mogą mieć 'skipped' zamiast 'pending'/'todo'
+                        skippedTests += fileResult.assertionResults.filter(r => r && r.status === 'skipped').length;
+                        totalTests += fileResult.assertionResults.length;
+                      } else {
+                         console.warn('Unexpected structure within testResults item:', fileResult);
+                      }
+                    });
+                    testStatsAvailable = true;
+                 } else if (summary && typeof summary.numTotalTests !== 'undefined') {
+                    // Alternatywna struktura, czasami Vitest umieszcza podsumowanie na górnym poziomie
+                    passedTests = summary.numPassedTests ?? 0;
+                    failedTests = summary.numFailedTests ?? 0;
+                    skippedTests = (summary.numPendingTests ?? 0) + (summary.numTodoTests ?? 0) + (summary.numSkippedTests ?? 0) ;
+                    totalTests = summary.numTotalTests ?? 0;
+                    testStatsAvailable = true;
+                 } else {
+                    console.warn('Unexpected vitest summary JSON structure:', summary);
+                 }
 
-                testComment += `Test Statistics\n`;
-                testComment += `✅ Passed Tests: ${passedTests}\n`;
-                testComment += failedTests > 0 ? `❌ Failed Tests: ${failedTests}\n` : `✅ Failed Tests: 0\n`;
-                testComment += skippedTests > 0 ? `⚠️ Skipped Tests: ${skippedTests}\n` : `✅ Skipped Tests: 0\n`;
-                testComment += `📊 Total Tests Run: ${totalTests}\n`; // Można użyć totalTests lub sumy passed+failed+skipped
+                if (testStatsAvailable) {
+                  testComment += `Test Statistics\n`;
+                  testComment += `✅ Passed Tests: ${passedTests}\n`;
+                  testComment += failedTests > 0 ? `❌ Failed Tests: ${failedTests}\n` : `✅ Failed Tests: 0\n`;
+                  testComment += skippedTests > 0 ? `⚠️ Skipped Tests: ${skippedTests}\n` : `✅ Skipped Tests: 0\n`;
+                  testComment += `📊 Total Tests Run: ${totalTests}\n`; // Używamy totalTests z pliku JSON
+                } else if (testResult === 'success') {
+                  // Jeśli testy przeszły, ale nie udało się sparsować statystyk
+                  testComment += `✅ Tests passed, but failed to parse detailed statistics from vitest-summary.json.\n`;
+                }
+
               } else {
-                 testComment += `⚠️ Could not find test summary file (vitest-summary.json).\n`;
-                 if (needs.test.result !== 'success') {
-                   testComment += `❌ Tests failed. Check the 'Unit Tests' job logs.\n`;
+                 // Plik nie istnieje
+                 testComment += `⚠️ Could not find test summary file (${summaryPath}).\n`;
+                 if (testResult !== 'success') {
+                   testComment += `❌ Tests failed. Check the 'Unit Tests' job logs for details.\n`;
+                 } else {
+                   // Rzadki przypadek: job 'test' sukces, ale artefakt nie istnieje/nie pobrał się?
+                   testComment += `🤔 Tests job reported success, but the summary artifact is missing.\n`;
                  }
               }
             } catch (error) {
-              console.error("Error parsing test summary:", error);
+              console.error("Error processing test summary:", error);
               testComment += `⚠️ Error processing test results.\n`;
-               if (needs.test.result !== 'success') {
-                 testComment += `❌ Tests failed. Check the 'Unit Tests' job logs.\n`;
+               if (testResult !== 'success') {
+                 testComment += `❌ Tests failed. Check the 'Unit Tests' job logs for details.\n`;
                }
             }
 
-            // --- Status Ogólny ---
+             // --- Status Ogólny ---
             let overallStatus = '\nOverall Status\n';
-            if (needs.lint.result === 'success' && needs.test.result === 'success') {
+            // Używamy zmiennych 'lintResult' i 'testResult'
+            if (lintResult === 'success' && testResult === 'success') {
               overallStatus += '✅ All checks passed successfully!';
             } else {
               overallStatus += '❌ Some checks have failed. Please review the details above. ⚠️';
@@ -179,17 +205,17 @@ jobs:
             const finalComment = `${lintComment}${testComment}${overallStatus}`;
 
             // --- Publikacja komentarza ---
-            // Można dodać logikę do edycji istniejącego komentarza zamiast tworzenia nowego za każdym razem
-            // ale dla uproszczenia tworzymy nowy.
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body: finalComment
-            });
-
-      - name: Fail workflow if checks failed
-        # Ten krok jawnie oznacza workflow jako nieudany, jeśli lint lub testy zawiodły.
-        # Bez tego, workflow mógłby pokazać zielony ✓, bo job 'status-comment' się udał.
-        if: needs.lint.result != 'success' || needs.test.result != 'success'
-        run: exit 1
+            // Dodaj logikę do edycji/aktualizacji komentarza, jeśli to preferowane
+            // Na razie tworzymy nowy
+            try {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: finalComment
+              });
+            } catch (commentError) {
+               console.error("Failed to create comment:", commentError);
+               // Możesz chcieć oznaczyć krok jako nieudany, jeśli komentowanie jest krytyczne
+               // core.setFailed('Failed to post status comment.');
+            }
