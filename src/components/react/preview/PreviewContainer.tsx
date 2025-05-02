@@ -29,7 +29,7 @@ export const PreviewContainer = () => {
     };
 
     loadInitialData();
-  }, [loadPage, loadCandidatesPage]);
+  }, []); // Only run on mount
 
   return (
     <PreviewSection

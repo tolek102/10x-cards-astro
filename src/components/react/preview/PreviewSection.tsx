@@ -63,10 +63,6 @@ export const PreviewSection = ({
     await Promise.all([loadPage(1, newLimit), loadCandidatesPage(1, newLimit)]);
   };
 
-  useEffect(() => {
-    setSelectedPageSize(activeTab === "accepted" ? pagination.limit : candidatesPagination.limit);
-  }, [activeTab, pagination.limit, candidatesPagination.limit]);
-
   const handleEditClick = (id: string) => {
     const flashcard =
       activeTab === "accepted" ? flashcards.find((f) => f.id === id) : candidates.find((f) => f.id === id);
