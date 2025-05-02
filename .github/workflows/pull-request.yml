@@ -171,13 +171,13 @@ jobs:
               COVERAGE_FUNCTIONS=$(jq '.coverageMap.summary.functions.pct // 0' vitest-report.json)
               COVERAGE_LINES=$(jq '.coverageMap.summary.lines.pct // 0' vitest-report.json)
               COVERAGE_SUMMARY=$(cat <<EOF
-✅ Code Coverage
-- Statements: ${COVERAGE_STATEMENTS}%
-- Branches: ${COVERAGE_BRANCHES}%
-- Functions: ${COVERAGE_FUNCTIONS}%
-- Lines: ${COVERAGE_LINES}%
-EOF
-)
+            ✅ Code Coverage
+            - Statements: ${COVERAGE_STATEMENTS}%
+            - Branches: ${COVERAGE_BRANCHES}%
+            - Functions: ${COVERAGE_FUNCTIONS}%
+            - Lines: ${COVERAGE_LINES}%
+            EOF
+            )
             else
               COVERAGE_SUMMARY="⚠️ Code Coverage summary not found in test report."
             fi
@@ -207,11 +207,11 @@ EOF
           if [ "$TESTS_FAILED" -gt 0 ]; then
             FAILED_TESTS_OUTPUT=$(cat <<EOF
 
-**Failed Tests:**
-\`\`\`
-${FAILED_TESTS_LIST}
-\`\`\`
-EOF
+          **Failed Tests:**
+          \`\`\`
+          ${FAILED_TESTS_LIST}
+          \`\`\`
+          EOF
           )
           fi
 
@@ -220,44 +220,44 @@ EOF
           if [ "$TESTS_SKIPPED" -gt 0 ]; then
             SKIPPED_TESTS_OUTPUT=$(cat <<EOF
 
-**Skipped Tests:**
-\`\`\`
-${SKIPPED_TESTS_LIST}
-\`\`\`
-EOF
+          **Skipped Tests:**
+          \`\`\`
+          ${SKIPPED_TESTS_LIST}
+          \`\`\`
+          EOF
           )
           fi
 
           # Używamy heredoc EOF do łatwiejszego formatowania wieloliniowego stringa
           COMMENT_BODY=$(cat <<EOF
-## Pull Request Status
+          ## Pull Request Status
 
-**Lint Results ${LINT_STATUS}**
-${LINT_ERRORS_COUNT} Errors ❌
-\`\`\`diff
-$( [ "$LINT_ERRORS_COUNT" -gt 0 ] && echo "$LINT_ERRORS_LIST" || echo "  + No errors found" )
-\`\`\`
-${LINT_WARNINGS_COUNT} Warnings ⚠️
-\`\`\`diff
-$( [ "$LINT_WARNINGS_COUNT" -gt 0 ] && echo "$LINT_WARNINGS_LIST" || echo "  + No warnings found" )
-\`\`\`
+          **Lint Results ${LINT_STATUS}**
+          ${LINT_ERRORS_COUNT} Errors ❌
+          \`\`\`diff
+          $( [ "$LINT_ERRORS_COUNT" -gt 0 ] && echo "$LINT_ERRORS_LIST" || echo "  + No errors found" )
+          \`\`\`
+          ${LINT_WARNINGS_COUNT} Warnings ⚠️
+          \`\`\`diff
+          $( [ "$LINT_WARNINGS_COUNT" -gt 0 ] && echo "$LINT_WARNINGS_LIST" || echo "  + No warnings found" )
+          \`\`\`
 
-**Test Results ${TEST_STATUS}**
-**Test Statistics**
-✅ Passed Tests: ${TESTS_PASSED}
-❌ Failed Tests: ${TESTS_FAILED}
-⚠️ Skipped Tests: ${TESTS_SKIPPED}
-📊 Total Tests: ${TESTS_TOTAL}
-${FAILED_TESTS_OUTPUT}
-${SKIPPED_TESTS_OUTPUT}
+          **Test Results ${TEST_STATUS}**
+          **Test Statistics**
+          ✅ Passed Tests: ${TESTS_PASSED}
+          ❌ Failed Tests: ${TESTS_FAILED}
+          ⚠️ Skipped Tests: ${TESTS_SKIPPED}
+          📊 Total Tests: ${TESTS_TOTAL}
+          ${FAILED_TESTS_OUTPUT}
+          ${SKIPPED_TESTS_OUTPUT}
 
-${COVERAGE_SUMMARY}
+          ${COVERAGE_SUMMARY}
 
----
-**Overall Status**
-${OVERALL_STATUS_ICON} ${OVERALL_STATUS_TEXT}
-EOF
-)
+          ---
+          **Overall Status**
+          ${OVERALL_STATUS_ICON} ${OVERALL_STATUS_TEXT}
+          EOF
+          )
 
           # --- Output Comment Body for next step ---
           # Zapisz sformatowany komentarz do zmiennej GITHUB_OUTPUT
@@ -274,3 +274,4 @@ EOF
           comment-id: ${{ github.run_id }}-${{ github.job }} # Używa ID bieżącego uruchomienia i joba dla unikalności
           body: ${{ steps.generate-comment.outputs.comment }} # Treść komentarza wygenerowana w poprzednim kroku
           edit-mode: replace # Zastąp istniejący komentarz o tym samym ID
+          
