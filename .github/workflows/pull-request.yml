@@ -1,223 +1,249 @@
-name: Master Pull Request Checks
+name: Pull Request Checks
 
 on:
   pull_request:
-    branches: [ master ]
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened] # Uruchamiaj przy otwarciu, aktualizacji lub ponownym otwarciu PR
 
-# Add permissions configuration
-permissions:
+permissions: # Wymagane do dodawania komentarzy do PR
   pull-requests: write
-  issues: write
-  contents: read
 
 jobs:
   lint:
-    name: Lint Check
+    name: Lint Code
     runs-on: ubuntu-latest
-    
+    outputs: # Udostępnij wynik lintowania dla joba status-comment
+      result: ${{ steps.run-lint.outcome }}
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js from .nvmrc
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Run linting
-        id: lint
-        continue-on-error: true
-        run: |
-          npm run lint > lint_results.txt 2> lint_error.txt || true
-          echo "LINT_OUTPUT<<EOF" >> $GITHUB_ENV
-          cat lint_results.txt >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          node-version-file: '.nvmrc' # Użyj wersji Node.js z pliku .nvmrc
+          cache: 'npm' # Włącz cache dla npm
 
-      - name: Upload lint results
+      - name: Install Dependencies
+        run: npm ci # Użyj 'ci' dla czystej instalacji w CI
+
+      - name: Run ESLint
+        id: run-lint
+        # Uruchom eslint, zapisz wynik do pliku JSON, kontynuuj nawet jeśli są błędy (`|| true`)
+        # Używamy npx, aby upewnić się, że używamy wersji ESLint z projektu
+        run: npx eslint . --format json --output-file eslint-report.json || true
+
+      - name: Upload Lint Report Artifact
+        # Zapisz raport jako artefakt, aby job status-comment mógł go pobrać
         uses: actions/upload-artifact@v4
         with:
-          name: lint-results
-          path: |
-            lint_results.txt
-            lint_error.txt
-          retention-days: 1
+          name: lint-report # Nazwa artefaktu
+          path: eslint-report.json # Ścieżka do pliku raportu
 
   test:
-    name: Unit Tests
-    needs: lint
+    name: Run Unit Tests
     runs-on: ubuntu-latest
-    
+    needs: lint # Uruchom ten job po zakończeniu joba 'lint'
+    outputs: # Udostępnij wynik testów dla joba status-comment
+      result: ${{ steps.run-tests.outcome }}
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js from .nvmrc
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
-          
-      - name: Install dependencies
+
+      - name: Install Dependencies
         run: npm ci
-        
-      - name: Run tests with coverage
-        id: test
-        continue-on-error: true
-        run: |
-          npm run test > test_results.txt 2> test_error.txt || true
-          echo "TEST_OUTPUT<<EOF" >> $GITHUB_ENV
-          cat test_results.txt >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-        
-      - name: Upload test results
+
+      - name: Run Vitest with Coverage and JSON Report
+        id: run-tests
+        # Uruchom testy z pokryciem, zapisz wynik do pliku JSON, kontynuuj nawet jeśli testy failują (`|| true`)
+        # Vitest z reporterem json zawiera podsumowanie pokrycia
+        run: npm run test:coverage -- --reporter=json --outputFile=vitest-report.json || true
+
+      - name: Upload Test Report Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
-          path: |
-            test_results.txt
-            test_error.txt
-            coverage/
-          retention-days: 1
+          name: test-report
+          path: vitest-report.json # Ścieżka do pliku raportu z testów i pokrycia
 
   status-comment:
-    name: PR Status Comment
-    needs: [lint, test]
+    name: Post Status Comment
     runs-on: ubuntu-latest
-    if: always()
-    
+    needs: [lint, test] # Uruchom ten job po zakończeniu jobów 'lint' i 'test'
+    if: always() # Zawsze uruchamiaj ten job, nawet jeśli poprzednie zawiodły, aby opublikować status
     steps:
-      - name: Download artifacts
+      - name: Checkout Code # Potrzebne do uzyskania kontekstu PR
+        uses: actions/checkout@v4
+
+      - name: Download Lint Report
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          name: lint-report
+          path: . # Pobierz do bieżącego katalogu
 
-      - name: Create Status Comment
-        uses: actions/github-script@v7
+      - name: Download Test Report
+        uses: actions/download-artifact@v4
         with:
-          script: |
-            const fs = require('fs');
-            
-            // Read lint results
-            const lintOutput = fs.readFileSync('./artifacts/lint-results/lint_results.txt', 'utf8');
-            
-            // Parse lint results
-            const lintErrors = [];
-            const lintWarnings = [];
-            let currentFile = null;
-            
-            // Function to clean file path
-            const cleanFilePath = (path) => {
-              return path.replace(/^\/home\/runner\/work\/[^/]+\/[^/]+\//, '');
-            };
-            
-            const lintLines = lintOutput.split('\n');
-            for (const line of lintLines) {
-              // Check if this is a file path line
-              if (line.startsWith('/')) {
-                currentFile = cleanFilePath(line.trim());
-                continue;
-              }
-              
-              // Parse error/warning lines
-              if (currentFile && line.trim()) {
-                const match = line.trim().match(/(\d+):(\d+)\s+(error|warning)\s+(.+?)\s+([a-zA-Z/-]+)\s*$/);
-                if (match) {
-                  const [_, lineNum, col, severity, message, rule] = match;
-                  const issue = `${currentFile}:${lineNum}:${col} - ${message} (${rule})`;
-                  if (severity === 'error') {
-                    lintErrors.push(issue);
-                  } else {
-                    lintWarnings.push(issue);
-                  }
-                }
-              }
-            }
-            
-            // Read test results
-            const testOutput = fs.readFileSync('./artifacts/test-results/test_results.txt', 'utf8');
-            
-            // Clean the output from ANSI escape codes and other special characters
-            const cleanOutput = testOutput
-              .replace(/\u001b\[\d+m/g, '') // Remove ANSI color codes
-              .replace(/\u001b\[0m/g, '')   // Remove ANSI reset codes
-              .replace(/[^\x20-\x7E\n]/g, ''); // Keep only printable ASCII and newlines
-            
-            // Parse test results - look for the test summary line
-            let testCounts = {
-              passed: 0,
-              failed: 0,
-              skipped: 0,
-              total: 0
-            };
-            
-            // Look for the test summary line that shows total tests
-            const testSummaryMatch = cleanOutput.match(/\s+Tests\s+(\d+)\s+passed\s+\((\d+)\)/);
-            
-            if (testSummaryMatch) {
-              testCounts.passed = parseInt(testSummaryMatch[1]);
-              testCounts.total = parseInt(testSummaryMatch[2]);
-            } else {
-              // Fallback: try to count individual test results from file summaries
-              const testLines = cleanOutput.split('\n');
-              for (const line of testLines) {
-                const match = line.match(/\((\d+) tests\)/);
-                if (match) {
-                  const count = parseInt(match[1]);
-                  testCounts.total += count;
-                  testCounts.passed += count; // since all tests passed
-                }
-              }
-            }
-            
-            // Try to read coverage summary if it exists
-            let coverageSummary = null;
-            try {
-              coverageSummary = JSON.parse(fs.readFileSync('./artifacts/test-results/coverage/coverage-summary.json', 'utf8'));
-            } catch (error) {
-              console.log('Coverage summary not found, skipping coverage report');
-            }
-            
-            // Calculate status
-            const hasLintErrors = lintErrors.length > 0;
-            const hasTestFailures = testCounts.failed > 0;
-            const overallStatus = !hasLintErrors && !hasTestFailures;
-            
-            const icon = overallStatus ? '✅' : '❌';
-            const lintIcon = !hasLintErrors ? '✅' : '❌';
-            const testIcon = !hasTestFailures ? '✅' : '❌';
-            
-            const body = `## Pull Request Status ${icon}
+          name: test-report
+          path: .
 
-            ### Lint Results ${lintIcon}
-            ${hasLintErrors ? '#### Errors ❌\n' + lintErrors.map(err => `- ${err}`).join('\n') : '✅ No linting errors'}
-            
-            ${lintWarnings.length > 0 ? '#### Warnings ⚠️\n' + lintWarnings.map(warn => `- ${warn}`).join('\n') : '✅ No linting warnings'}
+      - name: Install jq # Narzędzie do parsowania JSON w linii komend
+        run: sudo apt-get update && sudo apt-get install -y jq
 
-            ### Test Results ${testIcon}
-            
-            ${coverageSummary ? `#### Coverage Summary
-            - Statements: ${coverageSummary.total.statements.pct}%
-            - Branches: ${coverageSummary.total.branches.pct}%
-            - Functions: ${coverageSummary.total.functions.pct}%
-            - Lines: ${coverageSummary.total.lines.pct}%` : ''}
-            
-            #### Test Statistics
-            - ✅ Passed Tests: ${testCounts.passed}
-            - ❌ Failed Tests: ${testCounts.failed}
-            - ⚠️ Skipped Tests: ${testCounts.skipped}
-            - 📊 Total Tests: ${testCounts.total}
-            
-            ### Overall Status
-            ${overallStatus 
-              ? '✅ All checks have passed successfully! 🎉' 
-              : '❌ Some checks have failed. Please review the details above. ⚠️'}`;
-            
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: body
-            }); 
+      - name: Generate Comment Body
+        id: generate-comment
+        run: |
+          # --- Initialize Variables ---
+          LINT_STATUS="✅"
+          LINT_ERRORS_COUNT=0
+          LINT_WARNINGS_COUNT=0
+          LINT_ERRORS_LIST=""
+          LINT_WARNINGS_LIST=""
+          LINT_REPORT_EXISTS=false
+          TEST_STATUS="✅"
+          TESTS_PASSED=0
+          TESTS_FAILED=0
+          TESTS_SKIPPED=0
+          TESTS_TOTAL=0
+          FAILED_TESTS_LIST=""
+          SKIPPED_TESTS_LIST=""
+          COVERAGE_SUMMARY=""
+          COVERAGE_STATEMENTS=0
+          COVERAGE_BRANCHES=0
+          COVERAGE_FUNCTIONS=0
+          COVERAGE_LINES=0
+          OVERALL_STATUS_ICON="✅"
+          OVERALL_STATUS_TEXT="All checks passed successfully."
+
+          # --- Process Lint Report ---
+          if [ -f eslint-report.json ]; then
+            LINT_REPORT_EXISTS=true
+            # Licz błędy (severity 2) i ostrzeżenia (severity 1)
+            LINT_ERRORS_COUNT=$(jq '[.[] | .messages[] | select(.severity == 2)] | length' eslint-report.json)
+            LINT_WARNINGS_COUNT=$(jq '[.[] | .messages[] | select(.severity == 1)] | length' eslint-report.json)
+
+            if [ "$LINT_ERRORS_COUNT" -gt 0 ]; then
+              LINT_STATUS="❌"
+              LINT_ERRORS_LIST=$(jq -r '.[] | select(any(.messages[]; .severity == 2)) | .filePath as $path | .messages[] | select(.severity == 2) | "- \($path | sub("^[^/]*/"; "src/")):\(.line):\(.column) - \(.message) (\(.ruleId // "unknown"))"' eslint-report.json | sed 's/^/  /')
+            fi
+
+            if [ "$LINT_WARNINGS_COUNT" -gt 0 ]; then
+              # Jeśli są błędy, status to już X, wpp ustaw na warning
+              if [ "$LINT_STATUS" == "✅" ]; then LINT_STATUS="⚠️"; fi
+              LINT_WARNINGS_LIST=$(jq -r '.[] | select(any(.messages[]; .severity == 1)) | .filePath as $path | .messages[] | select(.severity == 1) | "- \($path | sub("^[^/]*/"; "src/")):\(.line):\(.column) - \(.message) (\(.ruleId // "unknown"))"' eslint-report.json | sed 's/^/  /')
+            fi
+          else
+            LINT_STATUS="❓" # Unknown status if file not found
+            LINT_ERRORS_LIST="  - Lint report file (eslint-report.json) not found."
+          fi
+
+          # --- Process Test Report ---
+          if [ -f vitest-report.json ]; then
+            TESTS_PASSED=$(jq '.numPassedTests' vitest-report.json)
+            TESTS_FAILED=$(jq '.numFailedTests' vitest-report.json)
+            # Vitest może raportować 'pending' jako skipped
+            TESTS_SKIPPED=$(jq '.numPendingTests // .numTodoTests // 0' vitest-report.json)
+            TESTS_TOTAL=$(jq '.numTotalTests' vitest-report.json)
+
+            if [ "$TESTS_FAILED" -gt 0 ]; then
+              TEST_STATUS="❌"
+              # Zbierz nazwy failujących testów
+              FAILED_TESTS_LIST=$(jq -r '.testResults[] | .assertionResults[] | select(.status == "failed") | "- `\(.ancestorTitles | join(" > ")) > \(.title)`"' vitest-report.json | sed 's/^/  /')
+            fi
+
+            if [ "$TESTS_SKIPPED" -gt 0 ]; then
+               # Jeśli nie ma błędów, ale są skipped, status to warning
+              if [ "$TEST_STATUS" == "✅" ]; then TEST_STATUS="⚠️"; fi
+              SKIPPED_TESTS_LIST=$(jq -r '.testResults[] | .assertionResults[] | select(.status == "pending" or .status == "todo") | "- `\(.ancestorTitles | join(" > ")) > \(.title)`"' vitest-report.json | sed 's/^/  /')
+            fi
+
+            # --- Process Coverage ---
+            # Sprawdź czy raport zawiera podsumowanie pokrycia (zwykle jest, jeśli testy były uruchomione z --coverage)
+            HAS_COVERAGE=$(jq 'if .coverageMap then true else false end' vitest-report.json)
+            if [ "$HAS_COVERAGE" == "true" ]; then
+              COVERAGE_STATEMENTS=$(jq '.coverageMap.data.total.statements.pct' vitest-report.json)
+              COVERAGE_BRANCHES=$(jq '.coverageMap.data.total.branches.pct' vitest-report.json)
+              COVERAGE_FUNCTIONS=$(jq '.coverageMap.data.total.functions.pct' vitest-report.json)
+              COVERAGE_LINES=$(jq '.coverageMap.data.total.lines.pct' vitest-report.json)
+              COVERAGE_SUMMARY=$(cat <<EOF
+          ✅ Code Coverage
+          - Statements: ${COVERAGE_STATEMENTS}%
+          - Branches: ${COVERAGE_BRANCHES}%
+          - Functions: ${COVERAGE_FUNCTIONS}%
+          - Lines: ${COVERAGE_LINES}%
+          EOF
+          )
+            else
+              COVERAGE_SUMMARY="⚠️ Code Coverage data not found in test report."
+            fi
+
+          else
+            TEST_STATUS="❓" # Unknown status if file not found
+            FAILED_TESTS_LIST="  - Test report file (vitest-report.json) not found."
+            COVERAGE_SUMMARY="❓ Code Coverage data unavailable."
+          fi
+
+          # --- Determine Overall Status ---
+          if [ "${{ needs.lint.outputs.result }}" == "failure" ] || [ "${{ needs.test.outputs.result }}" == "failure" ] || [ "$LINT_STATUS" == "❌" ] || [ "$TEST_STATUS" == "❌" ]; then
+              OVERALL_STATUS_ICON="❌"
+              OVERALL_STATUS_TEXT="Some checks have failed. Please review the details above."
+          elif [ "${{ needs.lint.outputs.result }}" == "success" ] && [ "${{ needs.test.outputs.result }}" == "success" ] && [ "$LINT_STATUS" == "⚠️" ] || [ "$TEST_STATUS" == "⚠️" ]; then
+              OVERALL_STATUS_ICON="⚠️"
+              OVERALL_STATUS_TEXT="Some checks passed with warnings. Please review the details above."
+          elif [ "$LINT_STATUS" == "❓" ] || [ "$TEST_STATUS" == "❓" ]; then
+              OVERALL_STATUS_ICON="❓"
+              OVERALL_STATUS_TEXT="Could not determine the status for all checks."
+          fi
+
+
+          # --- Construct Comment Body ---
+          # Używamy heredoc EOF do łatwiejszego formatowania wieloliniowego stringa
+          COMMENT_BODY=$(cat <<EOF
+          ## Pull Request Status
+
+          **Lint Results ${LINT_STATUS}**
+          ${LINT_ERRORS_COUNT} Errors ❌
+          \`\`\`diff
+          $( [ "$LINT_ERRORS_COUNT" -gt 0 ] && echo "$LINT_ERRORS_LIST" || echo "  + No errors found" )
+          \`\`\`
+          ${LINT_WARNINGS_COUNT} Warnings ⚠️
+          \`\`\`diff
+          $( [ "$LINT_WARNINGS_COUNT" -gt 0 ] && echo "$LINT_WARNINGS_LIST" || echo "  + No warnings found" )
+          \`\`\`
+
+          **Test Results ${TEST_STATUS}**
+          **Test Statistics**
+          ✅ Passed Tests: ${TESTS_PASSED}
+          ❌ Failed Tests: ${TESTS_FAILED}
+          $( [ "$TESTS_FAILED" -gt 0 ] && echo "$FAILED_TESTS_LIST" || echo "" )
+          ⚠️ Skipped Tests: ${TESTS_SKIPPED}
+          $( [ "$TESTS_SKIPPED" -gt 0 ] && echo "$SKIPPED_TESTS_LIST" || echo "" )
+          📊 Total Tests: ${TESTS_TOTAL}
+
+          ${COVERAGE_SUMMARY}
+
+          ---
+          **Overall Status**
+          ${OVERALL_STATUS_ICON} ${OVERALL_STATUS_TEXT}
+          EOF
+          )
+
+          # --- Output Comment Body for next step ---
+          # Zapisz sformatowany komentarz do zmiennej GITHUB_OUTPUT
+          # Zastąp znaki nowej linii, aby pasowały do formatu GITHUB_OUTPUT
+          echo "comment<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMENT_BODY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create or Update Comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }} # Numer PR z kontekstu zdarzenia
+          # Użyj unikalnego ID, aby akcja mogła znaleźć i zaktualizować swój poprzedni komentarz
+          comment-id: ${{ github.run_id }}-${{ github.job }} # Używa ID bieżącego uruchomienia i joba dla unikalności
+          body: ${{ steps.generate-comment.outputs.comment }} # Treść komentarza wygenerowana w poprzednim kroku
+          edit-mode: replace # Zastąp istniejący komentarz o tym samym ID
