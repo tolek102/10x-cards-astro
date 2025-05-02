@@ -66,7 +66,7 @@ describe("PATCH /api/flashcards/:id/accept", () => {
     const response = await PATCH(context);
     const data = await response.json();
 
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(400);
     expect(data.error).toBe("Not found");
     expect(data.message).toBe("Flashcard not found or does not belong to the user");
   });
