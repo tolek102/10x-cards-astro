@@ -118,26 +118,26 @@ jobs:
           COVERAGE_LINES=0
           OVERALL_STATUS_ICON="✅"
           OVERALL_STATUS_TEXT="All checks passed successfully."
+          LINT_JOB_RESULT="${{ needs.lint.outputs.result }}"
+          TEST_JOB_RESULT="${{ needs.test.outputs.result }}"
 
           # --- Process Lint Report ---
           if [ -f eslint-report.json ]; then
             LINT_REPORT_EXISTS=true
-            # Licz błędy (severity 2) i ostrzeżenia (severity 1)
             LINT_ERRORS_COUNT=$(jq '[.[] | .messages[] | select(.severity == 2)] | length' eslint-report.json)
             LINT_WARNINGS_COUNT=$(jq '[.[] | .messages[] | select(.severity == 1)] | length' eslint-report.json)
 
             if [ "$LINT_ERRORS_COUNT" -gt 0 ]; then
               LINT_STATUS="❌"
-              LINT_ERRORS_LIST=$(jq -r '.[] | select(any(.messages[]; .severity == 2)) | .filePath as $path | .messages[] | select(.severity == 2) | "- \($path | sub("^[^/]*/"; "src/")):\(.line):\(.column) - \(.message) (\(.ruleId // "unknown"))"' eslint-report.json | sed 's/^/  /')
+              LINT_ERRORS_LIST=$(jq -r '.[] | select(any(.messages[]; .severity == 2)) | .filePath as $path | .messages[] | select(.severity == 2) | "- \($path | sub(".*/src/"; "src/")):\(.line):\(.column) - \(.message) (\(.ruleId // "unknown"))"' eslint-report.json | sed 's/^/  /')
             fi
 
             if [ "$LINT_WARNINGS_COUNT" -gt 0 ]; then
-              # Jeśli są błędy, status to już X, wpp ustaw na warning
               if [ "$LINT_STATUS" == "✅" ]; then LINT_STATUS="⚠️"; fi
-              LINT_WARNINGS_LIST=$(jq -r '.[] | select(any(.messages[]; .severity == 1)) | .filePath as $path | .messages[] | select(.severity == 1) | "- \($path | sub("^[^/]*/"; "src/")):\(.line):\(.column) - \(.message) (\(.ruleId // "unknown"))"' eslint-report.json | sed 's/^/  /')
+              LINT_WARNINGS_LIST=$(jq -r '.[] | select(any(.messages[]; .severity == 1)) | .filePath as $path | .messages[] | select(.severity == 1) | "- \($path | sub(".*/src/"; "src/")):\(.line):\(.column) - \(.message) (\(.ruleId // "unknown"))"' eslint-report.json | sed 's/^/  /')
             fi
           else
-            LINT_STATUS="❓" # Unknown status if file not found
+            LINT_STATUS="❓"
             LINT_ERRORS_LIST="  - Lint report file (eslint-report.json) not found."
           fi
 
@@ -145,27 +145,23 @@ jobs:
           if [ -f vitest-report.json ]; then
             TESTS_PASSED=$(jq '.numPassedTests' vitest-report.json)
             TESTS_FAILED=$(jq '.numFailedTests' vitest-report.json)
-            # Vitest może raportować 'pending' jako skipped
             TESTS_SKIPPED=$(jq '.numPendingTests // .numTodoTests // 0' vitest-report.json)
             TESTS_TOTAL=$(jq '.numTotalTests' vitest-report.json)
 
             if [ "$TESTS_FAILED" -gt 0 ]; then
               TEST_STATUS="❌"
-              # Zbierz nazwy failujących testów
-              FAILED_TESTS_LIST=$(jq -r '.testResults[] | select(.status == "failed") | .assertionResults[] | select(.status == "failed") | "- `\(.ancestorTitles | join(" > ")) > \(.title)`"' vitest-report.json | sed 's/^/  /')
+              # Użyj `select(.status == "failed")` na poziomie testResults, aby uniknąć błędów jeśli plik nie ma wyników
+              FAILED_TESTS_LIST=$(jq -r '.testResults[]? | select(.status == "failed") | .assertionResults[]? | select(.status == "failed") | "- `\(.ancestorTitles | join(" > ")) > \(.title)`"' vitest-report.json | sed 's/^/  /')
             fi
 
             if [ "$TESTS_SKIPPED" -gt 0 ]; then
-               # Jeśli nie ma błędów, ale są skipped, status to warning
               if [ "$TEST_STATUS" == "✅" ]; then TEST_STATUS="⚠️"; fi
-              SKIPPED_TESTS_LIST=$(jq -r '.testResults[] | .assertionResults[] | select(.status == "pending" or .status == "todo") | "- `\(.ancestorTitles | join(" > ")) > \(.title)`"' vitest-report.json | sed 's/^/  /')
+              SKIPPED_TESTS_LIST=$(jq -r '.testResults[]? | .assertionResults[]? | select(.status == "pending" or .status == "todo") | "- `\(.ancestorTitles | join(" > ")) > \(.title)`"' vitest-report.json | sed 's/^/  /')
             fi
 
             # --- Process Coverage ---
-            # Sprawdź czy raport zawiera podsumowanie pokrycia
             HAS_COVERAGE_SUMMARY=$(jq 'if .coverageMap and .coverageMap.summary then true else false end' vitest-report.json)
             if [ "$HAS_COVERAGE_SUMMARY" == "true" ]; then
-              # Użyj // 0 aby zwrócić 0 jeśli wartość jest null lub nie istnieje ścieżka
               COVERAGE_STATEMENTS=$(jq '.coverageMap.summary.statements.pct // 0' vitest-report.json)
               COVERAGE_BRANCHES=$(jq '.coverageMap.summary.branches.pct // 0' vitest-report.json)
               COVERAGE_FUNCTIONS=$(jq '.coverageMap.summary.functions.pct // 0' vitest-report.json)
@@ -181,15 +177,15 @@ jobs:
             else
               COVERAGE_SUMMARY="⚠️ Code Coverage summary not found in test report."
             fi
-
           else
-            TEST_STATUS="❓" # Unknown status if file not found
+            TEST_STATUS="❓"
             FAILED_TESTS_LIST="  - Test report file (vitest-report.json) not found."
             COVERAGE_SUMMARY="❓ Code Coverage data unavailable."
           fi
 
           # --- Determine Overall Status ---
-          if [ "${{ needs.lint.outputs.result }}" == "failure" ] || [ "${{ needs.test.outputs.result }}" == "failure" ] || [ "$LINT_STATUS" == "❌" ] || [ "$TEST_STATUS" == "❌" ]; then
+          # Użyj zapisanych wyników jobów i statusów z raportów
+          if [ "$LINT_JOB_RESULT" == "failure" ] || [ "$TEST_JOB_RESULT" == "failure" ] || [ "$LINT_STATUS" == "❌" ] || [ "$TEST_STATUS" == "❌" ]; then
               OVERALL_STATUS_ICON="❌"
               OVERALL_STATUS_TEXT="Some checks have failed. Please review the details above."
           elif [ "$LINT_STATUS" == "⚠️" ] || [ "$TEST_STATUS" == "⚠️" ]; then
@@ -200,44 +196,17 @@ jobs:
               OVERALL_STATUS_TEXT="Could not determine the status for all checks."
           fi
 
-
           # --- Construct Comment Body ---
-          # Format failed tests list conditionally
-          FAILED_TESTS_OUTPUT=""
-          if [ "$TESTS_FAILED" -gt 0 ]; then
-            FAILED_TESTS_OUTPUT=$(cat <<EOF
-
-          **Failed Tests:**
-          \`\`\`
-          ${FAILED_TESTS_LIST}
-          \`\`\`
-          EOF
-          )
-          fi
-
-          # Format skipped tests list conditionally
-          SKIPPED_TESTS_OUTPUT=""
-          if [ "$TESTS_SKIPPED" -gt 0 ]; then
-            SKIPPED_TESTS_OUTPUT=$(cat <<EOF
-
-          **Skipped Tests:**
-          \`\`\`
-          ${SKIPPED_TESTS_LIST}
-          \`\`\`
-          EOF
-          )
-          fi
-
-          # Używamy heredoc EOF do łatwiejszego formatowania wieloliniowego stringa
+          # Bezpośrednie wstawianie list za pomocą $(...) i printf
           COMMENT_BODY=$(cat <<EOF
           ## Pull Request Status
 
           **Lint Results ${LINT_STATUS}**
-          ${LINT_ERRORS_COUNT} Errors ❌
+          Errors: ${LINT_ERRORS_COUNT} ❌
           \`\`\`diff
           $( [ "$LINT_ERRORS_COUNT" -gt 0 ] && echo "$LINT_ERRORS_LIST" || echo "  + No errors found" )
           \`\`\`
-          ${LINT_WARNINGS_COUNT} Warnings ⚠️
+          Warnings: ${LINT_WARNINGS_COUNT} ⚠️
           \`\`\`diff
           $( [ "$LINT_WARNINGS_COUNT" -gt 0 ] && echo "$LINT_WARNINGS_LIST" || echo "  + No warnings found" )
           \`\`\`
@@ -248,8 +217,8 @@ jobs:
           ❌ Failed Tests: ${TESTS_FAILED}
           ⚠️ Skipped Tests: ${TESTS_SKIPPED}
           📊 Total Tests: ${TESTS_TOTAL}
-          ${FAILED_TESTS_OUTPUT}
-          ${SKIPPED_TESTS_OUTPUT}
+          $( [ "$TESTS_FAILED" -gt 0 ] && printf "\n**Failed Tests:**\n\`\`\`\n%s\n\`\`\`\n" "$FAILED_TESTS_LIST" )
+          $( [ "$TESTS_SKIPPED" -gt 0 ] && printf "\n**Skipped Tests:**\n\`\`\`\n%s\n\`\`\`\n" "$SKIPPED_TESTS_LIST" )
 
           ${COVERAGE_SUMMARY}
 
@@ -260,8 +229,6 @@ jobs:
           )
 
           # --- Output Comment Body for next step ---
-          # Zapisz sformatowany komentarz do zmiennej GITHUB_OUTPUT
-          # Zastąp znaki nowej linii, aby pasowały do formatu GITHUB_OUTPUT
           echo "comment<<EOF" >> $GITHUB_OUTPUT
           echo "$COMMENT_BODY" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -269,9 +236,8 @@ jobs:
       - name: Create or Update Comment
         uses: peter-evans/create-or-update-comment@v4
         with:
-          issue-number: ${{ github.event.pull_request.number }} # Numer PR z kontekstu zdarzenia
-          # Użyj unikalnego ID, aby akcja mogła znaleźć i zaktualizować swój poprzedni komentarz
-          comment-id: ${{ github.run_id }}-${{ github.job }} # Używa ID bieżącego uruchomienia i joba dla unikalności
-          body: ${{ steps.generate-comment.outputs.comment }} # Treść komentarza wygenerowana w poprzednim kroku
-          edit-mode: replace # Zastąp istniejący komentarz o tym samym ID
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ github.run_id }}-${{ github.job }} # Używa unikalnego ID do aktualizacji
+          body: ${{ steps.generate-comment.outputs.comment }}
+          edit-mode: replace
           
