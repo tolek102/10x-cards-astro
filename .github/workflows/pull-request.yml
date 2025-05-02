@@ -94,58 +94,66 @@ jobs:
       - name: Create Status Comment
         uses: actions/github-script@v7
         id: comment-script
-        # Dostęp do 'needs' jest przez obiekt 'context'
-        # context.needs.<job_id>.result zwraca 'success', 'failure', 'cancelled', or 'skipped'
+        # Wracamy do próby bezpośredniego dostępu do 'needs'
+        # Zakładamy, że actions/github-script@v7 wstrzykuje 'needs' do globalnego scope'u skryptu
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const prNumber = context.issue.number;
+            // 'core' i 'context' są zazwyczaj dostępne globalnie lub przez parametry funkcji async
+            const core = require('@actions/core');
+            // 'github' i 'context' są też przekazywane jako argumenty do skryptu przez action runner
+            // Zmienna 'needs' powinna być dostępna globalnie
+            const prNumber = context.issue.number; // Dostęp do context nadal jest potrzebny dla PR number, repo, owner
+
             if (!prNumber) {
-              console.log('Could not get PR number from context, exiting');
-              core.setFailed('Could not get PR number from context.'); // Oznacz krok jako nieudany
+              core.setFailed('Could not get PR number from context.');
               return;
             }
 
             // --- Status Lintowania ---
-            // Używamy 'context.needs' zamiast 'needs'
-            const lintResult = context.needs.lint.result;
+            // Używamy teraz 'needs' bezpośrednio
+            // Sprawdzamy najpierw, czy 'needs' i 'needs.lint' istnieją
+            if (typeof needs === 'undefined' || typeof needs.lint === 'undefined') {
+               core.setFailed("Error: 'needs.lint' context is not available.");
+               return; // Zakończ, jeśli kontekst 'needs' jest niedostępny
+            }
+            const lintResult = needs.lint.result;
             const lintStatus = lintResult === 'success' ? '✅' : '❌';
             let lintComment = `Lint Results ${lintStatus}\n`;
             if (lintResult !== 'success') {
-              // W przyszłości można dodać parsowanie logów lub outputu JSON z ESLint dla szczegółów
               lintComment += `❌ Linting failed. Please check the 'Lint Code' job logs for details.\n`;
             } else {
                lintComment += `✅ Linting passed.\n`;
             }
 
             // --- Status Testów ---
-            // Używamy 'context.needs' zamiast 'needs'
-            const testResult = context.needs.test.result;
+            // Sprawdzamy najpierw, czy 'needs.test' istnieje
+            if (typeof needs.test === 'undefined') {
+               core.setFailed("Error: 'needs.test' context is not available.");
+               return; // Zakończ, jeśli kontekst 'needs' jest niedostępny
+            }
+            const testResult = needs.test.result;
             const testStatus = testResult === 'success' ? '✅' : '❌';
             let testComment = `\nTest Results ${testStatus}\n`;
             let passedTests = 0;
             let failedTests = 0;
-            let skippedTests = 0; // Vitest oznacza je jako 'pending' lub 'todo'
+            let skippedTests = 0;
             let totalTests = 0;
             let testStatsAvailable = false;
-            const summaryPath = './vitest-summary.json'; // Ścieżka do pobranego artefaktu
+            const summaryPath = './vitest-summary.json';
 
             try {
-              // Sprawdź, czy plik podsumowania istnieje (mógł nie zostać pobrany, jeśli job testowy zawiódł wcześnie)
               if (fs.existsSync(summaryPath)) {
                 const summaryRaw = fs.readFileSync(summaryPath, 'utf8');
                 const summary = JSON.parse(summaryRaw);
 
-                // Sprawdź, czy struktura summary jest oczekiwana
                 if (summary && summary.testResults && Array.isArray(summary.testResults)) {
                     summary.testResults.forEach(fileResult => {
                       if (fileResult && fileResult.assertionResults && Array.isArray(fileResult.assertionResults)) {
                         passedTests += fileResult.assertionResults.filter(r => r && r.status === 'passed').length;
                         failedTests += fileResult.assertionResults.filter(r => r && r.status === 'failed').length;
-                        skippedTests += fileResult.assertionResults.filter(r => r && (r.status === 'pending' || r.status === 'todo')).length;
-                        // Niektóre wersje mogą mieć 'skipped' zamiast 'pending'/'todo'
-                        skippedTests += fileResult.assertionResults.filter(r => r && r.status === 'skipped').length;
+                        skippedTests += fileResult.assertionResults.filter(r => r && (r.status === 'pending' || r.status === 'todo' || r.status === 'skipped')).length;
                         totalTests += fileResult.assertionResults.length;
                       } else {
                          console.warn('Unexpected structure within testResults item:', fileResult);
@@ -153,7 +161,6 @@ jobs:
                     });
                     testStatsAvailable = true;
                  } else if (summary && typeof summary.numTotalTests !== 'undefined') {
-                    // Alternatywna struktura, czasami Vitest umieszcza podsumowanie na górnym poziomie
                     passedTests = summary.numPassedTests ?? 0;
                     failedTests = summary.numFailedTests ?? 0;
                     skippedTests = (summary.numPendingTests ?? 0) + (summary.numTodoTests ?? 0) + (summary.numSkippedTests ?? 0) ;
@@ -168,19 +175,16 @@ jobs:
                   testComment += `✅ Passed Tests: ${passedTests}\n`;
                   testComment += failedTests > 0 ? `❌ Failed Tests: ${failedTests}\n` : `✅ Failed Tests: 0\n`;
                   testComment += skippedTests > 0 ? `⚠️ Skipped Tests: ${skippedTests}\n` : `✅ Skipped Tests: 0\n`;
-                  testComment += `📊 Total Tests Run: ${totalTests}\n`; // Używamy totalTests z pliku JSON
+                  testComment += `📊 Total Tests Run: ${totalTests}\n`;
                 } else if (testResult === 'success') {
-                  // Jeśli testy przeszły, ale nie udało się sparsować statystyk
                   testComment += `✅ Tests passed, but failed to parse detailed statistics from vitest-summary.json.\n`;
                 }
 
               } else {
-                 // Plik nie istnieje
                  testComment += `⚠️ Could not find test summary file (${summaryPath}).\n`;
                  if (testResult !== 'success') {
                    testComment += `❌ Tests failed. Check the 'Unit Tests' job logs for details.\n`;
                  } else {
-                   // Rzadki przypadek: job 'test' sukces, ale artefakt nie istnieje/nie pobrał się?
                    testComment += `🤔 Tests job reported success, but the summary artifact is missing.\n`;
                  }
               }
@@ -194,7 +198,7 @@ jobs:
 
              // --- Status Ogólny ---
             let overallStatus = '\nOverall Status\n';
-            // Używamy zmiennych 'lintResult' i 'testResult'
+            // Używamy zmiennych 'lintResult' i 'testResult' pobranych z 'needs'
             if (lintResult === 'success' && testResult === 'success') {
               overallStatus += '✅ All checks passed successfully!';
             } else {
@@ -205,8 +209,7 @@ jobs:
             const finalComment = `${lintComment}${testComment}${overallStatus}`;
 
             // --- Publikacja komentarza ---
-            // Dodaj logikę do edycji/aktualizacji komentarza, jeśli to preferowane
-            // Na razie tworzymy nowy
+            // Używamy 'github.rest' i 'context' przekazanych do skryptu
             try {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -216,6 +219,5 @@ jobs:
               });
             } catch (commentError) {
                console.error("Failed to create comment:", commentError);
-               // Możesz chcieć oznaczyć krok jako nieudany, jeśli komentowanie jest krytyczne
-               // core.setFailed('Failed to post status comment.');
+               core.setFailed('Failed to post status comment.'); // Oznacz krok jako nieudany
             }
