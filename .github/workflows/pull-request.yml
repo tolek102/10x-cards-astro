@@ -2,283 +2,235 @@ name: Pull Request Checks
 
 on:
   pull_request:
+    branches: [ main ]
     types: [opened, synchronize, reopened] # Uruchamiaj przy otwarciu, aktualizacji lub ponownym otwarciu PR
 
-permissions: # Wymagane do dodawania komentarzy do PR
-  pull-requests: write
+permissions: # Ustawienie domyślnych uprawnień dla całego workflow
+  contents: read    # Potrzebne do checkoutu kodu i odczytu .nvmrc
 
 jobs:
-  lint:
-    name: Lint Code
+  lint_and_test:
+    name: Lint and Test
     runs-on: ubuntu-latest
-    outputs: # Udostępnij wynik lintowania dla joba status-comment
-      result: ${{ steps.run-lint.outcome }}
+
+    outputs: # Definiujemy wyjścia tego joba, które przekażemy do joba komentującego
+      lint_outcome: ${{ steps.lint.outcome }}
+      test_outcome: ${{ steps.test.outcome }}
+      lint_results_path: ./lint-results.json # Ścieżka do pliku z wynikami lintera
+      test_results_path: ./test-results.json # Ścieżka do pliku z wynikami testów
+
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Node.js from .nvmrc
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc' # Użyj wersji Node.js z pliku .nvmrc
-          cache: 'npm' # Włącz cache dla npm
+          node-version-file: '.nvmrc' # Używa wersji Node.js z pliku .nvmrc
+          cache: 'npm' # Włącza cache'owanie zależności npm dla szybszych buildów
 
-      - name: Install Dependencies
-        run: npm ci # Użyj 'ci' dla czystej instalacji w CI
+      - name: Install dependencies
+        run: npm ci # Używaj 'ci' zamiast 'install' w CI dla deterministycznych instalacji
 
-      - name: Run ESLint
-        id: run-lint
-        # Uruchom eslint, zapisz wynik do pliku JSON, kontynuuj nawet jeśli są błędy (`|| true`)
-        run: npx eslint . --format json --output-file eslint-report.json || true
+      - name: Run Linter
+        id: lint # Nadajemy ID krokowi, aby móc odwołać się do jego wyniku (outcome)
+        # Uruchamiamy lintera z formatem JSON dla łatwiejszego parsowania i zapisujemy do pliku
+        # Używamy `|| true`, aby krok nie zakończył się błędem, jeśli lint znajdzie problemy. Sprawdzimy wynik w kolejnym jobie.
+        run: npm run lint -- --format json --output-file lint-results.json || true
+        continue-on-error: true # Pozwalamy workflow kontynuować nawet jeśli ten krok "zakończy się niepowodzeniem" (ze względu na `|| true` to nie nastąpi, ale outcome będzie 'failure')
 
-      - name: Upload Lint Report Artifact
+      - name: Run Unit Tests
+        id: test # Nadajemy ID krokowi
+        # Uruchamiamy testy z reporterem JSON i zapisujemy do pliku
+        # Używamy `npx vitest run`, aby upewnić się, że uruchamiamy testy jednorazowo (nie w trybie watch)
+        # Używamy `|| true`, aby krok nie zakończył się błędem, jeśli testy nie przejdą. Sprawdzimy wynik w kolejnym jobie.
+        run: npx vitest run --reporter=json --outputFile=test-results.json || true
+        continue-on-error: true # Pozwalamy workflow kontynuować
+
+      - name: Upload Lint Results Artifact
         uses: actions/upload-artifact@v4
+        if: always() # Zawsze uploaduj artefakt, niezależnie od wyniku kroku lint
         with:
-          name: lint-report # Nazwa artefaktu
-          path: eslint-report.json # Ścieżka do pliku raportu
+          name: lint-results # Nazwa artefaktu
+          path: ${{ steps.lint_and_test.outputs.lint_results_path }} # Ścieżka zdefiniowana w outputs joba
+          retention-days: 1 # Jak długo przechowywać artefakt
 
-  test:
-    name: Run Unit Tests
-    runs-on: ubuntu-latest
-    needs: lint # Uruchom ten job po zakończeniu joba 'lint'
-    outputs: # Udostępnij wynik testów dla joba status-comment
-      result: ${{ steps.run-tests.outcome }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js from .nvmrc
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Run Vitest with Coverage and JSON Report
-        id: run-tests
-        # Uruchom testy z pokryciem, zapisz wynik do pliku JSON, kontynuuj nawet jeśli testy failują (`|| true`)
-        run: npm run test:coverage -- --reporter=json --outputFile=vitest-report.json || true
-
-      - name: Upload Test Report Artifact
+      - name: Upload Test Results Artifact
         uses: actions/upload-artifact@v4
+        if: always() # Zawsze uploaduj artefakt
         with:
-          name: test-report
-          path: vitest-report.json # Ścieżka do pliku raportu z testów i pokrycia
+          name: test-results # Nazwa artefaktu
+          path: ${{ steps.lint_and_test.outputs.test_results_path }} # Ścieżka zdefiniowana w outputs joba
+          retention-days: 1
 
-  status-comment:
+  status_comment:
     name: Post Status Comment
     runs-on: ubuntu-latest
-    needs: [lint, test] # Uruchom ten job po zakończeniu jobów 'lint' i 'test'
-    if: always() # Zawsze uruchamiaj ten job, nawet jeśli poprzednie zawiodły, aby opublikować status
+    needs: lint_and_test # Ten job uruchomi się dopiero po zakończeniu joba lint_and_test
+    if: always() # Uruchom ten job zawsze, nawet jeśli lint_and_test się nie powiódł (aby móc skomentować o błędzie)
+    permissions:
+      pull-requests: write # Potrzebne do dodawania komentarzy do PR
+
     steps:
-      - name: Checkout Code # Potrzebne do uzyskania kontekstu PR
-        uses: actions/checkout@v4
-
-      - name: Download Lint Report
+      - name: Download Lint Results Artifact
         uses: actions/download-artifact@v4
         with:
-          name: lint-report
-          path: . # Pobierz do bieżącego katalogu
+          name: lint-results # Nazwa artefaktu zdefiniowana w jobie lint_and_test
+          path: ./ # Pobierz do bieżącego katalogu
 
-      - name: Download Test Report
+      - name: Download Test Results Artifact
         uses: actions/download-artifact@v4
         with:
-          name: test-report
-          path: .
+          name: test-results # Nazwa artefaktu zdefiniowana w jobie lint_and_test
+          path: ./
 
-      - name: Install jq # Narzędzie do parsowania JSON w linii komend
-        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Generate and Post Comment
+        uses: actions/github-script@v7 # Używamy akcji github-script do wykonania skryptu JS
+        env:
+          # Przekazujemy wyniki (outcome) poprzednich kroków jako zmienne środowiskowe
+          LINT_OUTCOME: ${{ needs.lint_and_test.outputs.lint_outcome }}
+          TEST_OUTCOME: ${{ needs.lint_and_test.outputs.test_outcome }}
+          LINT_RESULTS_PATH: ${{ needs.lint_and_test.outputs.lint_results_path }}
+          TEST_RESULTS_PATH: ${{ needs.lint_and_test.outputs.test_results_path }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }} # Token do uwierzytelnienia w API GitHub
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const { repo: { owner, repo }, issue: { number: issue_number } } = context;
 
-      - name: Generate Comment Body
-        id: generate-comment
-        run: |
-          set -xe # Exit on error (-e) and print commands (-x)
+            const lintOutcome = process.env.LINT_OUTCOME;
+            const testOutcome = process.env.TEST_OUTCOME;
+            const lintResultsPath = process.env.LINT_RESULTS_PATH;
+            const testResultsPath = process.env.TEST_RESULTS_PATH;
 
-          # --- Helper function to run jq and check exit code ---
-          run_jq() {
-            local query="$1"
-            local file="$2"
-            local jq_output
-            # Echo debug info to STDERR (>&2) so it's not captured by $(...)
-            echo "+ jq '$query' '$file'" >&2
-            jq_output=$(jq "$query" "$file")
-            local exit_code=$?
-            if [ $exit_code -ne 0 ]; then
-              echo "Error: jq command failed with exit code $exit_code for query '$query' on file '$file'" >&2
-              return 1 # Signal error
-            fi
-            echo "$jq_output" # Echo result to STDOUT
-            return 0
-          }
-          # Helper function for raw output (-r)
-           run_jq_raw() {
-            local query="$1"
-            local file="$2"
-            local jq_output
-            # Echo debug info to STDERR (>&2)
-            echo "+ jq -r '$query' '$file'" >&2
-            jq_output=$(jq -r "$query" "$file")
-            local exit_code=$?
-             if [ $exit_code -ne 0 ]; then
-              echo "Error: jq -r command failed with exit code $exit_code for query '$query' on file '$file'" >&2
-              return 1 # Signal error
-            fi
-            echo "$jq_output" # Echo result to STDOUT
-            return 0
-          }
+            // --- Funkcje pomocnicze do parsowania wyników ---
 
+            function parseLintResults(filePath) {
+              try {
+                if (!fs.existsSync(filePath)) return { success: lintOutcome === 'success', errors: 'N/A', warnings: 'N/A', error: 'Lint results file not found.' };
+                // ESLint JSON format: array of objects, each with filePath, messages, errorCount, warningCount, etc.
+                const results = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                let totalErrors = 0;
+                let totalWarnings = 0;
+                results.forEach(fileResult => {
+                  totalErrors += fileResult.errorCount;
+                  totalWarnings += fileResult.warningCount;
+                });
+                // Uznajemy sukces tylko jeśli *liczba* błędów = 0 (outcome może być 'success' przez '|| true')
+                const success = totalErrors === 0;
+                return { success, errors: totalErrors, warnings: totalWarnings };
+              } catch (error) {
+                console.error("Error parsing lint results:", error);
+                // Jeśli parsowanie zawiedzie, bazujemy na outcome kroku
+                return { success: lintOutcome === 'success', errors: 'N/A', warnings: 'N/A', error: 'Could not parse lint results file.' };
+              }
+            }
 
-          # --- Initialize Variables ---
-          echo "Initializing variables..." >&2 # Also send echoes to stderr
-          LINT_STATUS="✅"
-          LINT_ERRORS_COUNT=0
-          LINT_WARNINGS_COUNT=0
-          LINT_ERRORS_LIST=""
-          LINT_WARNINGS_LIST=""
-          TEST_STATUS="✅"
-          TESTS_PASSED=0
-          TESTS_FAILED=0
-          TESTS_SKIPPED=0
-          TESTS_TOTAL=0
-          FAILED_TESTS_LIST=""
-          SKIPPED_TESTS_LIST=""
-          COVERAGE_SUMMARY=""
-          COVERAGE_STATEMENTS=0
-          COVERAGE_BRANCHES=0
-          COVERAGE_FUNCTIONS=0
-          COVERAGE_LINES=0
-          OVERALL_STATUS_ICON="✅"
-          OVERALL_STATUS_TEXT="All checks passed successfully."
-          LINT_JOB_RESULT="${{ needs.lint.outputs.result }}"
-          TEST_JOB_RESULT="${{ needs.test.outputs.result }}"
-          COMMENT_BODY=""
+            function parseTestResults(filePath) {
+              try {
+                if (!fs.existsSync(filePath)) return { success: testOutcome === 'success', passed: 'N/A', failed: 'N/A', skipped: 'N/A', total: 'N/A', error: 'Test results file not found.' };
+                // Vitest JSON format: { numTotalTestSuites, numPassedTests, numFailedTests, numPendingTests (or numSkippedTests?), testResults: [...] }
+                const results = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                const passed = results.numPassedTests ?? 0;
+                const failed = results.numFailedTests ?? 0;
+                // Sprawdzamy oba potencjalne klucze dla pominiętych testów
+                const skipped = results.numPendingTests ?? results.numSkippedTests ?? 0;
+                // Całkowita liczba może być dostępna lub musimy ją obliczyć
+                const total = results.numTotalTests ?? (passed + failed + skipped);
+                // Uznajemy sukces tylko jeśli *liczba* failed = 0
+                const success = failed === 0;
+                return { success, passed, failed, skipped, total };
+              } catch (error) {
+                console.error("Error parsing test results:", error);
+                 // Jeśli parsowanie zawiedzie, bazujemy na outcome kroku
+                return { success: testOutcome === 'success', passed: 'N/A', failed: 'N/A', skipped: 'N/A', total: 'N/A', error: 'Could not parse test results file.' };
+              }
+            }
 
-          # --- Process Lint Report ---
-          echo "Processing Lint Report..." >&2
-          if [ -f eslint-report.json ]; then
-            # Now this should assign only the number
-            LINT_ERRORS_COUNT=$(run_jq '[.[] | .messages[] | select(.severity == 2)] | length' eslint-report.json) || LINT_ERRORS_COUNT=0
-            LINT_WARNINGS_COUNT=$(run_jq '[.[] | .messages[] | select(.severity == 1)] | length' eslint-report.json) || LINT_WARNINGS_COUNT=0
+            // --- Przetwarzanie wyników ---
+            const lintData = parseLintResults(path.basename(lintResultsPath)); // Używamy basename, bo plik jest w './'
+            const testData = parseTestResults(path.basename(testResultsPath)); // Używamy basename
 
-            # Comparisons should now work
-            if [ "$LINT_ERRORS_COUNT" -gt 0 ]; then
-              LINT_STATUS="❌"
-              LINT_ERRORS_LIST_RAW=$(run_jq_raw '.[] | select(any(.messages[]; .severity == 2)) | .filePath as $path | .messages[] | select(.severity == 2) | "- \($path | sub(".*/src/"; "src/")):\(.line):\(.column) - \(.message) (\(.ruleId // "unknown"))"' eslint-report.json)
-              LINT_ERRORS_LIST=$(echo "$LINT_ERRORS_LIST_RAW" | sed 's/^/  /') || LINT_ERRORS_LIST="  - Error processing error details"
-            fi
+            // Ogólny status bazuje na sukcesie parsowanych danych
+            const overallSuccess = lintData.success && testData.success;
 
-            if [ "$LINT_WARNINGS_COUNT" -gt 0 ]; then
-              if [ "$LINT_STATUS" == "✅" ]; then LINT_STATUS="⚠️"; fi
-              LINT_WARNINGS_LIST_RAW=$(run_jq_raw '.[] | select(any(.messages[]; .severity == 1)) | .filePath as $path | .messages[] | select(.severity == 1) | "- \($path | sub(".*/src/"; "src/")):\(.line):\(.column) - \(.message) (\(.ruleId // "unknown"))"' eslint-report.json)
-              LINT_WARNINGS_LIST=$(echo "$LINT_WARNINGS_LIST_RAW" | sed 's/^/  /') || LINT_WARNINGS_LIST="  - Error processing warning details"
-            fi
-          else
-            echo "Lint report file (eslint-report.json) not found." >&2
-            LINT_STATUS="❓"
-            LINT_ERRORS_LIST="  - Lint report file (eslint-report.json) not found."
-          fi
+            // --- Formatowanie komentarza ---
+            const lintStatusIcon = lintData.success ? '✅' : '❌';
+            const testStatusIcon = testData.success ? '✅' : '❌';
+            const overallStatusIcon = overallSuccess ? '✅' : '❌';
+            const overallMessage = overallSuccess
+              ? '✅ All checks passed successfully.'
+              : '❌ Some checks have failed. Please review the details above. ⚠️';
 
-          # --- Process Test Report ---
-          echo "Processing Test Report..." >&2
-           if [ -f vitest-report.json ]; then
-            # These should now assign only numbers
-            TESTS_PASSED=$(run_jq '.numPassedTests' vitest-report.json) || TESTS_PASSED=0
-            TESTS_FAILED=$(run_jq '.numFailedTests' vitest-report.json) || TESTS_FAILED=0
-            TESTS_SKIPPED=$(run_jq '.numPendingTests // .numTodoTests // 0' vitest-report.json) || TESTS_SKIPPED=0
-            TESTS_TOTAL=$(run_jq '.numTotalTests' vitest-report.json) || TESTS_TOTAL=0
+            // Ukryty znacznik do znajdowania/aktualizowania komentarza
+            const commentMarker = "<!-- github-actions-pr-comment-marker -->";
 
-            # Comparisons should now work
-            if [ "$TESTS_FAILED" -gt 0 ]; then
-              TEST_STATUS="❌"
-              FAILED_TESTS_LIST_RAW=$(run_jq_raw '.testResults[]? | select(.status == "failed") | .assertionResults[]? | select(.status == "failed") | "- `\(.ancestorTitles | join(" > ")) > \(.title)`"' vitest-report.json)
-              FAILED_TESTS_LIST=$(echo "$FAILED_TESTS_LIST_RAW" | sed 's/^/  /') || FAILED_TESTS_LIST="  - Error processing failed test details"
-            fi
+            const body = `${commentMarker}
+            ## Pull Request Check Summary
 
-            if [ "$TESTS_SKIPPED" -gt 0 ]; then
-              if [ "$TEST_STATUS" == "✅" ]; then TEST_STATUS="⚠️"; fi
-              SKIPPED_TESTS_LIST_RAW=$(run_jq_raw '.testResults[]? | .assertionResults[]? | select(.status == "pending" or .status == "todo") | "- `\(.ancestorTitles | join(" > ")) > \(.title)`"' vitest-report.json)
-              SKIPPED_TESTS_LIST=$(echo "$SKIPPED_TESTS_LIST_RAW" | sed 's/^/  /') || SKIPPED_TESTS_LIST="  - Error processing skipped test details"
-            fi
+            **Lint Results ${lintStatusIcon}**
+            ${lintData.error ? `> Error: ${lintData.error}\n` : ''}\
+            > ❌ Errors: ${lintData.errors}
+            > ⚠️ Warnings: ${lintData.warnings}
 
-            # --- Process Coverage ---
-            echo "Processing Coverage..." >&2
-            HAS_COVERAGE_SUMMARY=$(run_jq 'if .coverageMap and .coverageMap.summary then true else false end' vitest-report.json) || HAS_COVERAGE_SUMMARY="false"
-            # Comparison should now work
-            if [ "$HAS_COVERAGE_SUMMARY" == "true" ]; then
-              COVERAGE_STATEMENTS=$(run_jq '.coverageMap.summary.statements.pct // 0' vitest-report.json) || COVERAGE_STATEMENTS="?"
-              COVERAGE_BRANCHES=$(run_jq '.coverageMap.summary.branches.pct // 0' vitest-report.json) || COVERAGE_BRANCHES="?"
-              COVERAGE_FUNCTIONS=$(run_jq '.coverageMap.summary.functions.pct // 0' vitest-report.json) || COVERAGE_FUNCTIONS="?"
-              COVERAGE_LINES=$(run_jq '.coverageMap.summary.lines.pct // 0' vitest-report.json) || COVERAGE_LINES="?"
+            **Test Results ${testStatusIcon}**
+            ${testData.error ? `> Error: ${testData.error}\n` : ''}\
+            > **Test Statistics**
+            > ✅ Passed Tests: ${testData.passed}
+            > ❌ Failed Tests: ${testData.failed}
+            > ⚠️ Skipped Tests: ${testData.skipped}
+            > 📊 Total Tests: ${testData.total}
 
-              if [[ "$COVERAGE_STATEMENTS$COVERAGE_BRANCHES$COVERAGE_FUNCTIONS$COVERAGE_LINES" == *'?'* ]]; then
-                 COVERAGE_SUMMARY="⚠️ Error reading code coverage details."
-              else
-                  COVERAGE_SUMMARY=$(printf '✅ Code Coverage\n- Statements: %s%%\n- Branches: %s%%\n- Functions: %s%%\n- Lines: %s%%' \
-                    "$COVERAGE_STATEMENTS" "$COVERAGE_BRANCHES" "$COVERAGE_FUNCTIONS" "$COVERAGE_LINES")
-              fi
-            else
-              COVERAGE_SUMMARY="⚠️ Code Coverage summary not found or error checking report."
-            fi
-          else
-            echo "Test report file (vitest-report.json) not found." >&2
-            TEST_STATUS="❓"
-            FAILED_TESTS_LIST="  - Test report file (vitest-report.json) not found."
-            COVERAGE_SUMMARY="❓ Code Coverage data unavailable."
-          fi
+            ---
+            **Overall Status ${overallStatusIcon}**
+            ${overallMessage}
+            `;
 
-          # --- Determine Overall Status ---
-          echo "Determining Overall Status..." >&2
-          if [ "$LINT_JOB_RESULT" == "failure" ] || [ "$TEST_JOB_RESULT" == "failure" ] || [ "$LINT_STATUS" == "❌" ] || [ "$TEST_STATUS" == "❌" ]; then
-              OVERALL_STATUS_ICON="❌"
-              OVERALL_STATUS_TEXT="Some checks have failed. Please review the details above."
-          elif [ "$LINT_STATUS" == "⚠️" ] || [ "$TEST_STATUS" == "⚠️" ]; then
-              OVERALL_STATUS_ICON="⚠️"
-              OVERALL_STATUS_TEXT="Some checks passed with warnings. Please review the details above."
-          elif [ "$LINT_STATUS" == "❓" ] || [ "$TEST_STATUS" == "❓" ]; then
-              OVERALL_STATUS_ICON="❓"
-              OVERALL_STATUS_TEXT="Could not determine the status for all checks."
-          fi
+            // --- Logika publikowania/aktualizowania komentarza ---
+            const octokit = github.getOctokit(process.env.GITHUB_TOKEN);
+            let existingCommentId = null;
 
+            try {
+              console.log(`Listing comments for issue #${issue_number}...`);
+              const { data: comments } = await octokit.rest.issues.listComments({
+                owner,
+                repo,
+                issue_number,
+              });
+              const existingComment = comments.find(comment => comment.user.login === 'github-actions[bot]' && comment.body.includes(commentMarker));
+              if (existingComment) {
+                existingCommentId = existingComment.id;
+                console.log(`Found existing comment ID: ${existingCommentId}`);
+              } else {
+                console.log("No existing comment found.");
+              }
+            } catch (error) {
+              console.error("Error searching for existing comment:", error);
+              // Kontynuuj próbę utworzenia nowego komentarza
+            }
 
-          # --- Construct Comment Body Incrementally ---
-          echo "Constructing Comment Body..." >&2
-          COMMENT_BODY+=$(printf "## Pull Request Status\n\n")
-          COMMENT_BODY+=$(printf "**Lint Results %s**\n" "$LINT_STATUS")
-          COMMENT_BODY+=$(printf "Errors: %s ❌\n" "$LINT_ERRORS_COUNT")
-          # Conditional echo should now work correctly
-          COMMENT_BODY+=$(printf '```diff\n%s\n```\n' "$( [ "$LINT_ERRORS_COUNT" -gt 0 ] && echo "$LINT_ERRORS_LIST" || echo "  + No errors found" )")
-          COMMENT_BODY+=$(printf "Warnings: %s ⚠️\n" "$LINT_WARNINGS_COUNT")
-          COMMENT_BODY+=$(printf '```diff\n%s\n```\n\n' "$( [ "$LINT_WARNINGS_COUNT" -gt 0 ] && echo "$LINT_WARNINGS_LIST" || echo "  + No warnings found" )")
-
-          COMMENT_BODY+=$(printf "**Test Results %s**\n" "$TEST_STATUS")
-          COMMENT_BODY+=$(printf "**Test Statistics**\n")
-          COMMENT_BODY+=$(printf "✅ Passed Tests: %s\n" "$TESTS_PASSED")
-          COMMENT_BODY+=$(printf "❌ Failed Tests: %s\n" "$TESTS_FAILED")
-          COMMENT_BODY+=$(printf "⚠️ Skipped Tests: %s\n" "$TESTS_SKIPPED")
-          COMMENT_BODY+=$(printf "📊 Total Tests: %s\n" "$TESTS_TOTAL")
-
-          # Conditional printf should now work correctly
-          if [ "$TESTS_FAILED" -gt 0 ]; then
-            COMMENT_BODY+=$(printf "\n**Failed Tests:**\n\`\`\`\n%s\n\`\`\`\n" "$FAILED_TESTS_LIST")
-          fi
-          if [ "$TESTS_SKIPPED" -gt 0 ]; then
-            COMMENT_BODY+=$(printf "\n**Skipped Tests:**\n\`\`\`\n%s\n\`\`\`\n" "$SKIPPED_TESTS_LIST")
-          fi
-
-          COMMENT_BODY+=$(printf "\n%s\n\n" "$COVERAGE_SUMMARY")
-
-          # Use %s for the separator
-          COMMENT_BODY+=$(printf "%s\n" "---")
-          COMMENT_BODY+=$(printf "**Overall Status**\n")
-          COMMENT_BODY+=$(printf "%s %s\n" "$OVERALL_STATUS_ICON" "$OVERALL_STATUS_TEXT")
-
-
-          # --- Output Comment Body for next step ---
-          echo "Encoding comment for GITHUB_OUTPUT..." >&2
-          COMMENT_BODY="${COMMENT_BODY//'%'/'%25'}"
-          COMMENT_BODY="${COMMENT_BODY//$'\n'/'%0A'}"
-          COMMENT_BODY="${COMMENT_BODY//$'\r'/'%0D'}"
-          echo "comment=$COMMENT_BODY" >> $GITHUB_OUTPUT
-          echo "Finished script successfully." >&2
+            try {
+              if (existingCommentId) {
+                console.log(`Updating comment ID: ${existingCommentId}`);
+                await octokit.rest.issues.updateComment({
+                  owner,
+                  repo,
+                  comment_id: existingCommentId,
+                  body,
+                });
+                console.log("Comment updated successfully.");
+              } else {
+                console.log("Creating new comment...");
+                await octokit.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number,
+                  body,
+                });
+                console.log("Comment created successfully.");
+              }
+            } catch (error) {
+               console.error("Error creating/updating comment:", error);
+               core.setFailed(`Failed to post comment: ${error.message}`);
+            }
