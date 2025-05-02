@@ -29,11 +29,9 @@ jobs:
       - name: Run ESLint
         id: run-lint
         # Uruchom eslint, zapisz wynik do pliku JSON, kontynuuj nawet jeśli są błędy (`|| true`)
-        # Używamy npx, aby upewnić się, że używamy wersji ESLint z projektu
         run: npx eslint . --format json --output-file eslint-report.json || true
 
       - name: Upload Lint Report Artifact
-        # Zapisz raport jako artefakt, aby job status-comment mógł go pobrać
         uses: actions/upload-artifact@v4
         with:
           name: lint-report # Nazwa artefaktu
@@ -61,7 +59,6 @@ jobs:
       - name: Run Vitest with Coverage and JSON Report
         id: run-tests
         # Uruchom testy z pokryciem, zapisz wynik do pliku JSON, kontynuuj nawet jeśli testy failują (`|| true`)
-        # Vitest z reporterem json zawiera podsumowanie pokrycia
         run: npm run test:coverage -- --reporter=json --outputFile=vitest-report.json || true
 
       - name: Upload Test Report Artifact
@@ -103,7 +100,6 @@ jobs:
           LINT_WARNINGS_COUNT=0
           LINT_ERRORS_LIST=""
           LINT_WARNINGS_LIST=""
-          LINT_REPORT_EXISTS=false
           TEST_STATUS="✅"
           TESTS_PASSED=0
           TESTS_FAILED=0
@@ -120,10 +116,10 @@ jobs:
           OVERALL_STATUS_TEXT="All checks passed successfully."
           LINT_JOB_RESULT="${{ needs.lint.outputs.result }}"
           TEST_JOB_RESULT="${{ needs.test.outputs.result }}"
+          COMMENT_BODY="" # Initialize comment body string
 
           # --- Process Lint Report ---
           if [ -f eslint-report.json ]; then
-            LINT_REPORT_EXISTS=true
             LINT_ERRORS_COUNT=$(jq '[.[] | .messages[] | select(.severity == 2)] | length' eslint-report.json)
             LINT_WARNINGS_COUNT=$(jq '[.[] | .messages[] | select(.severity == 1)] | length' eslint-report.json)
 
@@ -150,7 +146,6 @@ jobs:
 
             if [ "$TESTS_FAILED" -gt 0 ]; then
               TEST_STATUS="❌"
-              # Użyj `select(.status == "failed")` na poziomie testResults, aby uniknąć błędów jeśli plik nie ma wyników
               FAILED_TESTS_LIST=$(jq -r '.testResults[]? | select(.status == "failed") | .assertionResults[]? | select(.status == "failed") | "- `\(.ancestorTitles | join(" > ")) > \(.title)`"' vitest-report.json | sed 's/^/  /')
             fi
 
@@ -166,14 +161,8 @@ jobs:
               COVERAGE_BRANCHES=$(jq '.coverageMap.summary.branches.pct // 0' vitest-report.json)
               COVERAGE_FUNCTIONS=$(jq '.coverageMap.summary.functions.pct // 0' vitest-report.json)
               COVERAGE_LINES=$(jq '.coverageMap.summary.lines.pct // 0' vitest-report.json)
-              COVERAGE_SUMMARY=$(cat <<EOF
-            ✅ Code Coverage
-            - Statements: ${COVERAGE_STATEMENTS}%
-            - Branches: ${COVERAGE_BRANCHES}%
-            - Functions: ${COVERAGE_FUNCTIONS}%
-            - Lines: ${COVERAGE_LINES}%
-            EOF
-            )
+              COVERAGE_SUMMARY=$(printf '✅ Code Coverage\n- Statements: %s%%\n- Branches: %s%%\n- Functions: %s%%\n- Lines: %s%%' \
+                "$COVERAGE_STATEMENTS" "$COVERAGE_BRANCHES" "$COVERAGE_FUNCTIONS" "$COVERAGE_LINES")
             else
               COVERAGE_SUMMARY="⚠️ Code Coverage summary not found in test report."
             fi
@@ -184,7 +173,6 @@ jobs:
           fi
 
           # --- Determine Overall Status ---
-          # Użyj zapisanych wyników jobów i statusów z raportów
           if [ "$LINT_JOB_RESULT" == "failure" ] || [ "$TEST_JOB_RESULT" == "failure" ] || [ "$LINT_STATUS" == "❌" ] || [ "$TEST_STATUS" == "❌" ]; then
               OVERALL_STATUS_ICON="❌"
               OVERALL_STATUS_TEXT="Some checks have failed. Please review the details above."
@@ -196,42 +184,41 @@ jobs:
               OVERALL_STATUS_TEXT="Could not determine the status for all checks."
           fi
 
-          # --- Construct Comment Body ---
-          # Bezpośrednie wstawianie list za pomocą $(...) i printf
-          COMMENT_BODY=$(cat <<EOF
-          ## Pull Request Status
+          # --- Construct Comment Body Incrementally ---
+          COMMENT_BODY+=$(printf "## Pull Request Status\n\n")
+          COMMENT_BODY+=$(printf "**Lint Results %s**\n" "$LINT_STATUS")
+          COMMENT_BODY+=$(printf "Errors: %s ❌\n" "$LINT_ERRORS_COUNT")
+          COMMENT_BODY+=$(printf '```diff\n%s\n```\n' "$( [ "$LINT_ERRORS_COUNT" -gt 0 ] && echo "$LINT_ERRORS_LIST" || echo "  + No errors found" )")
+          COMMENT_BODY+=$(printf "Warnings: %s ⚠️\n" "$LINT_WARNINGS_COUNT")
+          COMMENT_BODY+=$(printf '```diff\n%s\n```\n\n' "$( [ "$LINT_WARNINGS_COUNT" -gt 0 ] && echo "$LINT_WARNINGS_LIST" || echo "  + No warnings found" )")
 
-          **Lint Results ${LINT_STATUS}**
-          Errors: ${LINT_ERRORS_COUNT} ❌
-          \`\`\`diff
-          $( [ "$LINT_ERRORS_COUNT" -gt 0 ] && echo "$LINT_ERRORS_LIST" || echo "  + No errors found" )
-          \`\`\`
-          Warnings: ${LINT_WARNINGS_COUNT} ⚠️
-          \`\`\`diff
-          $( [ "$LINT_WARNINGS_COUNT" -gt 0 ] && echo "$LINT_WARNINGS_LIST" || echo "  + No warnings found" )
-          \`\`\`
+          COMMENT_BODY+=$(printf "**Test Results %s**\n" "$TEST_STATUS")
+          COMMENT_BODY+=$(printf "**Test Statistics**\n")
+          COMMENT_BODY+=$(printf "✅ Passed Tests: %s\n" "$TESTS_PASSED")
+          COMMENT_BODY+=$(printf "❌ Failed Tests: %s\n" "$TESTS_FAILED")
+          COMMENT_BODY+=$(printf "⚠️ Skipped Tests: %s\n" "$TESTS_SKIPPED")
+          COMMENT_BODY+=$(printf "📊 Total Tests: %s\n" "$TESTS_TOTAL")
 
-          **Test Results ${TEST_STATUS}**
-          **Test Statistics**
-          ✅ Passed Tests: ${TESTS_PASSED}
-          ❌ Failed Tests: ${TESTS_FAILED}
-          ⚠️ Skipped Tests: ${TESTS_SKIPPED}
-          📊 Total Tests: ${TESTS_TOTAL}
-          $( [ "$TESTS_FAILED" -gt 0 ] && printf "\n**Failed Tests:**\n\`\`\`\n%s\n\`\`\`\n" "$FAILED_TESTS_LIST" )
-          $( [ "$TESTS_SKIPPED" -gt 0 ] && printf "\n**Skipped Tests:**\n\`\`\`\n%s\n\`\`\`\n" "$SKIPPED_TESTS_LIST" )
+          if [ "$TESTS_FAILED" -gt 0 ]; then
+            COMMENT_BODY+=$(printf "\n**Failed Tests:**\n\`\`\`\n%s\n\`\`\`\n" "$FAILED_TESTS_LIST")
+          fi
+          if [ "$TESTS_SKIPPED" -gt 0 ]; then
+            COMMENT_BODY+=$(printf "\n**Skipped Tests:**\n\`\`\`\n%s\n\`\`\`\n" "$SKIPPED_TESTS_LIST")
+          fi
 
-          ${COVERAGE_SUMMARY}
+          COMMENT_BODY+=$(printf "\n%s\n\n" "$COVERAGE_SUMMARY") # Add coverage summary
 
-          ---
-          **Overall Status**
-          ${OVERALL_STATUS_ICON} ${OVERALL_STATUS_TEXT}
-          EOF
-          )
+          COMMENT_BODY+=$(printf "---\n") # Separator
+          COMMENT_BODY+=$(printf "**Overall Status**\n")
+          COMMENT_BODY+=$(printf "%s %s\n" "$OVERALL_STATUS_ICON" "$OVERALL_STATUS_TEXT")
 
           # --- Output Comment Body for next step ---
-          echo "comment<<EOF" >> $GITHUB_OUTPUT
-          echo "$COMMENT_BODY" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Use parameter expansion to escape special characters for GITHUB_OUTPUT
+          # Replace % with %25, \n with %0A, \r with %0D
+          COMMENT_BODY="${COMMENT_BODY//'%'/'%25'}"
+          COMMENT_BODY="${COMMENT_BODY//$'\n'/'%0A'}"
+          COMMENT_BODY="${COMMENT_BODY//$'\r'/'%0D'}"
+          echo "comment=$COMMENT_BODY" >> $GITHUB_OUTPUT
 
       - name: Create or Update Comment
         uses: peter-evans/create-or-update-comment@v4
@@ -240,4 +227,3 @@ jobs:
           comment-id: ${{ github.run_id }}-${{ github.job }} # Używa unikalnego ID do aktualizacji
           body: ${{ steps.generate-comment.outputs.comment }}
           edit-mode: replace
-          
