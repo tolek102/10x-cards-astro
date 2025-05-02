@@ -162,7 +162,7 @@ export const ResultsList = ({
           <AlertDialogHeader>
             <AlertDialogTitle>Czy na pewno chcesz odrzucić tę fiszkę?</AlertDialogTitle>
             <AlertDialogDescription>
-              Fiszka zostanie usunięta z listy kandydatów. Będziesz mógł ją później wygenerować ponownie.
+              Fiszka zostanie trwale usunięta z listy kandydatów. Ta operacja jest nieodwracalna.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
