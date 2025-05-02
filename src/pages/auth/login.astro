@@ -64,7 +64,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 </BaseLayout>
 
 <script>
-  import { showToast } from "../../lib/toast";
+import { showToast } from "../../lib/toast";
   const displayToast = (message: string, type: "success" | "error" = "error") => {
     if (message && message.trim()) {
       showToast(message, type);
@@ -104,13 +104,19 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       const data = await response.json();
 
       if (!response.ok) {
+        let errorMessage = data.error || "Wystąpił błąd podczas logowania";
+        if (errorMessage.includes("Invalid login credentials")) {
+          errorMessage = "Nieprawidłowe dane logowania";
+        }
+        displayToast(errorMessage);
         return;
       }
 
+      displayToast("Zalogowano pomyślnie", "success");
       await new Promise((resolve) => setTimeout(resolve, 1000));
       window.location.href = "/creator";
     } catch (error) {
-      console.error("Login error:", error);
+      displayToast(error instanceof Error ? error.message : "Wystąpił nieoczekiwany błąd");
     }
   });
 </script>
