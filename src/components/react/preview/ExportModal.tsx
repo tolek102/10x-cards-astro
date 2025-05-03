@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -78,6 +78,9 @@ export const ExportModal = ({ isOpen, onClose, flashcards }: ExportModalProps) =
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Eksportuj fiszki</DialogTitle>
+          <DialogDescription>
+            Wybierz format eksportu dla swoich fiszek.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="py-4">
