@@ -67,7 +67,6 @@ export class OpenRouterService {
 
   private async parseAIResponse(response: OpenRouterResponse): Promise<FlashcardCreateDto[]> {
     try {
-
       if (!response.choices || !Array.isArray(response.choices) || response.choices.length === 0) {
         throw new OpenRouterError(
           OpenRouterErrorType.GENERATION_ERROR,
@@ -76,7 +75,7 @@ export class OpenRouterService {
       }
 
       const firstChoice = response.choices[0];
-      if (!firstChoice.message || typeof firstChoice.message.content !== 'string') {
+      if (!firstChoice.message || typeof firstChoice.message.content !== "string") {
         throw new OpenRouterError(
           OpenRouterErrorType.GENERATION_ERROR,
           `Invalid message structure in first choice. Choice: ${JSON.stringify(firstChoice)}`
@@ -85,10 +84,7 @@ export class OpenRouterService {
 
       const content = firstChoice.message.content;
       if (!content) {
-        throw new OpenRouterError(
-          OpenRouterErrorType.GENERATION_ERROR,
-          "Empty content in AI response"
-        );
+        throw new OpenRouterError(OpenRouterErrorType.GENERATION_ERROR, "Empty content in AI response");
       }
 
       let parsedContent;
@@ -118,11 +114,7 @@ export class OpenRouterService {
       if (error instanceof OpenRouterError) {
         throw error;
       }
-      throw new OpenRouterError(
-        OpenRouterErrorType.GENERATION_ERROR,
-        "Failed to parse AI response",
-        error
-      );
+      throw new OpenRouterError(OpenRouterErrorType.GENERATION_ERROR, "Failed to parse AI response", error);
     }
   }
 
@@ -161,18 +153,17 @@ export class OpenRouterService {
             "You are a helpful AI that creates high-quality educational flashcards. " +
             "Generate concise, clear, and accurate flashcards from the provided text. " +
             "Each flashcard should have a clear question on the front and a comprehensive answer on the back. " +
-            "Return the flashcards only in requested JSON response format without any other text or thinking section. " 
-            // "Don`t put response in ```json``` tags. " +
-            // "Only allowed format is: " +
-            // "{" +
-            // "  \"flashcards\": [" +
-            // "    {" +
-            // "      \"front\": \"Question\"," +
-            // "      \"back\": \"Answer\"" +
-            // "    }" +
-            // "  ]" +
-            // "}"
-            ,
+            "Return the flashcards only in requested JSON response format without any other text or thinking section. ",
+          // "Don`t put response in ```json``` tags. " +
+          // "Only allowed format is: " +
+          // "{" +
+          // "  \"flashcards\": [" +
+          // "    {" +
+          // "      \"front\": \"Question\"," +
+          // "      \"back\": \"Answer\"" +
+          // "    }" +
+          // "  ]" +
+          // "}"
         },
         {
           role: "user",

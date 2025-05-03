@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -57,7 +64,7 @@ export const EditModal = ({ isOpen, onClose, onSave, flashcard }: EditModalProps
       await onSave(flashcard.id, { front, back });
       onClose();
     } catch (error) {
-      console.error('Error saving flashcard:', error);
+      console.error("Error saving flashcard:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -68,9 +75,7 @@ export const EditModal = ({ isOpen, onClose, onSave, flashcard }: EditModalProps
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Edytuj fiszkę</DialogTitle>
-          <DialogDescription>
-            Wprowadź nową treść dla przodu i tyłu fiszki.
-          </DialogDescription>
+          <DialogDescription>Wprowadź nową treść dla przodu i tyłu fiszki.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">

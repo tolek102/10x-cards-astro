@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { LearningSession } from "./LearningSession";
 import { useFlashcards } from "@/lib/hooks/useFlashcards";
 import type { FlashcardDto } from "@/types";
-import { showToast } from "@/lib/toast";
 
 export const LearningContainer = () => {
   const { flashcards, isLoading, loadPage } = useFlashcards();

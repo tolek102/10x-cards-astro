@@ -23,7 +23,6 @@ export const PreviewContainer = () => {
       try {
         await Promise.all([loadPage(1), loadCandidatesPage(1)]);
       } catch (error) {
-        // eslint-disable-next-line no-console
         console.error("Error loading initial data:", error);
       }
     };

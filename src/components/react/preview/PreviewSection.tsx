@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FlashcardList } from "./FlashcardList";
 import { EditModal } from "./EditModal";
 import { ExportModal } from "./ExportModal";
@@ -15,7 +15,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { FlashcardDto, FlashcardUpdateDto, PaginationDto } from "@/types";
-import { showToast } from "@/lib/toast";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
@@ -81,7 +80,7 @@ export const PreviewSection = ({
         loadCandidatesPage(candidatesPagination.page, candidatesPagination.limit),
       ]);
     } catch (err) {
-      console.error('Error updating flashcard:', err);
+      console.error("Error updating flashcard:", err);
     } finally {
       setIsEditModalOpen(false);
       setSelectedFlashcard(null);
@@ -104,7 +103,7 @@ export const PreviewSection = ({
         await loadCandidatesPage(candidatesPagination.page, candidatesPagination.limit);
       }
     } catch (err) {
-      console.error('Error deleting flashcard:', err);
+      console.error("Error deleting flashcard:", err);
     } finally {
       setFlashcardToDelete(null);
       setIsDeleteDialogOpen(false);
@@ -119,7 +118,7 @@ export const PreviewSection = ({
         loadCandidatesPage(candidatesPagination.page, candidatesPagination.limit),
       ]);
     } catch (err) {
-      console.error('Error accepting flashcard:', err);
+      console.error("Error accepting flashcard:", err);
     }
   };
 
@@ -138,7 +137,7 @@ export const PreviewSection = ({
         loadCandidatesPage(candidatesPagination.page, candidatesPagination.limit),
       ]);
     } catch (err) {
-      // Error handling is done in the hook
+      console.error("Error discarding flashcard:", err);
     } finally {
       setFlashcardToDiscard(null);
       setIsDiscardDialogOpen(false);

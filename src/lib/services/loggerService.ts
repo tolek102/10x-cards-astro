@@ -33,7 +33,6 @@ export class LoggerService {
   private log(entry: LogEntry): void {
     // In development, log to console
     // In production, this could be extended to log to a service
-    // eslint-disable-next-line no-console
     const logFn = entry.level === "error" ? console.error : console.log;
 
     logFn(`[${entry.timestamp}] ${entry.level.toUpperCase()}: ${entry.message}`, entry.context || "");
