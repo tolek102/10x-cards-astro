@@ -35,8 +35,19 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
               name="password"
               type="password"
               required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
               placeholder="Hasło"
+            />
+          </div>
+          <div>
+            <label for="confirmPassword" class="sr-only">Potwierdź hasło</label>
+            <input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              required
+              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+              placeholder="Potwierdź hasło"
             />
           </div>
         </div>
@@ -84,9 +95,15 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     const formData = new FormData(form);
     const email = formData.get("email")?.toString();
     const password = formData.get("password")?.toString();
+    const confirmPassword = formData.get("confirmPassword")?.toString();
 
-    if (!email || !password) {
+    if (!email || !password || !confirmPassword) {
       displayToast("Proszę wypełnić wszystkie pola");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      displayToast("Podane hasła nie są takie same");
       return;
     }
 
