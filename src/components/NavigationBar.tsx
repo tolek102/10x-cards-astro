@@ -1,7 +1,6 @@
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 import type { UserDto } from "@/types";
-import { showToast } from "../lib/toast";
 import { Logo } from "./Logo";
 
 interface NavigationBarProps {
