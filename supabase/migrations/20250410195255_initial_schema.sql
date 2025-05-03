@@ -73,6 +73,9 @@ alter table statistics enable row level security;
 create policy "Users can view their own statistics" on statistics
     for select using (auth.uid() = user_id);
 
+create policy "Users can insert their own statistics" on statistics
+    for insert with check (auth.uid() = user_id);
+
 create policy "Users can update their own statistics" on statistics
     for update using (auth.uid() = user_id);
 
