@@ -1,5 +1,6 @@
 import { OpenRouterError, OpenRouterErrorType } from "./types";
 import type { OpenRouterConfig, OpenRouterRequest, OpenRouterResponse, FlashcardCreateDto } from "./types";
+import { logger } from "../loggerService";
 
 export class OpenRouterService {
   private readonly apiKey: string;
@@ -140,7 +141,7 @@ export class OpenRouterService {
 
   private handleApiError(error: Error): void {
     // In a real implementation, this would log to a monitoring service
-    console.error("OpenRouter API Error:", error);
+    logger.error("OpenRouter API Error:", { error });
   }
 
   private formatPrompt(text: string): OpenRouterRequest {

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import type { UserDto } from "../../types";
 import { showToast } from "../../lib/toast";
-
+import { logger } from "../../lib/services/loggerService";
 interface AuthResult {
   success: boolean;
   error?: string;
@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setUser(userData);
         }
       } catch (err) {
-        console.error("Failed to check authentication status:", err);
+        logger.error("Failed to check authentication status:", { err });
       } finally {
         setIsLoading(false);
       }

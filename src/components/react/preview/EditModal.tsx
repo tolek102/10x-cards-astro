@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { FlashcardDto, FlashcardUpdateDto } from "@/types";
 import { showToast } from "@/lib/toast";
+import { logger } from "@/lib/services/loggerService";
 
 interface EditModalProps {
   isOpen: boolean;
@@ -64,7 +65,7 @@ export const EditModal = ({ isOpen, onClose, onSave, flashcard }: EditModalProps
       await onSave(flashcard.id, { front, back });
       onClose();
     } catch (error) {
-      console.error("Error saving flashcard:", error);
+      logger.error("Error saving flashcard:", { error });
     } finally {
       setIsSubmitting(false);
     }

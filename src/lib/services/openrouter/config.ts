@@ -1,4 +1,5 @@
 import type { OpenRouterConfig } from "./types";
+import { logger } from "../loggerService";
 
 function validateEnvConfig() {
   const apiKey = import.meta.env.PUBLIC_OPENROUTER_API_KEY;
@@ -7,7 +8,7 @@ function validateEnvConfig() {
   }
 
   // Log configuration for debugging
-  console.debug("OpenRouter Configuration:", {
+  logger.debug("OpenRouter Configuration:", {
     apiKey: apiKey ? "***" : undefined,
     model: import.meta.env.PUBLIC_OPENROUTER_MODEL,
     maxRetries: import.meta.env.PUBLIC_OPENROUTER_MAX_RETRIES,

@@ -4,6 +4,7 @@ import { AIGeneratorTab } from "./AIGeneratorTab";
 import { ManualCreatorTab } from "./ManualCreatorTab";
 import { ResultsList } from "./ResultsList";
 import type { FlashcardCreateDto, FlashcardDto } from "@/types";
+import { logger } from "@/lib/services/loggerService";
 
 interface CreatorSectionProps {
   generateFlashcards: (text: string) => Promise<FlashcardDto[]>;
@@ -41,7 +42,7 @@ export const CreatorSection = ({
       const generatedFlashcards = await generateFlashcards(text);
       setLastGeneratedFlashcards(generatedFlashcards);
     } catch (err) {
-      console.error("Error generating flashcards:", err);
+      logger.error("Error generating flashcards:", { err });
     } finally {
       setIsLoading(false);
     }
@@ -53,7 +54,7 @@ export const CreatorSection = ({
       const createdFlashcard = await createFlashcard(flashcard);
       setLastCreatedFlashcard([createdFlashcard]);
     } catch (err) {
-      console.error("Error creating flashcard:", err);
+      logger.error("Error creating flashcard:", { err });
     } finally {
       setIsLoading(false);
     }
@@ -74,7 +75,7 @@ export const CreatorSection = ({
         await Promise.all([onLoadPage(1), onLoadCandidatesPage(1)]);
       }
     } catch (err) {
-      console.error("Error updating flashcard:", err);
+      logger.error("Error updating flashcard:", { err });
     } finally {
       setIsLoading(false);
     }
@@ -91,7 +92,7 @@ export const CreatorSection = ({
         setLastCreatedFlashcard((prev) => prev.filter((card) => card.id !== id));
       }
     } catch (err) {
-      console.error("Error deleting flashcard:", err);
+      logger.error("Error deleting flashcard:", { err });
     } finally {
       setIsLoading(false);
     }
@@ -110,7 +111,7 @@ export const CreatorSection = ({
         await Promise.all([onLoadPage(1), onLoadCandidatesPage(1)]);
       }
     } catch (err) {
-      console.error("Error accepting flashcard:", err);
+      logger.error("Error accepting flashcard:", { err });
     } finally {
       setIsLoading(false);
     }
@@ -125,7 +126,7 @@ export const CreatorSection = ({
         setLastGeneratedFlashcards((prev) => prev.filter((card) => card.id !== id));
       }
     } catch (err) {
-      console.error("Error discarding flashcard:", err);
+      logger.error("Error discarding flashcard:", { err });
     } finally {
       setIsLoading(false);
     }

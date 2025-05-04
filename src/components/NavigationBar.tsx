@@ -2,6 +2,7 @@ import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 import type { UserDto } from "@/types";
 import { Logo } from "./Logo";
+import { logger } from "@/lib/services/loggerService";
 
 interface NavigationBarProps {
   user: UserDto | null;
@@ -27,7 +28,7 @@ export const NavigationBar = ({ user, activeSection }: NavigationBarProps) => {
 
       window.location.href = "/";
     } catch (error) {
-      console.error("Failed to logout:", error);
+      logger.error("Failed to logout:", { error });
     }
   };
 
