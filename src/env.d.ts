@@ -17,9 +17,11 @@ interface UserDto {
   email: string | null;
 }
 
-declare namespace App {
-  interface Locals {
-    user: UserDto;
-    supabase: SupabaseClient<Database>;
+declare global {
+  namespace App {
+    interface Locals {
+      user: UserDto | null;
+      supabase: SupabaseClient<Database>;
+    }
   }
 }
