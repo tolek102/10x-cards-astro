@@ -63,60 +63,9 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
   </div>
 </BaseLayout>
 
+{/* eslint-disable */}
 <script>
-  import { showToast } from "../../lib/toast";
-  const displayToast = (message: string, type: "success" | "error" = "error") => {
-    if (message && message.trim()) {
-      showToast(message, type);
-    }
-  };
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const error = urlParams.get("error");
-    const registered = urlParams.get("registered");
-
-    if (error) {
-      displayToast(error);
-    }
-    if (registered) {
-      displayToast("Konto zostało utworzone. Możesz się teraz zalogować.", "success");
-    }
-  });
-
-  document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const formData = new FormData(form);
-
-    try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: formData.get("email"),
-          password: formData.get("password"),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        let errorMessage = data.error || "Wystąpił błąd podczas logowania";
-        if (errorMessage.includes("Invalid login credentials")) {
-          errorMessage = "Nieprawidłowe dane logowania";
-        }
-        displayToast(errorMessage);
-        return;
-      }
-
-      displayToast("Zalogowano pomyślnie", "success");
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      window.location.href = "/creator";
-    } catch (error) {
-      displayToast(error instanceof Error ? error.message : "Wystąpił nieoczekiwany błąd");
-    }
-  });
+import {initializeLoginPage} from "../../lib/client/login"; document.addEventListener("DOMContentLoaded",
+initializeLoginPage);
 </script>
+{/* eslint-enable */}
