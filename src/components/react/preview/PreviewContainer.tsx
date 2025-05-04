@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { PreviewSection } from "./PreviewSection";
 import { useFlashcards } from "@/lib/hooks/useFlashcards";
+import { logger } from "@/lib/services/loggerService";
 
 export const PreviewContainer = () => {
   const {
@@ -23,12 +24,12 @@ export const PreviewContainer = () => {
       try {
         await Promise.all([loadPage(1), loadCandidatesPage(1)]);
       } catch (error) {
-        console.error("Error loading initial data:", error);
+        logger.error("Error loading initial data:", { error });
       }
     };
 
     loadInitialData();
-  }, []); // Only run on mount
+  }, [loadPage, loadCandidatesPage]); // Add stable function dependencies
 
   return (
     <PreviewSection

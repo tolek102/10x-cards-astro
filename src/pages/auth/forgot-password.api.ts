@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServerInstance } from "../../db/supabase.client";
+import { logger } from "@/lib/services/loggerService";
 
 export const prerender = false;
 
@@ -19,7 +20,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
 
     return redirect("/auth/forgot-password?success=true");
   } catch (error) {
-    console.error("Failed to reset password:", error);
+    logger.error("Failed to reset password:", { error });
     return redirect("/auth/forgot-password?error=Wystąpił nieoczekiwany błąd");
   }
 };

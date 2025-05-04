@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import type { UserDto } from "@/types";
+import { logger } from "@/lib/services/loggerService";
 
 export const useCurrentUser = () => {
   const [user, setUser] = useState<UserDto | null>(null);
@@ -16,7 +17,7 @@ export const useCurrentUser = () => {
           setUser(null);
         }
       } catch (error) {
-        console.error("Failed to check authentication status:", error);
+        logger.error("Failed to check authentication status:", { error });
         setUser(null);
       } finally {
         setIsLoading(false);

@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServerInstance } from "../../../db/supabase.client";
+import { logger } from "@/lib/services/loggerService";
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
@@ -22,7 +23,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       status: 200,
     });
   } catch (error) {
-    console.error("Failed to logout:", error);
+    logger.error("Failed to logout:", { error });
     return new Response(
       JSON.stringify({
         error: "Wystąpił nieoczekiwany błąd podczas wylogowywania",

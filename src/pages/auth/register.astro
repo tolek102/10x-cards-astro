@@ -67,12 +67,13 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 
 <script>
   import { showToast } from "../../lib/toast";
+  import { logger } from "../../lib/services/loggerService";
   const displayToast = (message: string, type: "success" | "error" = "error") => {
     if (message?.trim() && typeof showToast === "function") {
-      console.log("Displaying toast:", { message, type });
+      logger.info("Displaying toast:", { message, type });
       showToast(message, type);
     } else {
-      console.error("Cannot display toast:", {
+      logger.error("Cannot display toast:", {
         message,
         type,
         showToastAvailable: typeof showToast === "function",

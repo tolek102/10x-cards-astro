@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { FlashcardDto, FlashcardUpdateDto, PaginationDto } from "@/types";
+import { logger } from "@/lib/services/loggerService";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
@@ -80,7 +81,7 @@ export const PreviewSection = ({
         loadCandidatesPage(candidatesPagination.page, candidatesPagination.limit),
       ]);
     } catch (err) {
-      console.error("Error updating flashcard:", err);
+      logger.error("Error updating flashcard:", { err });
     } finally {
       setIsEditModalOpen(false);
       setSelectedFlashcard(null);
@@ -103,7 +104,7 @@ export const PreviewSection = ({
         await loadCandidatesPage(candidatesPagination.page, candidatesPagination.limit);
       }
     } catch (err) {
-      console.error("Error deleting flashcard:", err);
+      logger.error("Error deleting flashcard:", { err });
     } finally {
       setFlashcardToDelete(null);
       setIsDeleteDialogOpen(false);
@@ -118,7 +119,7 @@ export const PreviewSection = ({
         loadCandidatesPage(candidatesPagination.page, candidatesPagination.limit),
       ]);
     } catch (err) {
-      console.error("Error accepting flashcard:", err);
+      logger.error("Error accepting flashcard:", { err });
     }
   };
 
@@ -137,7 +138,7 @@ export const PreviewSection = ({
         loadCandidatesPage(candidatesPagination.page, candidatesPagination.limit),
       ]);
     } catch (err) {
-      console.error("Error discarding flashcard:", err);
+      logger.error("Error discarding flashcard:", { err });
     } finally {
       setFlashcardToDiscard(null);
       setIsDiscardDialogOpen(false);
