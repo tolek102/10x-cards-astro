@@ -54,7 +54,14 @@ export const FlashcardList = ({
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium text-gray-900">Fiszki ({pagination.total})</h3>
+        <div>
+          <h3 className="text-lg font-medium text-gray-900">Fiszki ({pagination.total})</h3>
+          {isCandidate && (
+            <p className="text-sm text-gray-500 mt-1">
+              Niezaakceptowane fiszki-kandydaci są automatycznie usuwane o godzinie 3:00 następnego dnia
+            </p>
+          )}
+        </div>
         {onExport && (
           <Button onClick={onExport} variant="outline">
             Eksportuj

@@ -106,6 +106,9 @@ export const ResultsList = ({
             Wyświetlane są fiszki utworzone w ciągu ostatniej godziny, posortowane od najnowszych
           </p>
         )}
+        <p className="text-sm text-gray-500">
+          Niezaakceptowane fiszki-kandydaci są automatycznie usuwane o godzinie 3:00 następnego dnia
+        </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

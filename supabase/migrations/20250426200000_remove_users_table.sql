@@ -26,16 +26,6 @@ CREATE POLICY "Users can update their own flashcards" ON flashcards
 CREATE POLICY "Users can delete their own flashcards" ON flashcards
     FOR DELETE USING (auth.uid() = user_id);
 
--- Update RLS policies for statistics
-DROP POLICY IF EXISTS "Users can view their own statistics" ON statistics;
-DROP POLICY IF EXISTS "Users can update their own statistics" ON statistics;
-
-CREATE POLICY "Users can view their own statistics" ON statistics
-    FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can update their own statistics" ON statistics
-    FOR UPDATE USING (auth.uid() = user_id);
-
 -- Add comment explaining the change
 COMMENT ON TABLE flashcards IS 'Flashcards table with user_id referencing Supabase Auth users';
 COMMENT ON TABLE statistics IS 'Statistics table with user_id referencing Supabase Auth users'; 

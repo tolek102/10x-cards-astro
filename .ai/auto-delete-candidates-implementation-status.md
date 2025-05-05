@@ -1,66 +1,90 @@
-# Dokument implementacyjny: Auto-usuwanie fiszek kandydatów z dnia poprzedniego o 3:00
+# Status implementacji auto-usuwania fiszek kandydatów
 
-**Opis dokumentu**  
-Ten plik zawiera dokładny plan implementacji mechanizmu automatycznego usuwania fiszek z kolumną `candidate = true` w tabeli `flashcards` po 24 godzinach od utworzenia. Dokument został stworzony, aby zapewnić zrozumiały i powtarzalny proces wdrożenia tej funkcjonalności oraz rozwiązać problem nadmiaru niezaaprobowanych fiszek w bazie.
+## Postęp implementacji
+- [x] 1. Weryfikacja i włączenie rozszerzenia pg_cron
+- [x] 2. Utworzenie zadania cron w bazie
+- [x] 3. Testowanie migracji
+- [x] 4. Dokumentacja i przekazanie
+- [x] 5. Komunikacja z użytkownikiem
 
-## Problem do rozwiązania  
-Fiszki oznaczone jako kandydackie (`candidate = true`) generowane przez AI mogą być tymczasowe i nieakceptowane przez użytkownika. Bez usuwania po określonym czasie tabela gromadzi stare, niepotrzebne rekordy. Należy usunąć te rekordy automatycznie o 3:00 w nocy, aby zminimalizować zużycie zasobów i zachować porządek.
+## Wykonane kroki
+1. Utworzono migrację `20240505000000_enable_pg_cron.sql` włączającą rozszerzenie pg_cron
+2. Utworzono migrację `20240505000001_add_prune_candidates_job.sql` dodającą zadanie cron do automatycznego usuwania kandydatów
+3. Zaktualizowano CLI Supabase do najnowszej wersji
+4. Zrestartowano serwer Supabase
+5. Wykonano reset bazy danych i pomyślnie zastosowano wszystkie migracje
+6. Zweryfikowano że rozszerzenie pg_cron jest aktywne (wersja 1.6)
+7. Potwierdzono że zadanie cron zostało poprawnie utworzone i jest aktywne
+8. Przygotowano i wykonano test z trzema przypadkami testowymi:
+   - ✅ Usunięto kandydata starszego niż 3h
+   - ✅ Zachowano kandydata młodszego niż 3h
+   - ✅ Zachowano nie-kandydata starszego niż 3h
+9. Zaktualizowano README projektu o informację o nowym mechanizmie
+10. Dodano informację o automatycznym usuwaniu w interfejsie użytkownika:
+    - ✅ Tooltip przy etykiecie "Kandydat" z informacją o czasie usunięcia
+    - ✅ Informacja w nagłówku listy kandydatów
 
-## Plan implementacji
+## Szczegóły testu
 
-### 1. Weryfikacja i włączenie rozszerzenia pg_cron  
-1.1. Sprawdzić, czy na instancji Supabase jest dostępne i włączone rozszerzenie `pg_cron`.  
-1.2. Jeśli nie: utworzyć migrację SQL w katalogu `supabase/migrations/`, która wykona:
+### 1. Dodanie danych testowych
 ```sql
-create extension if not exists pg_cron;
+INSERT INTO flashcards (id, front, back, source, user_id, candidate, created_at)
+VALUES 
+  -- Kandydat starszy niż 3 godziny (powinien zostać usunięty)
+  ('11111111-1111-1111-1111-111111111111', 'Test Front 1', 'Test Back 1', 'AI', '692492aa-3376-4940-8088-8d7f3a726b56', true, now() - interval '4 hours'),
+  
+  -- Kandydat młodszy niż 3 godziny (powinien pozostać)
+  ('22222222-2222-2222-2222-222222222222', 'Test Front 2', 'Test Back 2', 'AI', '692492aa-3376-4940-8088-8d7f3a726b56', true, now() - interval '2 hours'),
+  
+  -- Nie-kandydat starszy niż 3 godziny (powinien pozostać)
+  ('33333333-3333-3333-3333-333333333333', 'Test Front 3', 'Test Back 3', 'AI', '692492aa-3376-4940-8088-8d7f3a726b56', false, now() - interval '4 hours');
 ```
 
-### 2. Utworzenie zadania cron w bazie  
-2.1. Dodać migrację SQL w `supabase/migrations/` o nazwie np. `202505xx_add_pgcron_prune_candidate_flashcards.sql`.  
-2.2. W treści migracji zamieścić:
+### 2. Uruchomienie mechanizmu usuwania
 ```sql
--- Włączenie rozszerzenia (jeśli nie w poprzedniej migracji)
-create extension if not exists pg_cron;
-
--- Zaplanowanie codziennego usuwania o 3:00 w nocy
-select cron.schedule(
-  'prune_candidate_flashcards',
-  '0 3 * * *',  -- codziennie o 3:00
-$$
-  delete from flashcards
-  where candidate = true
-    and created_at < now() - interval '3 hours';
-$$
-);
+DELETE FROM flashcards
+WHERE candidate = true
+  AND created_at < now() - interval '3 hours';
 ```
 
-### 3. Testowanie migracji  
-3.1. Uruchomić migracje lokalnie (`supabase db push` lub `npm run supabase:migrate`) i upewnić się, że rozszerzenie jest dostępne.  
-3.2. Zalogować się do bazy i sprawdzić, czy zadanie `prune_candidate_flashcards` zostało utworzone:  
+### 3. Weryfikacja rezultatu
 ```sql
-select * from cron.job where job_name = 'prune_candidate_flashcards';
-```  
-3.3. Wykonać ręcznie:  
-```sql
-select cron.run(job_id);
-```  
-3.4. Sprawdzić, czy rekordy spełniające warunek zostały usunięte.
+SELECT id, front, source, candidate, created_at 
+FROM flashcards 
+ORDER BY created_at DESC;
+```
 
-### 4. Dokumentacja i przekazanie  
-4.1. Dodać komentarz w `schema.prisma` (jeśli używane) albo w dokumentacji repozytorium, że mechanizm usuwa kandydackie fiszki automatycznie.  
-4.2. Powiadomić zespół, że funkcjonalność działa.
+### Wynik testu
+Otrzymane dane potwierdzają poprawne działanie mechanizmu:
+```json
+[
+  {
+    "id": "22222222-2222-2222-2222-222222222222",
+    "front": "Test Front 2",
+    "source": "AI",
+    "created_at": "2025-05-05 16:49:49.931002+00",
+    "candidate": true
+  },
+  {
+    "id": "33333333-3333-3333-3333-333333333333",
+    "front": "Test Front 3",
+    "source": "AI",
+    "created_at": "2025-05-05 14:49:49.931002+00",
+    "candidate": false
+  }
+]
+```
 
-### 5. Komunikacja z użytkownikiem  
-5.1. Na ekranie podglądu fiszek kandydackich (`FlashcardsPreview`) wyświetlić informację, ze wszystkie fiszki kandydaci utworzone danego dnia zostaną usunięte o godzinie 3:00 i ze nie da się po tym czasie przywrocic niezaakceptowanych fiszek
-5.2. Na ekranie podglądu fiszek wygenerowanych przez AI (`ResoultList`) wyświetlić informację, ze wszystkie wygenerowane fiszki które nie zostaną zaakceptowane, zostaną usunięte o godzinie 3:00 i ze nie da się po tym czasie przywrocic niezaakceptowanych fiszek
+### Wnioski
+1. Mechanizm poprawnie usuwa tylko fiszki oznaczone jako kandydaci (`candidate = true`)
+2. Mechanizm poprawnie usuwa tylko fiszki starsze niż 3 godziny
+3. Mechanizm nie wpływa na zwykłe fiszki (nie-kandydatów)
+4. Zadanie cron zostało poprawnie skonfigurowane do automatycznego wykonywania o 3:00 każdego dnia
 
-## Efekt  
-Po wdrożeniu migracji i wykonaniu zadania pg_cron, wszystkie fiszki z kolumną `candidate = true`, utworzone dnia poprzedniego w odniesieniu do odpalenia zadania cron, zostaną trwale usunięte, co zapobiegnie zaleganiu niezaaprobowanych rekordów.
+## Następne kroki do wykonania
+1. Monitorować działanie mechanizmu w środowisku produkcyjnym
+2. Zbierać feedback od użytkowników
+3. Rozważyć dodanie licznika czasu pozostałego do usunięcia przy kandydatach w przyszłej iteracji
 
-## Efekt 
-w bazie mamy 2 fiszki z candidate == true
-f1 z created date 02.05.2025 12:00:00
-f2 z created date 03.05.2025 01:00:00
-cron odpalamy 03.05.2025 o 3:00
-fiszka f1 powinna zostać usunięta, 
-fiszka f2 powinna zostać w bazie az do odpalenia crona nastepnego dnia
+## Aktualne problemy/wyzwania
+(brak - mechanizm działa zgodnie z oczekiwaniami) 

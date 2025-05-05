@@ -135,7 +135,19 @@ export const FlashcardCard = ({ flashcard, onEdit, onDelete, onAccept, onDiscard
         <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">{flashcard.source}</span>
         {flashcard.candidate && (
           <>
-            <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700">Kandydat</span>
+            <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 flex items-center gap-1">
+              Kandydat
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <span className="inline-block w-4 h-4 text-yellow-600">ⓘ</span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Niezaakceptowana fiszka zostanie automatycznie usunięta o godzinie 3:00 następnego dnia</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </span>
             <div className="flex space-x-2">
               <TooltipProvider>
                 <Tooltip>

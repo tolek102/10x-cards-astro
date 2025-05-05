@@ -44,6 +44,7 @@
   - Delete flashcards.
   - Accept AI-generated candidates into the main learning deck.
   - Discard unwanted candidates.
+  - Automatic removal of unaccepted AI-generated candidates at 3:00 AM the next day.
   - Pagination and configurable page size for lists.
   - Export accepted flashcards to JSON or CSV.
 - **Learning Module:**
