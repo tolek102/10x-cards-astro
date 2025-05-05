@@ -490,8 +490,18 @@ describe("FlashcardService", () => {
       );
     });
 
-    it("should preserve candidate status if not explicitly set to false", async () => {
-      mockSupabaseChain.data = mockFlashcard;
+    it("should automatically set candidate to false when editing a candidate flashcard", async () => {
+      const existingFlashcard: FlashcardDto = {
+        id: mockFlashcardId,
+        front: "Old front",
+        back: "Old back",
+        source: "AI",
+        candidate: true,
+        created_at: "2024-02-20T12:00:00Z",
+        updated_at: "2024-02-20T12:00:00Z",
+      };
+
+      mockSupabaseChain.data = existingFlashcard;
       mockSupabaseChain.error = null;
 
       const updateCommand = {
@@ -501,9 +511,9 @@ describe("FlashcardService", () => {
       };
 
       const expectedUpdate: FlashcardDto = {
-        ...mockFlashcard,
+        ...existingFlashcard,
         ...updateCommand,
-        candidate: true, // Should remain true
+        candidate: false, // Should be set to false when editing a candidate
         source: "AI_EDITED",
         updated_at: expect.any(String),
       };
@@ -521,8 +531,54 @@ describe("FlashcardService", () => {
       expect(result).toEqual(expectedUpdate);
       expect(mockSupabaseChain.update).toHaveBeenCalledWith({
         ...updateCommand,
-        candidate: true,
+        candidate: false,
         source: "AI_EDITED",
+        updated_at: expect.any(String),
+      });
+    });
+
+    it("should respect candidate status for non-candidate flashcards", async () => {
+      const existingFlashcard: FlashcardDto = {
+        id: mockFlashcardId,
+        front: "Old front",
+        back: "Old back",
+        source: "MANUAL",
+        candidate: false,
+        created_at: "2024-02-20T12:00:00Z",
+        updated_at: "2024-02-20T12:00:00Z",
+      };
+
+      mockSupabaseChain.data = existingFlashcard;
+      mockSupabaseChain.error = null;
+
+      const updateCommand = {
+        front: "Updated front",
+        back: "Updated back",
+        candidate: true, // Trying to set candidate to true
+      };
+
+      const expectedUpdate: FlashcardDto = {
+        ...existingFlashcard,
+        ...updateCommand,
+        candidate: true, // Should respect the command for non-candidate flashcards
+        source: "MANUAL",
+        updated_at: expect.any(String),
+      };
+
+      const mockUpdateChain = {
+        ...mockSupabaseChain,
+        data: expectedUpdate,
+        error: null,
+      };
+
+      mockSupabaseChain.update = vi.fn().mockReturnValue(mockUpdateChain);
+
+      const result = await service.updateFlashcard(mockUserId, mockFlashcardId, updateCommand);
+
+      expect(result).toEqual(expectedUpdate);
+      expect(mockSupabaseChain.update).toHaveBeenCalledWith({
+        ...updateCommand,
+        source: "MANUAL",
         updated_at: expect.any(String),
       });
     });

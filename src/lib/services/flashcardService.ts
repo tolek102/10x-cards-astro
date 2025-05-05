@@ -289,8 +289,8 @@ export class FlashcardService {
       // Prepare update data with business logic
       const updateData = {
         ...command,
-        // If flashcard was a candidate or is AI-generated being edited, set it to false only if explicitly requested
-        candidate: command.candidate === false ? false : existingFlashcard.candidate,
+        // If flashcard was a candidate, set it to false as it's being edited
+        candidate: existingFlashcard.candidate ? false : (command.candidate ?? existingFlashcard.candidate),
         // If source was AI, change to AI_EDITED
         source: existingFlashcard.source === "AI" ? ("AI_EDITED" as Source) : existingFlashcard.source,
         updated_at: new Date().toISOString(),
