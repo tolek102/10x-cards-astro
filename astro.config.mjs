@@ -6,6 +6,8 @@ import sitemap from "@astrojs/sitemap";
 import tailwind from "@astrojs/tailwind";
 import node from "@astrojs/node";
 
+import cloudflare from "@astrojs/cloudflare";
+
 // https://astro.build/config
 export default defineConfig({
   output: "server",
@@ -14,9 +16,7 @@ export default defineConfig({
   vite: {
     envPrefix: ["SUPABASE_", "PUBLIC_"],
   },
-  adapter: node({
-    mode: "standalone",
-  }),
+  adapter: cloudflare(),
   experimental: {
     session: true,
   },
