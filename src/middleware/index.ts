@@ -56,5 +56,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   // Kontynuuj dla publicznych ścieżek lub zalogowanych użytkowników
-  return next();
+  const response = await next();
+
+  // Dodaj nagłówki no-cache dla chronionych ścieżek
+  if (isProtectedPath) {
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    response.headers.set("Pragma", "no-cache");
+    response.headers.set("Expires", "0");
+  }
+
+  return response;
 });
