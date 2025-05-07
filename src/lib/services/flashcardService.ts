@@ -134,12 +134,13 @@ export class FlashcardService {
     }
   }
 
-  async listAcceptedFlashcards(
+  private async listFlashcards(
     userId: string,
-    params: { page: number; limit: number; sort?: "created_at_desc" | "created_at_asc" }
+    params: { page: number; limit: number; sort?: "created_at_desc" | "created_at_asc" },
+    isCandidate: boolean
   ): Promise<FlashcardsListResponseDto> {
     try {
-      logger.info("Fetching accepted flashcards", { userId, ...params });
+      logger.info(`Fetching ${isCandidate ? "candidate" : "accepted"} flashcards`, { userId, ...params });
 
       // Calculate offset for pagination
       const offset = (params.page - 1) * params.limit;
@@ -149,7 +150,7 @@ export class FlashcardService {
         .from("flashcards")
         .select("*", { count: "exact" })
         .eq("user_id", userId)
-        .eq("candidate", false)
+        .eq("candidate", isCandidate)
         .range(offset, offset + params.limit - 1);
 
       // Apply sorting if specified
@@ -166,21 +167,21 @@ export class FlashcardService {
         query = query.order(field, { ascending: direction === "asc" });
       } else {
         // Default sorting
-        query = query.order("created_at", { ascending: false });
+        query = query.order("updated_at", { ascending: false });
       }
 
       // Execute query
       const { data: flashcards, error, count } = await query;
 
       if (error) {
-        logger.error("Error fetching flashcards", { error });
-        throw new Error("Failed to fetch flashcards");
+        logger.error(`Error fetching ${isCandidate ? "candidate" : ""} flashcards`, { error });
+        throw new Error(`Failed to fetch ${isCandidate ? "candidate" : ""} flashcards`);
       }
 
       const totalCount = count ?? 0;
       const mappedFlashcards = (flashcards || []).map(mapDatabaseFlashcardToDto);
 
-      logger.info("Successfully fetched flashcards", {
+      logger.info(`Successfully fetched ${isCandidate ? "candidate" : ""} flashcards`, {
         count: mappedFlashcards.length,
         total: totalCount,
       });
@@ -194,74 +195,23 @@ export class FlashcardService {
         },
       };
     } catch (error) {
-      logger.error("Error in listAcceptedFlashcards", { error });
+      logger.error(`Error in list${isCandidate ? "Candidate" : "Accepted"}Flashcards`, { error });
       throw error;
     }
+  }
+
+  async listAcceptedFlashcards(
+    userId: string,
+    params: { page: number; limit: number; sort?: "created_at_desc" | "created_at_asc" }
+  ): Promise<FlashcardsListResponseDto> {
+    return this.listFlashcards(userId, params, false);
   }
 
   async listCandidateFlashcards(
     userId: string,
     params: { page: number; limit: number; sort?: "created_at_desc" | "created_at_asc" }
   ): Promise<FlashcardsListResponseDto> {
-    try {
-      logger.info("Fetching candidate flashcards", { userId, ...params });
-
-      // Calculate offset for pagination
-      const offset = (params.page - 1) * params.limit;
-
-      // Build query
-      let query = this.supabase
-        .from("flashcards")
-        .select("*", { count: "exact" })
-        .eq("user_id", userId)
-        .eq("candidate", true)
-        .range(offset, offset + params.limit - 1);
-
-      // Apply sorting if specified
-      if (params.sort) {
-        const [field, direction] = params.sort.split("_").reduce(
-          ([acc, dir], part) => {
-            if (part === "asc" || part === "desc") {
-              return [acc, part];
-            }
-            return [acc ? `${acc}_${part}` : part, dir];
-          },
-          ["", ""] as [string, string]
-        );
-        query = query.order(field, { ascending: direction === "asc" });
-      } else {
-        // Default sorting
-        query = query.order("created_at", { ascending: false });
-      }
-
-      // Execute query
-      const { data: flashcards, error, count } = await query;
-
-      if (error) {
-        logger.error("Error fetching candidate flashcards", { error });
-        throw new Error("Failed to fetch candidate flashcards");
-      }
-
-      const totalCount = count ?? 0;
-      const mappedFlashcards = (flashcards || []).map(mapDatabaseFlashcardToDto);
-
-      logger.info("Successfully fetched candidate flashcards", {
-        count: mappedFlashcards.length,
-        total: totalCount,
-      });
-
-      return {
-        data: mappedFlashcards,
-        pagination: {
-          page: params.page,
-          limit: params.limit,
-          total: totalCount,
-        },
-      };
-    } catch (error) {
-      logger.error("Error in listCandidateFlashcards", { error });
-      throw error;
-    }
+    return this.listFlashcards(userId, params, true);
   }
 
   async updateFlashcard(userId: string, flashcardId: string, command: FlashcardUpdateDto): Promise<FlashcardDto> {
