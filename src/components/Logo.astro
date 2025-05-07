@@ -1,0 +1,95 @@
+---
+/**
+ * UWAGA: Ten komponent ma swoją wersję React w LogoReact.tsx
+ * Wszelkie zmiany w stylach, strukturze lub właściwościach powinny być zsynchronizowane między oboma plikami.
+ *
+ * Wersja Astro jest używana w:
+ * - WelcomeScreen.astro
+ * - MarketingContent.astro
+ */
+
+interface Props {
+  size?: "sm" | "md" | "lg";
+  withContainer?: boolean;
+}
+
+const { size = "md", withContainer = false } = Astro.props;
+
+const sizeClasses = {
+  sm: {
+    container: "text-xl",
+    icon: "w-7 h-7",
+    iconInner: "w-4 h-4",
+  },
+  md: {
+    container: "text-2xl",
+    icon: "w-8 h-8",
+    iconInner: "w-5 h-5",
+  },
+  lg: {
+    container: "text-4xl",
+    icon: "w-10 h-10",
+    iconInner: "w-6 h-6",
+  },
+};
+---
+
+{
+  withContainer ? (
+    <div class="inline-flex items-center justify-center gap-3 px-4 py-2 rounded-2xl bg-white/50 backdrop-blur-sm border border-blue-100/20 shadow-sm">
+      <div class="relative flex items-center">
+        <div
+          class={`${sizeClasses[size].icon} flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-inner`}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class={sizeClasses[size].iconInner}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M12 2a9 9 0 1 0 9 9" />
+            <path d="M12 8v4l3 3" />
+            <path d="m17 2 4 4" />
+            <path d="m21 2-4 4" />
+          </svg>
+        </div>
+        <div
+          class={`${sizeClasses[size].container} font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 ml-2 pr-1`}
+        >
+          10x Cards
+        </div>
+      </div>
+    </div>
+  ) : (
+    <div class="relative flex items-center">
+      <div
+        class={`${sizeClasses[size].icon} flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-inner`}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class={sizeClasses[size].iconInner}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M12 2a9 9 0 1 0 9 9" />
+          <path d="M12 8v4l3 3" />
+          <path d="m17 2 4 4" />
+          <path d="m21 2-4 4" />
+        </svg>
+      </div>
+      <div
+        class={`${sizeClasses[size].container} font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 ml-2 pr-1`}
+      >
+        10x Cards
+      </div>
+    </div>
+  )
+}
