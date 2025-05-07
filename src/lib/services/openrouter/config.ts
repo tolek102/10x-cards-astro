@@ -2,9 +2,9 @@ import type { OpenRouterConfig } from "./types";
 import { logger } from "../loggerService";
 
 function validateEnvConfig() {
-  const apiKey = import.meta.env.PUBLIC_OPENROUTER_API_KEY;
+  const apiKey = import.meta.env.OPENROUTER_API_KEY;
   if (!apiKey) {
-    throw new Error("PUBLIC_OPENROUTER_API_KEY is not set in environment variables");
+    throw new Error("OPENROUTER_API_KEY is not set in environment variables");
   }
 
   // Log configuration for debugging
@@ -23,7 +23,7 @@ export function getOpenRouterConfig(): OpenRouterConfig {
   validateEnvConfig();
 
   return {
-    apiKey: import.meta.env.PUBLIC_OPENROUTER_API_KEY,
+    apiKey: import.meta.env.OPENROUTER_API_KEY,
     model: import.meta.env.PUBLIC_OPENROUTER_MODEL,
     maxRetries: Number(import.meta.env.PUBLIC_OPENROUTER_MAX_RETRIES) || 3,
     timeout: Number(import.meta.env.PUBLIC_OPENROUTER_TIMEOUT) || 30000,

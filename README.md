@@ -92,7 +92,7 @@
     SUPABASE_KEY=YOUR_SUPABASE_ANON_KEY
 
     # OpenRouter API Key (find in your OpenRouter account settings)
-    PUBLIC_OPENROUTER_API_KEY=YOUR_OPENROUTER_API_KEY
+    OPENROUTER_API_KEY=YOUR_OPENROUTER_API_KEY
 
     # Optional OpenRouter configuration (defaults are provided in the code)
     # PUBLIC_OPENROUTER_MODEL=google/gemini-flash-1.5 # Example model
