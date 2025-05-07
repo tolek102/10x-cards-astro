@@ -3,7 +3,6 @@ import "../styles/global.css";
 import { Providers } from "../components/providers/Providers";
 // import { ClientRouter } from "astro:transitions";
 import { NavigationBar } from "../components/NavigationBar";
-import { Toaster } from "../components/ui/sonner";
 
 interface Props {
   title?: string;
@@ -43,7 +42,6 @@ const { user } = Astro.locals;
             )
           }
         </main>
-        {showNav && <Toaster client:load />}
       </div>
     </Providers>
   </body>
