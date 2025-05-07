@@ -159,11 +159,21 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
 
         setState((prev) => ({
           ...prev,
-          candidates: [...prev.candidates, newFlashcard],
-          candidatesPagination: {
-            ...prev.candidatesPagination,
-            total: prev.candidatesPagination.total + 1,
-          },
+          ...(newFlashcard.candidate
+            ? {
+                candidates: [...prev.candidates, newFlashcard],
+                candidatesPagination: {
+                  ...prev.candidatesPagination,
+                  total: prev.candidatesPagination.total + 1,
+                },
+              }
+            : {
+                flashcards: [...prev.flashcards, newFlashcard],
+                pagination: {
+                  ...prev.pagination,
+                  total: prev.pagination.total + 1,
+                },
+              }),
         }));
 
         showToast("Utworzono nową fiszkę", "success", {
