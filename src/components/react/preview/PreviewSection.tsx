@@ -59,8 +59,15 @@ export const PreviewSection = ({
   const [flashcardToDiscard, setFlashcardToDiscard] = useState<string | null>(null);
 
   const handlePageSizeChange = async (newLimit: number) => {
-    setSelectedPageSize(newLimit);
-    await Promise.all([loadPage(1, newLimit), loadCandidatesPage(1, newLimit)]);
+    try {
+      setSelectedPageSize(newLimit);
+      // First load the accepted flashcards
+      await loadPage(1, newLimit);
+      // Then load the candidates
+      await loadCandidatesPage(1, newLimit);
+    } catch (err) {
+      logger.error("Error changing page size:", { err });
+    }
   };
 
   const handleEditClick = (id: string) => {

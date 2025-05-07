@@ -64,11 +64,15 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
     async (page: number, limit?: number) => {
       setLoading(true);
       try {
-        const response = await FlashcardsService.getFlashcards(page, limit ?? state.pagination.limit);
+        const newLimit = limit ?? state.pagination.limit;
+        const response = await FlashcardsService.getFlashcards(page, newLimit);
         setState((prev) => ({
           ...prev,
           flashcards: response.data,
-          pagination: response.pagination,
+          pagination: {
+            ...response.pagination,
+            limit: newLimit,
+          },
         }));
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Failed to load flashcards");
@@ -80,18 +84,22 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
         setLoading(false);
       }
     },
-    [setLoading, setError, state.pagination.limit]
+    [setLoading, setError]
   );
 
   const loadCandidatesPage = useCallback(
     async (page: number, limit?: number) => {
       setCandidatesLoading(true);
       try {
-        const response = await FlashcardsService.getCandidates(page, limit ?? state.candidatesPagination.limit);
+        const newLimit = limit ?? state.candidatesPagination.limit;
+        const response = await FlashcardsService.getCandidates(page, newLimit);
         setState((prev) => ({
           ...prev,
           candidates: response.data,
-          candidatesPagination: response.pagination,
+          candidatesPagination: {
+            ...response.pagination,
+            limit: newLimit,
+          },
         }));
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Failed to load candidate flashcards");
@@ -103,7 +111,7 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
         setCandidatesLoading(false);
       }
     },
-    [setCandidatesLoading, setError, state.candidatesPagination.limit]
+    [setCandidatesLoading, setError]
   );
 
   const generateFlashcards = useCallback(
