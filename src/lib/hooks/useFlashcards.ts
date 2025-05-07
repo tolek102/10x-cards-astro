@@ -84,7 +84,7 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
         setLoading(false);
       }
     },
-    [setLoading, setError]
+    [setLoading, setError, state.pagination.limit]
   );
 
   const loadCandidatesPage = useCallback(
@@ -111,7 +111,7 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
         setCandidatesLoading(false);
       }
     },
-    [setCandidatesLoading, setError]
+    [setCandidatesLoading, setError, state.candidatesPagination.limit]
   );
 
   const generateFlashcards = useCallback(
