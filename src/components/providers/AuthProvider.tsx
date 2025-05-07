@@ -61,10 +61,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      let data;
+      let errorMessage = "Nieprawidłowy email lub hasło";
+
+      try {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          data = await response.json();
+        }
+      } catch (parseError) {
+        logger.error("Błąd parsowania JSON podczas logowania:", { parseError });
+      }
 
       if (!response.ok) {
-        const errorMessage = data.error || "Nieprawidłowy email lub hasło";
+        errorMessage = data?.error || errorMessage;
+        showToast("Błąd logowania", "error", {
+          description: errorMessage,
+        });
+        return { success: false, error: errorMessage };
+      }
+
+      if (!data?.user) {
+        errorMessage = "Nieprawidłowa odpowiedź serwera";
         showToast("Błąd logowania", "error", {
           description: errorMessage,
         });
@@ -99,10 +117,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      let data;
+      let errorMessage = "Nie udało się zarejestrować";
+
+      try {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          data = await response.json();
+        }
+      } catch (parseError) {
+        logger.error("Błąd parsowania JSON podczas rejestracji:", { parseError });
+      }
 
       if (!response.ok) {
-        const errorMessage = data.error || "Nie udało się zarejestrować";
+        errorMessage = data?.error || errorMessage;
+        showToast("Błąd rejestracji", "error", {
+          description: errorMessage,
+        });
+        return { success: false, error: errorMessage };
+      }
+
+      if (!data?.user) {
+        errorMessage = "Nieprawidłowa odpowiedź serwera";
         showToast("Błąd rejestracji", "error", {
           description: errorMessage,
         });
@@ -134,8 +170,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        const errorMessage = data.error || "Nie udało się wylogować";
+        let errorMessage = "Nie udało się wylogować";
+
+        // Sprawdzamy czy odpowiedź zawiera JSON
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          try {
+            const data = await response.json();
+            errorMessage = data.error || errorMessage;
+          } catch (parseError) {
+            logger.error("Błąd parsowania JSON podczas wylogowywania:", { parseError });
+          }
+        }
+
         showToast("Błąd wylogowania", "error", {
           description: errorMessage,
         });
@@ -170,10 +217,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
+      let data;
+      let errorMessage = "Nie udało się zresetować hasła";
+
+      try {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          data = await response.json();
+        }
+      } catch (parseError) {
+        logger.error("Błąd parsowania JSON podczas resetowania hasła:", { parseError });
+      }
 
       if (!response.ok) {
-        const errorMessage = data.error || "Nie udało się zresetować hasła";
+        errorMessage = data?.error || errorMessage;
         showToast("Błąd resetowania hasła", "error", {
           description: errorMessage,
         });
