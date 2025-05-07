@@ -2,6 +2,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./db/database.types";
+import type { UserDto } from "./types";
 
 interface ImportMetaEnv {
   readonly SUPABASE_URL: string;
@@ -10,11 +11,6 @@ interface ImportMetaEnv {
 
 interface ImportMeta {
   readonly env: ImportMetaEnv;
-}
-
-interface UserDto {
-  id: string;
-  email: string | null;
 }
 
 declare global {

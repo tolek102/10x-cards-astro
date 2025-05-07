@@ -1,5 +1,4 @@
 import type { Database } from "./db/database.types";
-import type { SupabaseClient } from "./db/supabase.client";
 
 // Extract database table rows for type derivation
 
@@ -31,18 +30,6 @@ export interface RegisterUserCommand {
 // Response DTO for a successful login including token and user details
 export interface LoginUserResponseDto {
   user: UserDto;
-}
-
-export interface AppLocals {
-  user: UserDto | null;
-  supabase: SupabaseClient;
-}
-
-// Declare the App namespace for global augmentation
-declare global {
-  interface App {
-    Locals: AppLocals;
-  }
 }
 
 /**
