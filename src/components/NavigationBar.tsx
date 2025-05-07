@@ -1,7 +1,7 @@
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 import type { UserDto } from "@/types";
-import { Logo } from "./Logo";
+import { Logo } from "./LogoReact";
 import { logger } from "@/lib/services/loggerService";
 
 interface NavigationBarProps {
