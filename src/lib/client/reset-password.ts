@@ -1,33 +1,22 @@
 import { showToast } from "../toast";
+import { authService } from "../services/auth";
 
 export const initializeResetPasswordPage = () => {
   document.getElementById("resetPasswordForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
+    const email = formData.get("email")?.toString();
+
+    if (!email) {
+      showToast("Proszę podać adres email", "error");
+      return;
+    }
 
     try {
-      const response = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: formData.get("email"),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        showToast(data.error || "Wystąpił błąd podczas resetowania hasła", "error");
-        return;
-      }
-
-      showToast("Instrukcje resetowania hasła zostały wysłane na podany adres email", "success");
-      window.location.href = "/auth/login";
+      await authService.resetPassword({ email });
     } catch (error) {
-      showToast(error instanceof Error ? error.message : "Wystąpił nieoczekiwany błąd", "error");
+      authService.handleAuthError(error);
     }
   });
 

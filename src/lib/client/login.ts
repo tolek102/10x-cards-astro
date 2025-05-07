@@ -24,7 +24,7 @@ export function initializeLoginPage() {
         password: formData.get("password") as string,
       });
     } catch (error) {
-      authService.handleLoginError(error);
+      authService.handleAuthError(error);
     }
   });
 }
