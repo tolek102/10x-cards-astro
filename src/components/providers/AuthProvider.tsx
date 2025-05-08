@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect } from "react";
 import type { UserDto } from "../../types";
 import { showToast } from "../../lib/toast";
 import { logger } from "../../lib/services/loggerService";
+import { authService } from "../../lib/services/auth";
+
 interface AuthResult {
   success: boolean;
   error?: string;
@@ -51,55 +53,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (email: string, password: string): Promise<AuthResult> => {
     setIsLoading(true);
-
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      let data;
-      let errorMessage = "Nieprawidłowy email lub hasło";
-
-      try {
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          data = await response.json();
-        }
-      } catch (parseError) {
-        logger.error("Błąd parsowania JSON podczas logowania:", { parseError });
-      }
-
-      if (!response.ok) {
-        errorMessage = data?.error || errorMessage;
-        showToast("Błąd logowania", "error", {
-          description: errorMessage,
-        });
-        return { success: false, error: errorMessage };
-      }
-
-      if (!data?.user) {
-        errorMessage = "Nieprawidłowa odpowiedź serwera";
-        showToast("Błąd logowania", "error", {
-          description: errorMessage,
-        });
-        return { success: false, error: errorMessage };
-      }
-
-      setUser(data.user);
-      showToast("Pomyślnie zalogowano do systemu", "success", {
-        description: "Witamy w aplikacji!",
-      });
-      return { success: true, user: data.user };
+      await authService.login({ email, password });
+      return { success: true };
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd";
-      showToast("Błąd logowania", "error", {
-        description: `Nie można połączyć się z serwerem. ${errorMessage}`,
-      });
-      return { success: false, error: errorMessage };
+      authService.handleAuthError(err);
+      return { success: false, error: err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd" };
     } finally {
       setIsLoading(false);
     }
@@ -107,55 +66,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const register = async (email: string, password: string): Promise<AuthResult> => {
     setIsLoading(true);
-
     try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      let data;
-      let errorMessage = "Nie udało się zarejestrować";
-
-      try {
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          data = await response.json();
-        }
-      } catch (parseError) {
-        logger.error("Błąd parsowania JSON podczas rejestracji:", { parseError });
-      }
-
-      if (!response.ok) {
-        errorMessage = data?.error || errorMessage;
-        showToast("Błąd rejestracji", "error", {
-          description: errorMessage,
-        });
-        return { success: false, error: errorMessage };
-      }
-
-      if (!data?.user) {
-        errorMessage = "Nieprawidłowa odpowiedź serwera";
-        showToast("Błąd rejestracji", "error", {
-          description: errorMessage,
-        });
-        return { success: false, error: errorMessage };
-      }
-
-      setUser(data.user);
-      showToast("Pomyślnie utworzono konto", "success", {
-        description: "Witamy w aplikacji!",
-      });
-      return { success: true, user: data.user };
+      await authService.register({ email, password });
+      return { success: true };
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd";
-      showToast("Błąd rejestracji", "error", {
-        description: `Nie można połączyć się z serwerem. ${errorMessage}`,
-      });
-      return { success: false, error: errorMessage };
+      authService.handleAuthError(err);
+      return { success: false, error: err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd" };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPassword = async (email: string): Promise<AuthResult> => {
+    setIsLoading(true);
+    try {
+      await authService.resetPassword({ email });
+      return { success: true };
+    } catch (err) {
+      authService.handleAuthError(err);
+      return { success: false, error: err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd" };
     } finally {
       setIsLoading(false);
     }
@@ -163,7 +92,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async (): Promise<AuthResult> => {
     setIsLoading(true);
-
     try {
       const response = await fetch("/api/auth/logout", {
         method: "POST",
@@ -171,8 +99,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (!response.ok) {
         let errorMessage = "Nie udało się wylogować";
-
-        // Sprawdzamy czy odpowiedź zawiera JSON
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.includes("application/json")) {
           try {
@@ -182,7 +108,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             logger.error("Błąd parsowania JSON podczas wylogowywania:", { parseError });
           }
         }
-
         showToast("Błąd wylogowania", "error", {
           description: errorMessage,
         });
@@ -197,51 +122,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd";
       showToast("Błąd wylogowania", "error", {
-        description: `Nie można połączyć się z serwerem. ${errorMessage}`,
-      });
-      return { success: false, error: errorMessage };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const resetPassword = async (email: string): Promise<AuthResult> => {
-    setIsLoading(true);
-
-    try {
-      const response = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      let data;
-      let errorMessage = "Nie udało się zresetować hasła";
-
-      try {
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          data = await response.json();
-        }
-      } catch (parseError) {
-        logger.error("Błąd parsowania JSON podczas resetowania hasła:", { parseError });
-      }
-
-      if (!response.ok) {
-        errorMessage = data?.error || errorMessage;
-        showToast("Błąd resetowania hasła", "error", {
-          description: errorMessage,
-        });
-        return { success: false, error: errorMessage };
-      }
-
-      showToast("Instrukcje resetowania hasła zostały wysłane na podany adres email", "success");
-      return { success: true };
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd";
-      showToast("Błąd resetowania hasła", "error", {
         description: `Nie można połączyć się z serwerem. ${errorMessage}`,
       });
       return { success: false, error: errorMessage };

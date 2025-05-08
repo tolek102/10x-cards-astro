@@ -93,15 +93,16 @@ export const authService = {
         throw new Error(data.error || "Wystąpił błąd podczas resetowania hasła");
       }
 
-      showToast("Instrukcje resetowania hasła zostały wysłane na podany adres email", "success");
-      window.location.href = "/auth/login";
+      showToast("Link do resetowania hasła został wysłany", "success", {
+        description: "Sprawdź swoją skrzynkę email i postępuj zgodnie z instrukcjami.",
+      });
     } catch (error) {
       throw error instanceof Error ? error : new Error("Wystąpił nieoczekiwany błąd");
     }
   },
 
   handleAuthError(error: unknown): void {
-    logger.error("Auth error:", error);
+    logger.error("Auth error:", { error });
     showToast(error instanceof Error ? error.message : "Wystąpił nieoczekiwany błąd", "error");
   },
 };
