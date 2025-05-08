@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import type { FlashcardDto, FlashcardCreateDto, GenerateFlashcardsCommand, PaginationDto } from "@/types";
 import { FlashcardsService } from "@/lib/services/flashcards";
 import { showToast } from "@/lib/toast";
@@ -28,7 +28,7 @@ interface UseFlashcardsReturn extends FlashcardsState {
 const DEFAULT_PAGE_SIZE = 10;
 
 export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): UseFlashcardsReturn => {
-  // Stan
+  // State
   const [state, setState] = useState<FlashcardsState>({
     flashcards: [],
     candidates: [],
@@ -46,6 +46,14 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
       total: 0,
     },
   });
+
+  // Ref to store pagination limit
+  const pageLimitRef = useRef(pageSize);
+
+  // Update ref when state changes
+  if (state.pagination.limit !== pageLimitRef.current) {
+    pageLimitRef.current = state.pagination.limit;
+  }
 
   // Pomocnicze funkcje do aktualizacji stanu
   const setLoading = useCallback((isLoading: boolean) => {
@@ -65,7 +73,7 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
     async (page: number, limit?: number) => {
       setLoading(true);
       try {
-        const newLimit = limit ?? state.pagination.limit;
+        const newLimit = limit ?? pageLimitRef.current;
         const response = await FlashcardsService.getFlashcards(page, newLimit);
         setState((prev) => ({
           ...prev,
@@ -85,14 +93,14 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
         setLoading(false);
       }
     },
-    [setLoading, setError, state.pagination.limit]
+    [setLoading, setError]
   );
 
   const loadCandidatesPage = useCallback(
     async (page: number, limit?: number) => {
       setCandidatesLoading(true);
       try {
-        const newLimit = limit ?? state.candidatesPagination.limit;
+        const newLimit = limit ?? pageLimitRef.current;
         const response = await FlashcardsService.getCandidates(page, newLimit);
         setState((prev) => ({
           ...prev,
@@ -112,7 +120,7 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
         setCandidatesLoading(false);
       }
     },
-    [setCandidatesLoading, setError, state.candidatesPagination.limit]
+    [setCandidatesLoading, setError]
   );
 
   const generateFlashcards = useCallback(
