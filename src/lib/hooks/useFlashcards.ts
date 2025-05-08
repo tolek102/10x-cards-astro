@@ -153,9 +153,7 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
     async (flashcard: FlashcardCreateDto): Promise<FlashcardDto> => {
       setLoading(true);
       try {
-        const [newFlashcard] = await FlashcardsService.createFlashcards({
-          flashcards: [flashcard],
-        });
+        const newFlashcard = await FlashcardsService.createFlashcard(flashcard);
 
         setState((prev) => ({
           ...prev,

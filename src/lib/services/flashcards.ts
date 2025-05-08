@@ -1,9 +1,4 @@
-import type {
-  FlashcardDto,
-  FlashcardsCreateCommand,
-  FlashcardsListResponseDto,
-  GenerateFlashcardsCommand,
-} from "@/types";
+import type { FlashcardDto, FlashcardCreateDto, FlashcardsListResponseDto, GenerateFlashcardsCommand } from "@/types";
 
 const API_BASE_URL = "/api";
 
@@ -25,21 +20,20 @@ export class FlashcardsService {
     return response.json();
   }
 
-  static async createFlashcards(command: FlashcardsCreateCommand): Promise<FlashcardDto[]> {
+  static async createFlashcard(flashcard: FlashcardCreateDto): Promise<FlashcardDto> {
     const response = await fetch(`${API_BASE_URL}/flashcards`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(command.flashcards[0]),
+      body: JSON.stringify(flashcard),
     });
 
     if (!response.ok) {
       throw new Error("Wystąpił problem podczas tworzenia fiszki. Sprawdź wprowadzone dane i spróbuj ponownie.");
     }
 
-    const flashcard = await response.json();
-    return [flashcard];
+    return response.json();
   }
 
   static async getFlashcards(page = 1, limit = 10): Promise<FlashcardsListResponseDto> {

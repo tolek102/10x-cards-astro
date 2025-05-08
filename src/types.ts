@@ -71,11 +71,6 @@ export interface FlashcardCreateDto {
   candidate: boolean;
 }
 
-// Command for creating multiple flashcards at once
-export interface FlashcardsCreateCommand {
-  flashcards: FlashcardCreateDto[];
-}
-
 export type FlashcardUpdateDto = Partial<FlashcardCreateDto>;
 
 // Command for generating flashcards via AI by providing a long text input
