@@ -29,10 +29,9 @@ export class FlashcardService {
       logger.info("Starting flashcards generation", { userId, textLength: command.text.length });
 
       // Generuj fiszki przez OpenRouter
-      const config = getOpenRouterConfig();
+      const config = await getOpenRouterConfig();
       const openRouterService = new OpenRouterService(config);
       const generatedFlashcards = await openRouterService.generateFlashcards(command.text);
-
       // Przygotuj dane do zapisu w bazie
       const flashcardsToSave = generatedFlashcards.map((flashcard: FlashcardCreateDto) => ({
         ...flashcard,
@@ -43,7 +42,6 @@ export class FlashcardService {
 
       // Store flashcards in database
       const { data: flashcards, error } = await this.supabase.from("flashcards").insert(flashcardsToSave).select();
-
       if (error) {
         logger.error("Error storing flashcards", { error });
         throw new Error("Failed to store generated flashcards");
@@ -52,8 +50,12 @@ export class FlashcardService {
       const savedFlashcards = (flashcards || []).map(mapDatabaseFlashcardToDto);
 
       // Update statistics
-      const statisticsService = createStatisticsService(this.supabase);
-      await statisticsService.trackFlashcardsGeneration(userId, savedFlashcards.length);
+      try {
+        const statisticsService = createStatisticsService(this.supabase);
+        await statisticsService.trackFlashcardsGeneration(userId, savedFlashcards.length);
+      } catch (error) {
+        logger.error("Error updating statistics", { error });
+      }
 
       logger.info("Successfully generated and stored flashcards", {
         count: savedFlashcards.length,

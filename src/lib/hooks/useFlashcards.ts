@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import type { FlashcardDto, FlashcardCreateDto, GenerateFlashcardsCommand, PaginationDto } from "@/types";
 import { FlashcardsService } from "@/lib/services/flashcards";
 import { showToast } from "@/lib/toast";
+import { logger } from "../services/loggerService";
 
 interface FlashcardsState {
   flashcards: FlashcardDto[];
@@ -137,6 +138,7 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
         return generatedFlashcards;
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Failed to generate flashcards");
+        logger.error("Failed to generate flashcards", { error });
         setError(error);
         showToast("Nie udało się wygenerować fiszek", "error", {
           description: "Wystąpił problem podczas generowania fiszek. Sprawdź wprowadzony tekst i spróbuj ponownie.",

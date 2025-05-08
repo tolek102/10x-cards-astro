@@ -19,11 +19,21 @@ export class OpenRouterService {
 
   public async generateFlashcards(text: string): Promise<FlashcardCreateDto[]> {
     try {
+      logger.info("Generating flashcards by OpenRouter", { textLength: text.length });
       const response = await this.retryRequest(() => this.makeRequest(text), this.maxRetries);
       const flashcards = await this.parseAIResponse(response);
       return await this.validateGeneratedFlashcards(flashcards);
     } catch (error) {
-      this.handleApiError(error as Error);
+      logger.error("OpenRouter generation error", {
+        error:
+          error instanceof Error
+            ? {
+                name: error.name,
+                message: error.message,
+                type: error instanceof OpenRouterError ? error.type : "unknown",
+              }
+            : error,
+      });
       throw error;
     }
   }

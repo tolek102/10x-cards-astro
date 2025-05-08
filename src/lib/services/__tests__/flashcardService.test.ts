@@ -5,7 +5,7 @@ import type { SupabaseClient } from "../../../db/supabase.client";
 import type { PostgrestError } from "@supabase/supabase-js";
 
 vi.mock("../openrouter/config", () => ({
-  getOpenRouterConfig: vi.fn().mockReturnValue({
+  getOpenRouterConfig: vi.fn().mockResolvedValue({
     apiKey: "test-api-key",
     baseUrl: "https://api.openrouter.ai/api/v1",
   }),

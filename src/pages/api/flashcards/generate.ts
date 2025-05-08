@@ -55,11 +55,23 @@ export const POST: APIRoute = async ({ request, locals }) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    logger.error("Error generating flashcards", { error });
+    logger.error("Error generating flashcards", {
+      error:
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
+          : error,
+      userId: locals.user?.id,
+      requestUrl: request.url,
+    });
+
     return new Response(
       JSON.stringify({
         error: "Internal server error",
-        message: "Failed to process the request",
+        message: error instanceof Error ? error.message : "Failed to process the request",
       }),
       {
         status: 500,
