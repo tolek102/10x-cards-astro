@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { FlashcardDto } from "@/types";
+import { useResizeObserver } from "@/lib/hooks/useResizeObserver";
 
 interface FlashcardCardProps {
   flashcard: FlashcardDto;
@@ -15,6 +16,7 @@ export const FlashcardCard = ({ flashcard, onEdit, onDelete, onAccept, onDiscard
   const [isFlipped, setIsFlipped] = useState(false);
   const [backTextSize, setBackTextSize] = useState(20);
   const backContentRef = useRef<HTMLParagraphElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleClick = () => {
     setIsFlipped(!isFlipped);
@@ -27,29 +29,60 @@ export const FlashcardCard = ({ flashcard, onEdit, onDelete, onAccept, onDiscard
     }
   };
 
-  useEffect(() => {
-    const adjustTextSize = () => {
-      const content = backContentRef.current;
-      if (!content) return;
+  const adjustTextSize = useCallback(() => {
+    const content = backContentRef.current;
+    const container = containerRef.current;
+    if (!content || !container) return;
 
-      const container = content.parentElement;
-      if (!container) return;
+    // Określamy początkowy rozmiar czcionki na podstawie długości tekstu
+    const textLength = flashcard.back.length;
+    let fontSize = (() => {
+      if (textLength < 100) return 24;
+      if (textLength < 200) return 22;
+      if (textLength < 300) return 20;
+      if (textLength < 400) return 18;
+      return 16;
+    })();
 
-      let fontSize = 20;
-      content.style.fontSize = `${fontSize}px`;
+    const minFontSize = 16; // Zmniejszamy minimalny rozmiar czcionki
 
-      while (content.scrollHeight > container.clientHeight && fontSize > 14) {
-        fontSize -= 0.5;
-        content.style.fontSize = `${fontSize}px`;
-      }
+    content.style.fontSize = `${fontSize}px`;
 
-      setBackTextSize(fontSize);
+    // Sprawdzamy zarówno wysokość jak i szerokość
+    const isOverflowing = () => {
+      const contentRect = content.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+
+      // Dodajemy margines bezpieczeństwa
+      const safetyMargin = 10; // piksele
+
+      return (
+        content.scrollHeight > container.clientHeight - safetyMargin ||
+        content.scrollWidth > container.clientWidth - safetyMargin ||
+        contentRect.height > containerRect.height - safetyMargin ||
+        contentRect.width > containerRect.width - safetyMargin
+      );
     };
 
-    adjustTextSize();
-    window.addEventListener("resize", adjustTextSize);
-    return () => window.removeEventListener("resize", adjustTextSize);
+    // Zmniejszamy rozmiar czcionki, dopóki tekst się nie zmieści
+    while (isOverflowing() && fontSize > minFontSize) {
+      // Bardziej agresywne zmniejszanie dla dłuższych tekstów
+      const decrementStep = fontSize > 18 ? 1 : 0.5;
+      fontSize -= decrementStep;
+      content.style.fontSize = `${fontSize}px`;
+    }
+
+    setBackTextSize(fontSize);
   }, [flashcard.back]);
+
+  const setResizeObserver = useResizeObserver(adjustTextSize);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      setResizeObserver(containerRef.current);
+    }
+    adjustTextSize();
+  }, [adjustTextSize, setResizeObserver, flashcard.back]);
 
   return (
     <div
@@ -109,19 +142,28 @@ export const FlashcardCard = ({ flashcard, onEdit, onDelete, onAccept, onDiscard
               )}
             </div>
             <div className="max-h-[320px] overflow-y-auto">
-              <h2 className="text-[20px] leading-[1.4] font-bold text-center">{flashcard.front}</h2>
+              <h2 className="text-[20px] leading-[1.4] font-bold text-center break-words">{flashcard.front}</h2>
             </div>
           </div>
         </div>
 
         {/* Back side */}
         <div className="absolute w-full h-full backface-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 rotate-y-180">
-          <div className="flex flex-col items-center justify-center h-full">
-            <div className="max-h-[320px] overflow-y-auto">
+          <div ref={containerRef} className="flex flex-col items-center justify-center h-full">
+            <div className="max-h-[320px] w-full overflow-y-auto">
               <p
                 ref={backContentRef}
-                className="text-center"
-                style={{ fontSize: `${backTextSize}px`, lineHeight: "1.4" }}
+                className="text-center break-words"
+                style={{
+                  fontSize: `${backTextSize}px`,
+                  lineHeight: "1.4",
+                  wordWrap: "break-word",
+                  overflowWrap: "break-word",
+                  hyphens: "auto",
+                  maxHeight: "100%",
+                  margin: 0,
+                  padding: 0,
+                }}
               >
                 {flashcard.back}
               </p>

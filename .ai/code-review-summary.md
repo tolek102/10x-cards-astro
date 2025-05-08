@@ -95,7 +95,7 @@ Projekt jest dobrze zorganizowany i napisany z dbałością o wiele aspektów no
     Obecne mieszane podejście jest mniej spójne.
 *   **Severity: 4/10** (Średnia - wpływa na spójność i potencjalnie na doświadczenie deweloperskie)
 
-#### 4.2. Typ `FlashcardsCreateCommand` vs implementacja
+#### 4.2. Typ `FlashcardsCreateCommand` vs implementacja - **FIXED**
 *   **Opis:** Typ `FlashcardsCreateCommand` w `src/types.ts` definiuje `flashcards: FlashcardCreateDto[]`, sugerując możliwość tworzenia wielu fiszek naraz. Jednak implementacja w `FlashcardsService.createFlashcards` (`src/lib/services/flashcards.ts`) obsługuje tylko `command.flashcards[0]`, a endpoint API `POST /api/flashcards` (w `src/pages/api/flashcards/index.ts`) również oczekuje pojedynczej fiszki (`CreateManualFlashcardCommand` z OpenAPI).
 *   **Lokalizacja:** `src/types.ts`, `src/lib/services/flashcards.ts`, `src/pages/api/flashcards/index.ts`, `src/openapi/flashcards.yaml`
 *   **Sugestia:**
@@ -103,7 +103,7 @@ Projekt jest dobrze zorganizowany i napisany z dbałością o wiele aspektów no
     *   Jeśli w przyszłości planowane jest tworzenie wielu fiszek, zaktualizować serwis i API, aby poprawnie obsługiwały tablicę.
 *   **Severity: 4/10** (Średnia - niespójność między definicją typu a implementacją może prowadzić do błędów)
 
-#### 4.3. Dynamiczne dopasowanie rozmiaru czcionki w `FlashcardCard.tsx`
+#### 4.3. Dynamiczne dopasowanie rozmiaru czcionki w `FlashcardCard.tsx` - **FIXED**
 *   **Opis:** `FlashcardCard.tsx` używa `useEffect` i listenera `resize` do dynamicznego dostosowywania rozmiaru czcionki na odwrocie karty. Każda instancja karty dodaje własny listener.
 *   **Lokalizacja:** `src/components/react/preview/FlashcardCard.tsx`
 *   **Sugestia:** Jeśli kart na stronie jest dużo, może to wpłynąć na wydajność. Rozważyć:
@@ -123,7 +123,7 @@ Projekt jest dobrze zorganizowany i napisany z dbałością o wiele aspektów no
 *   **Sugestia:** Usunąć zależność `next-themes`, jeśli nie jest używana gdzie indziej. Dostosować `src/components/ui/sonner.tsx`, aby nie polegał na `useTheme`, lub usunąć ten plik, jeśli `ToastProvider.tsx` jest wystarczający (co wydaje się być prawdą).
 *   **Severity: 4/10** (Średnia - niepotrzebna zależność, potencjalne błędy)
 
-#### 4.6. Fallback dla klucza w `ResultsList.tsx`
+#### 4.6. Fallback dla klucza w `ResultsList.tsx` - **FIXED**
 *   **Opis:** W `ResultsList.tsx` używany jest klucz `key={flashcard.id || \`${flashcard.front}-${flashcard.back}\`}`. Fiszki po utworzeniu (nawet jako kandydaci) powinny zawsze mieć unikalne `id` z bazy danych. Fallback na `front-back` może prowadzić do problemów z re-renderowaniem Reacta, jeśli kombinacja `front` i `back` nie jest unikalna.
 *   **Lokalizacja:** `src/components/react/creator/ResultsList.tsx`
 *   **Sugestia:** Upewnić się, że wszystkie fiszki, nawet te tymczasowo wyświetlane w `ResultsList` po wygenerowaniu przez AI, mają stabilne i unikalne `id` (np. tymczasowe UUIDv4 wygenerowane po stronie klienta przed wysłaniem do bazy, lub polegać na `id` zwracanym przez API).
