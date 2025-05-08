@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { showToast } from "@/lib/toast";
+import { logger } from "@/lib/services/loggerService";
 
 export const ForgotPasswordForm = () => {
   const { resetPassword } = useAuth();
@@ -24,6 +25,7 @@ export const ForgotPasswordForm = () => {
         form.reset();
       }
     } catch (error) {
+      logger.error("Error resetting password", { error });
       showToast("Wystąpił błąd podczas resetowania hasła", "error");
     } finally {
       setIsLoading(false);
