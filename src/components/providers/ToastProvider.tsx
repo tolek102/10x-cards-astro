@@ -8,7 +8,9 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
   return (
     <>
       {children}
-      <Toaster richColors position="bottom-right" />
+      <div data-astro-transition-persist>
+        <Toaster richColors position="bottom-right" />
+      </div>
     </>
   );
 };

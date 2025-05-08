@@ -4,7 +4,7 @@ Projekt jest dobrze zorganizowany i napisany z dbałością o wiele aspektów no
 
 ### 1. Bezpieczeństwo
 
-#### 1.1. Klucz API OpenRouter eksponowany po stronie klienta - FIXED
+#### 1.1. Klucz API OpenRouter eksponowany po stronie klienta - **FIXED**
 *   **Opis:** W pliku `src/lib/services/openrouter/config.ts` klucz API `PUBLIC_OPENROUTER_API_KEY` jest pobierany ze zmiennej środowiskowej z prefiksem `PUBLIC_`. Oznacza to, że ten klucz API jest dostępny w kodzie po stronie klienta, co stanowi poważne zagrożenie bezpieczeństwa. Klucze API do usług zewnętrznych powinny być przechowywane i używane wyłącznie po stronie serwera.
 *   **Lokalizacja:** `src/lib/services/openrouter/config.ts`
 *   **Sugestia:**
@@ -31,25 +31,25 @@ Projekt jest dobrze zorganizowany i napisany z dbałością o wiele aspektów no
 
 ### 2. Struktura Klas i Komponentów
 
-#### 2.1. Powtórzenie definicji `UserDto` i `App.Locals` - FIXED
+#### 2.1. Powtórzenie definicji `UserDto` i `App.Locals` - **FIXED**
 *   **Opis:** Typ `UserDto` jest zdefiniowany zarówno w `src/env.d.ts` jak i `src/types.ts`. Podobnie, `App.Locals` jest rozszerzane w obu tych plikach.
 *   **Lokalizacja:** `src/env.d.ts`, `src/types.ts`
 *   **Sugestia:** Skonsolidować te definicje. `App.Locals` powinno być zdefiniowane tylko w `src/env.d.ts`, ponieważ jest to typ globalny specyficzny dla Astro. `UserDto` może pozostać w `src/types.ts` i być importowane do `env.d.ts` w razie potrzeby.
 *   **Severity: 3/10** (Niska - głównie kwestia porządkowa)
 
-#### 2.2. Niespójne użycie serwisów klienckich - FIXED
+#### 2.2. Niespójne użycie serwisów klienckich - **FIXED**
 *   **Opis:** W `src/lib/client/login.ts` używany jest `authService`, natomiast w `src/lib/client/register.ts` i `src/lib/client/reset-password.ts` logika `fetch` jest zaimplementowana bezpośrednio.
 *   **Lokalizacja:** `src/lib/client/*`, `src/lib/services/auth.ts`
 *   **Sugestia:** Rozszerzyć `authService` (`src/lib/services/auth.ts`) o metody `register` i `resetPassword` i używać go spójnie we wszystkich skryptach klienckich. To poprawi spójność i reużywalność.
 *   **Severity: 4/10** (Średnia - wpływa na czytelność i spójność)
 
-#### 2.3. Hydratacja komponentu `Logo` - FIXED
+#### 2.3. Hydratacja komponentu `Logo` - **FIXED**
 *   **Opis:** Komponent `Logo.tsx` jest używany z dyrektywą `client:load` w `MarketingContent.astro` i `WelcomeScreen.astro`. Komponent ten nie wydaje się zawierać żadnej logiki interaktywnej (stanu, hooków useEffect), więc pełna hydratacja może nie być konieczna.
 *   **Lokalizacja:** `src/components/astro/welcome/MarketingContent.astro`, `src/components/astro/welcome/WelcomeScreen.astro`, `src/components/Logo.tsx`
 *   **Sugestia:** Jeśli `Logo.tsx` nie wymaga interaktywności JavaScript po stronie klienta, można usunąć `client:load` (renderowanie serwerowe) lub, jeśli jest jakaś subtelna interakcja (np. event listener dodany w `useEffect`), rozważyć `client:visible`. Jeśli logo ma być tylko statyczne, najlepiej przekształcić je na komponent `.astro` lub upewnić się, że wersja `.tsx` nie jest niepotrzebnie hydratowana.
 *   **Severity: 2/10** (Niska - potencjalna drobna optymalizacja wydajności)
 
-#### 2.4. Podwójne renderowanie `Toaster`
+#### 2.4. Podwójne renderowanie `Toaster` - **FIXED**
 *   **Opis:** `ToastProvider.tsx` renderuje `<Toaster />` z biblioteki `sonner`. Jednocześnie `BaseLayout.astro` renderuje `<Toaster />` z `src/components/ui/sonner.tsx` (który dodatkowo używa `next-themes`, co jest problematyczne). Prowadzi to do potencjalnego podwójnego renderowania lub konfliktów.
 *   **Lokalizacja:** `src/components/providers/ToastProvider.tsx`, `src/layouts/BaseLayout.astro`, `src/components/ui/sonner.tsx`
 *   **Sugestia:**
@@ -58,7 +58,7 @@ Projekt jest dobrze zorganizowany i napisany z dbałością o wiele aspektów no
     3.  Usunąć lub naprawić `src/components/ui/sonner.tsx`. Jeśli celem było ostylowanie `Toaster`a lub integracja z motywami, należy to zrobić w sposób kompatybilny z Astro, bez `next-themes`. Najprościej będzie polegać na konfiguracji przekazywanej do `Toaster` w `ToastProvider`.
 *   **Severity: 5/10** (Średnia - może powodować błędy w działaniu powiadomień)
 
-#### 2.5. Logika `useFlashcards` dla ręcznie tworzonych fiszek - FIXED
+#### 2.5. Logika `useFlashcards` dla ręcznie tworzonych fiszek - **FIXED**
 *   **Opis:** `ManualCreatorTab.tsx` tworzy fiszki z `candidate: false`. Jednak hook `useFlashcards` w funkcji `createFlashcard` dodaje nowo utworzoną fiszkę (która powinna być `candidate: false`) do stanu `state.candidates` i aktualizuje `candidatesPagination`.
 *   **Lokalizacja:** `src/lib/hooks/useFlashcards.ts`, `src/components/react/creator/ManualCreatorTab.tsx`
 *   **Sugestia:** Zmodyfikować `createFlashcard` w `useFlashcards`, aby poprawnie obsługiwał typ tworzonej fiszki. Jeśli fiszka ma `candidate: false`, powinna być dodana do `state.flashcards` i aktualizować `state.pagination`.
@@ -66,13 +66,13 @@ Projekt jest dobrze zorganizowany i napisany z dbałością o wiele aspektów no
 
 ### 3. Powtórzenia Kodu (DRY)
 
-#### 3.1. Style CSS dla fiszek - FIXED
+#### 3.1. Style CSS dla fiszek - **FIXED**
 *   **Opis:** Style CSS dla `.flashcard`, `.flashcard-inner`, `.flashcard-front`, `.flashcard-back` są zdefiniowane zarówno w `src/styles/global.css` jak i w bloku `<style is:global>` w `src/layouts/BaseLayout.astro`.
 *   **Lokalizacja:** `src/styles/global.css`, `src/layouts/BaseLayout.astro`
 *   **Sugestia:** Skonsolidować te style w jednym miejscu, preferencyjnie w `src/styles/global.css`.
 *   **Severity: 2/10** (Niska - bałagan, potencjalne problemy z pierwszeństwem stylów)
 
-#### 3.2. Logika listowania fiszek w `FlashcardService` (serwer) - FIXED
+#### 3.2. Logika listowania fiszek w `FlashcardService` (serwer) - **FIXED**
 *   **Opis:** Metody `listAcceptedFlashcards` i `listCandidateFlashcards` w `src/lib/services/flashcardService.ts` mają bardzo podobną logikę (budowanie query, paginacja, sortowanie), różnią się jedynie warunkiem `eq("candidate", boolean_value)`.
 *   **Lokalizacja:** `src/lib/services/flashcardService.ts`
 *   **Sugestia:** Zrefaktoryzować te dwie metody do jednej, prywatnej metody, która przyjmuje parametr `candidate: boolean` (lub podobny) w celu zmniejszenia redundancji kodu.
@@ -111,13 +111,13 @@ Projekt jest dobrze zorganizowany i napisany z dbałością o wiele aspektów no
     2.  Jeśli JavaScript jest konieczny, zoptymalizować przez np. debouncing funkcji `adjustTextSize` lub użycie jednego globalnego listenera `resize`, który zarządza aktualizacją widocznych kart.
 *   **Severity: 3/10** (Niska - potencjalna optymalizacja wydajności w skrajnych przypadkach)
 
-#### 4.4. Zakomentowany `ClientRouter`
+#### 4.4. Zakomentowany `ClientRouter` - **FIXED**
 *   **Opis:** W `BaseLayout.astro` `ClientRouter` (odpowiedzialny za View Transitions) jest zakomentowany z powodu problemów z Toasterem.
 *   **Lokalizacja:** `src/layouts/BaseLayout.astro`
 *   **Sugestia:** Warto zbadać przyczynę konfliktu z Toasterem i spróbować go rozwiązać, ponieważ View Transitions znacząco poprawiają UX. Możliwe, że Toaster musi być inicjalizowany w sposób, który przetrwa przejścia, lub jego kontener musi być oznaczony jako `transition:persist`.
 *   **Severity: 5/10** (Średnia - utrata ważnej funkcjonalności Astro wpływającej na UX)
 
-#### 4.5. `useTheme` z `next-themes` w `ui/sonner.tsx` - FIXED
+#### 4.5. `useTheme` z `next-themes` w `ui/sonner.tsx` - **FIXED**
 *   **Opis:** Komponent `src/components/ui/sonner.tsx` używa `useTheme` z `next-themes`, co jest specyficzne dla Next.js. W projekcie Astro nie zadziała to poprawnie i jest niepotrzebną zależnością.
 *   **Lokalizacja:** `src/components/ui/sonner.tsx`
 *   **Sugestia:** Usunąć zależność `next-themes`, jeśli nie jest używana gdzie indziej. Dostosować `src/components/ui/sonner.tsx`, aby nie polegał na `useTheme`, lub usunąć ten plik, jeśli `ToastProvider.tsx` jest wystarczający (co wydaje się być prawdą).
@@ -129,7 +129,7 @@ Projekt jest dobrze zorganizowany i napisany z dbałością o wiele aspektów no
 *   **Sugestia:** Upewnić się, że wszystkie fiszki, nawet te tymczasowo wyświetlane w `ResultsList` po wygenerowaniu przez AI, mają stabilne i unikalne `id` (np. tymczasowe UUIDv4 wygenerowane po stronie klienta przed wysłaniem do bazy, lub polegać na `id` zwracanym przez API).
 *   **Severity: 3/10** (Niska - potencjalne problemy z wydajnością/poprawnością renderowania Reacta)
 
-#### 4.7. Obsługa błędów w `AuthProvider` przy parsowaniu JSON - FIXED
+#### 4.7. Obsługa błędów w `AuthProvider` przy parsowaniu JSON - **FIXED**
 *   **Opis:** W metodzie `logout` w `AuthProvider.tsx`, jeśli `!response.ok`, następuje próba `await response.json()`. Jeśli serwer zwróci błąd bez ciała JSON (np. błąd sieciowy przed dotarciem do serwera, lub serwer zwróci HTML błędu), to wywołanie `.json()` rzuci błąd, który nie jest elegancko obsłużony.
 *   **Lokalizacja:** `src/components/providers/AuthProvider.tsx` (metoda `logout`)
 *   **Sugestia:** Opakować `await response.json()` w blok `try-catch` lub sprawdzić `Content-Type` odpowiedzi przed próbą parsowania jako JSON.
