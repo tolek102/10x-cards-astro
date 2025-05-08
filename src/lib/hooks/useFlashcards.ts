@@ -12,6 +12,8 @@ interface FlashcardsState {
   error: Error | null;
   pagination: PaginationDto;
   candidatesPagination: PaginationDto;
+  manuallyCreatedFlashcards: FlashcardDto[];
+  lastCreatedFlashcard: FlashcardDto | null;
 }
 
 interface UseFlashcardsReturn extends FlashcardsState {
@@ -45,6 +47,8 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
       limit: pageSize,
       total: 0,
     },
+    manuallyCreatedFlashcards: [],
+    lastCreatedFlashcard: null,
   });
 
   // Ref to store pagination limit
@@ -181,7 +185,9 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
                   ...prev.pagination,
                   total: prev.pagination.total + 1,
                 },
+                manuallyCreatedFlashcards: [...prev.manuallyCreatedFlashcards, newFlashcard],
               }),
+          lastCreatedFlashcard: newFlashcard,
         }));
 
         showToast("Utworzono nową fiszkę", "success", {

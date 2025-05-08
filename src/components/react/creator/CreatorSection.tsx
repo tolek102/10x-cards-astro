@@ -13,8 +13,9 @@ interface CreatorSectionProps {
   deleteFlashcard: (id: string) => Promise<void>;
   acceptFlashcard: (id: string) => Promise<void>;
   discardFlashcard: (id: string) => Promise<void>;
-  onLoadPage?: (page: number, limit?: number) => Promise<void>;
-  onLoadCandidatesPage?: (page: number, limit?: number) => Promise<void>;
+  candidates: FlashcardDto[];
+  manuallyCreatedFlashcards: FlashcardDto[];
+  isLoading: boolean;
 }
 
 export const CreatorSection = ({
@@ -24,118 +25,69 @@ export const CreatorSection = ({
   deleteFlashcard,
   acceptFlashcard,
   discardFlashcard,
-  onLoadPage,
-  onLoadCandidatesPage,
+  candidates,
+  manuallyCreatedFlashcards,
+  isLoading,
 }: CreatorSectionProps) => {
-  const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"ai" | "manual">("ai");
-  const [lastGeneratedFlashcards, setLastGeneratedFlashcards] = useState<FlashcardDto[]>([]);
-  const [lastCreatedFlashcard, setLastCreatedFlashcard] = useState<FlashcardDto[]>([]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value as "ai" | "manual");
   };
 
   const handleGenerateFlashcards = async (text: string) => {
-    setIsLoading(true);
     try {
-      const generatedFlashcards = await generateFlashcards(text);
-      setLastGeneratedFlashcards(generatedFlashcards);
+      await generateFlashcards(text);
     } catch (err) {
       logger.error("Error generating flashcards:", { err });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleCreateFlashcard = async (flashcard: FlashcardCreateDto) => {
-    setIsLoading(true);
     try {
-      const createdFlashcard = await createFlashcard(flashcard);
-      setLastCreatedFlashcard([createdFlashcard]);
+      await createFlashcard(flashcard);
     } catch (err) {
       logger.error("Error creating flashcard:", { err });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleEditFlashcard = async (id: string, flashcard?: Partial<FlashcardDto>) => {
     if (!flashcard) return;
 
-    setIsLoading(true);
     try {
       await updateFlashcard(id, flashcard);
-      // Remove the edited flashcard from the list since it's no longer a candidate
-      if (activeTab === "ai") {
-        setLastGeneratedFlashcards((prev) => prev.filter((card) => card.id !== id));
-      } else {
-        setLastCreatedFlashcard((prev) => prev.filter((card) => card.id !== id));
-      }
-      // Refresh both lists in PreviewSection
-      if (onLoadPage && onLoadCandidatesPage) {
-        await Promise.all([onLoadPage(1), onLoadCandidatesPage(1)]);
-      }
     } catch (err) {
       logger.error("Error updating flashcard:", { err });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleDeleteFlashcard = async (id: string) => {
-    setIsLoading(true);
     try {
       await deleteFlashcard(id);
-      // Remove the deleted flashcard from the appropriate list
-      if (activeTab === "ai") {
-        setLastGeneratedFlashcards((prev) => prev.filter((card) => card.id !== id));
-      } else {
-        setLastCreatedFlashcard((prev) => prev.filter((card) => card.id !== id));
-      }
     } catch (err) {
       logger.error("Error deleting flashcard:", { err });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleAcceptFlashcard = async (id: string) => {
-    setIsLoading(true);
     try {
       await acceptFlashcard(id);
-      // Remove the accepted flashcard from the list
-      if (activeTab === "ai") {
-        setLastGeneratedFlashcards((prev) => prev.filter((card) => card.id !== id));
-      }
-      // Refresh both lists in PreviewSection
-      if (onLoadPage && onLoadCandidatesPage) {
-        await Promise.all([onLoadPage(1), onLoadCandidatesPage(1)]);
-      }
     } catch (err) {
       logger.error("Error accepting flashcard:", { err });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleDiscardFlashcard = async (id: string) => {
-    setIsLoading(true);
     try {
       await discardFlashcard(id);
-      // Remove the discarded flashcard from the list
-      if (activeTab === "ai") {
-        setLastGeneratedFlashcards((prev) => prev.filter((card) => card.id !== id));
-      }
     } catch (err) {
       logger.error("Error discarding flashcard:", { err });
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Display flashcards based on active tab
-  const displayedFlashcards = activeTab === "ai" ? lastGeneratedFlashcards : lastCreatedFlashcard;
+  // Wyświetlamy fiszki w zależności od aktywnej zakładki
+  const displayedFlashcards = activeTab === "ai" ? candidates : manuallyCreatedFlashcards;
+
   const displayedPagination = {
     page: 1,
     limit: displayedFlashcards.length || 10,

@@ -9,8 +9,9 @@ export const CreatorContainer = () => {
     deleteFlashcard,
     acceptFlashcard,
     discardFlashcard,
-    loadPage,
-    loadCandidatesPage,
+    candidates,
+    manuallyCreatedFlashcards,
+    isLoading,
   } = useFlashcards();
 
   return (
@@ -21,8 +22,9 @@ export const CreatorContainer = () => {
       deleteFlashcard={deleteFlashcard}
       acceptFlashcard={acceptFlashcard}
       discardFlashcard={discardFlashcard}
-      onLoadPage={loadPage}
-      onLoadCandidatesPage={loadCandidatesPage}
+      candidates={candidates}
+      manuallyCreatedFlashcards={manuallyCreatedFlashcards}
+      isLoading={isLoading}
     />
   );
 };
