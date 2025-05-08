@@ -78,7 +78,7 @@ Projekt jest dobrze zorganizowany i napisany z dbałością o wiele aspektów no
 *   **Sugestia:** Zrefaktoryzować te dwie metody do jednej, prywatnej metody, która przyjmuje parametr `candidate: boolean` (lub podobny) w celu zmniejszenia redundancji kodu.
 *   **Severity: 3/10** (Niska - poprawa czytelności i łatwości utrzymania)
 
-#### 3.3. Komponenty `ResultsList.tsx` i `FlashcardList.tsx`
+#### 3.3. Komponenty `ResultsList.tsx` i `FlashcardList.tsx` - **FIXED**
 *   **Opis:** `ResultsList.tsx` (używany w `CreatorSection`) i `FlashcardList.tsx` (używany w `PreviewSection`) są bardzo podobne. Oba renderują listę `FlashcardCard`, obsługują paginację i wyświetlają komunikaty. Różnią się nieco w przekazywanych propsach (np. `onAccept`, `onDiscard`, `onExport`).
 *   **Lokalizacja:** `src/components/react/creator/ResultsList.tsx`, `src/components/react/preview/FlashcardList.tsx`
 *   **Sugestia:** Rozważyć unifikację tych dwóch komponentów w jeden bardziej generyczny komponent listy fiszek, który można by skonfigurować za pomocą propsów. Może to wymagać ostrożnego zaprojektowania interfejsu propsów. Alternatywnie, jeśli różnice są znaczące i uzasadnione kontekstem użycia, pozostawienie ich jako osobnych komponentów jest akceptowalne, ale warto przejrzeć, czy nie da się wyekstrahować wspólnych części.
@@ -111,7 +111,7 @@ Projekt jest dobrze zorganizowany i napisany z dbałością o wiele aspektów no
     2.  Jeśli JavaScript jest konieczny, zoptymalizować przez np. debouncing funkcji `adjustTextSize` lub użycie jednego globalnego listenera `resize`, który zarządza aktualizacją widocznych kart.
 *   **Severity: 3/10** (Niska - potencjalna optymalizacja wydajności w skrajnych przypadkach)
 
-#### 4.4. Zakomentowany `ClientRouter` - **FIXED**
+#### 4.4. Zakomentowany `ClientRouter` - **PROBLEM WITH TOAST AFTER UNCOMMENT**
 *   **Opis:** W `BaseLayout.astro` `ClientRouter` (odpowiedzialny za View Transitions) jest zakomentowany z powodu problemów z Toasterem.
 *   **Lokalizacja:** `src/layouts/BaseLayout.astro`
 *   **Sugestia:** Warto zbadać przyczynę konfliktu z Toasterem i spróbować go rozwiązać, ponieważ View Transitions znacząco poprawiają UX. Możliwe, że Toaster musi być inicjalizowany w sposób, który przetrwa przejścia, lub jego kontener musi być oznaczony jako `transition:persist`.

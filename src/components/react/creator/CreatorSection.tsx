@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AIGeneratorTab } from "./AIGeneratorTab";
 import { ManualCreatorTab } from "./ManualCreatorTab";
-import { ResultsList } from "./ResultsList";
+import { FlashcardList } from "../preview/FlashcardList";
 import type { FlashcardCreateDto, FlashcardDto } from "@/types";
 import { logger } from "@/lib/services/loggerService";
 
@@ -60,7 +60,9 @@ export const CreatorSection = ({
     }
   };
 
-  const handleEditFlashcard = async (id: string, flashcard: Partial<FlashcardDto>) => {
+  const handleEditFlashcard = async (id: string, flashcard?: Partial<FlashcardDto>) => {
+    if (!flashcard) return;
+
     setIsLoading(true);
     try {
       await updateFlashcard(id, flashcard);
@@ -157,15 +159,16 @@ export const CreatorSection = ({
         </TabsContent>
 
         <div className="mt-8">
-          <ResultsList
+          <FlashcardList
             flashcards={displayedFlashcards}
             pagination={displayedPagination}
             onEdit={handleEditFlashcard}
-            onDelete={handleDeleteFlashcard}
-            onAccept={handleAcceptFlashcard}
-            onDiscard={handleDiscardFlashcard}
+            onDelete={activeTab === "manual" || !displayedFlashcards[0]?.candidate ? handleDeleteFlashcard : undefined}
+            onAccept={activeTab === "ai" ? handleAcceptFlashcard : undefined}
+            onDiscard={activeTab === "ai" ? handleDiscardFlashcard : undefined}
             onPageChange={async () => Promise.resolve()}
             showTimeFilter={false}
+            isLoading={isLoading}
           />
         </div>
       </Tabs>

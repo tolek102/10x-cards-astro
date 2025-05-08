@@ -1,7 +1,7 @@
 ---
 import "../styles/global.css";
 import { Providers } from "../components/providers/Providers";
-import { ClientRouter } from "astro:transitions";
+// import { ClientRouter } from "astro:transitions";
 import { NavigationBar } from "../components/NavigationBar";
 
 interface Props {
@@ -25,7 +25,7 @@ const { user } = Astro.locals;
     <meta name="generator" content={Astro.generator} />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <title>{title}</title>
-    <ClientRouter />
+    <!-- <ClientRouter /> problems with toast if enabled - toast showing only after page reload -->
   </head>
   <body>
     <Providers client:load>
