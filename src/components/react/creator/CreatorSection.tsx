@@ -85,13 +85,18 @@ export const CreatorSection = ({
     }
   };
 
-  // Wyświetlamy fiszki w zależności od aktywnej zakładki
-  const displayedFlashcards = activeTab === "ai" ? candidates : manuallyCreatedFlashcards;
+  // Combine both flashcard lists
+  const allFlashcards = [...candidates, ...manuallyCreatedFlashcards];
+
+  // Sort by creation date (assuming there's a createdAt field)
+  const sortedFlashcards = allFlashcards.sort((a, b) => {
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
 
   const displayedPagination = {
     page: 1,
-    limit: displayedFlashcards.length || 10,
-    total: displayedFlashcards.length,
+    limit: sortedFlashcards.length || 10,
+    total: sortedFlashcards.length,
   };
 
   return (
@@ -111,17 +116,44 @@ export const CreatorSection = ({
         </TabsContent>
 
         <div className="mt-8">
-          <FlashcardList
-            flashcards={displayedFlashcards}
-            pagination={displayedPagination}
-            onEdit={handleEditFlashcard}
-            onDelete={activeTab === "manual" || !displayedFlashcards[0]?.candidate ? handleDeleteFlashcard : undefined}
-            onAccept={activeTab === "ai" ? handleAcceptFlashcard : undefined}
-            onDiscard={activeTab === "ai" ? handleDiscardFlashcard : undefined}
-            onPageChange={async () => Promise.resolve()}
-            showTimeFilter={false}
-            isLoading={isLoading}
-          />
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">Ostatnio dodane fiszki ({sortedFlashcards.length})</h3>
+              <label htmlFor="input-text" className="text-sm font-medium text-gray-700">
+                Po wyjściu z kreatora, fiszki przenoszone są do sekcji `Podgląd`
+              </label>
+              <p className="text-sm text-gray-500 mt-1">
+                Niezaakceptowane fiszki-kandydaci są automatycznie usuwane o godzinie 3:00 następnego dnia
+              </p>
+            </div>
+            <FlashcardList
+              flashcards={sortedFlashcards}
+              pagination={displayedPagination}
+              onEdit={handleEditFlashcard}
+              onDelete={async (id) => {
+                const flashcard = sortedFlashcards.find((f) => f.id === id);
+                if (flashcard && (flashcard.source === "MANUAL" || flashcard.source === "AI_EDITED")) {
+                  await handleDeleteFlashcard(id);
+                }
+              }}
+              onAccept={async (id) => {
+                const flashcard = sortedFlashcards.find((f) => f.id === id);
+                if (flashcard && flashcard.source === "AI" && flashcard.candidate) {
+                  await handleAcceptFlashcard(id);
+                }
+              }}
+              onDiscard={async (id) => {
+                const flashcard = sortedFlashcards.find((f) => f.id === id);
+                if (flashcard && flashcard.source === "AI" && flashcard.candidate) {
+                  await handleDiscardFlashcard(id);
+                }
+              }}
+              onPageChange={async () => Promise.resolve()}
+              showTimeFilter={false}
+              isLoading={isLoading}
+              showCustomTitle={true}
+            />
+          </div>
         </div>
       </Tabs>
     </div>

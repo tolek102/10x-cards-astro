@@ -23,6 +23,7 @@ interface FlashcardListProps {
   onExport?: () => void;
   isLoading?: boolean;
   showTimeFilter?: boolean;
+  showCustomTitle?: boolean;
   pagination: {
     page: number;
     limit: number;
@@ -40,6 +41,7 @@ export const FlashcardList = ({
   onExport,
   isLoading = false,
   showTimeFilter = false,
+  showCustomTitle = false,
   pagination,
   onPageChange,
 }: FlashcardListProps) => {
@@ -119,26 +121,28 @@ export const FlashcardList = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-medium text-gray-900">Fiszki ({pagination.total})</h3>
-          {showTimeFilter && (
-            <p className="text-sm text-gray-500 mt-1">
-              Wyświetlane są fiszki utworzone w ciągu ostatniej godziny, posortowane od najnowszych
-            </p>
-          )}
-          {isCandidate && (
-            <p className="text-sm text-gray-500 mt-1">
-              Niezaakceptowane fiszki-kandydaci są automatycznie usuwane o godzinie 3:00 następnego dnia
-            </p>
+      {!showCustomTitle && (
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-medium text-gray-900">Fiszki ({pagination.total})</h3>
+            {showTimeFilter && (
+              <p className="text-sm text-gray-500 mt-1">
+                Wyświetlane są fiszki utworzone w ciągu ostatniej godziny, posortowane od najnowszych
+              </p>
+            )}
+            {isCandidate && (
+              <p className="text-sm text-gray-500 mt-1">
+                Niezaakceptowane fiszki-kandydaci są automatycznie usuwane o godzinie 3:00 następnego dnia
+              </p>
+            )}
+          </div>
+          {onExport && (
+            <Button onClick={onExport} variant="outline">
+              Eksportuj
+            </Button>
           )}
         </div>
-        {onExport && (
-          <Button onClick={onExport} variant="outline">
-            Eksportuj
-          </Button>
-        )}
-      </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {flashcards.map((flashcard) => (
@@ -146,7 +150,7 @@ export const FlashcardList = ({
             key={flashcard.id}
             flashcard={flashcard}
             onEdit={onEdit ? () => handleEdit(flashcard.id) : undefined}
-            onDelete={!isCandidate && onDelete ? () => handleDelete(flashcard.id) : undefined}
+            onDelete={onDelete ? () => handleDelete(flashcard.id) : undefined}
             onAccept={onAccept}
             onDiscard={onDiscard ? () => handleDiscard(flashcard.id) : undefined}
           />
