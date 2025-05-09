@@ -52,7 +52,7 @@ export const EditModal = ({ isOpen, onClose, onSave, flashcard }: EditModalProps
       return;
     }
 
-    if (trimmedFront === flashcard.front && trimmedBack === flashcard.back) {
+    if (trimmedFront === flashcard.front.trim() && trimmedBack === flashcard.back.trim()) {
       showToast("Brak zmian", "info", {
         description: "Nie wprowadzono żadnych zmian w treści fiszki. Edycja została anulowana.",
       });

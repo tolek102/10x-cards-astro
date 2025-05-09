@@ -86,7 +86,7 @@ Projekt jest dobrze zorganizowany i napisany z dbałością o wiele aspektów no
 
 ### 4. Jakość Kodu i Dobre Praktyki
 
-#### 4.1. Niespójność w obsłudze formularzy na stronach autoryzacji - **FIXED**
+#### 4.1. Niespójność w obsłudze formularzy na stronach autoryzacji
 *   **Opis:** Strona `forgot-password.astro` używa standardowego formularza HTML POST i endpointu API Astro (`forgot-password.api.ts`) do obsługi logiki. Natomiast strony `login.astro`, `register.astro`, `reset-password.astro` używają skryptów klienckich (`<script>`) do obsługi formularzy i wywołań `fetch`.
 *   **Lokalizacja:** `src/pages/auth/*`
 *   **Sugestia:** Ujednolicić podejście.

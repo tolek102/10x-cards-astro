@@ -219,6 +219,9 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
           ...prev,
           flashcards: prev.flashcards.map((card) => (card.id === id ? updatedFlashcard : card)),
           candidates: prev.candidates.map((card) => (card.id === id ? updatedFlashcard : card)),
+          manuallyCreatedFlashcards: prev.manuallyCreatedFlashcards.map((card) =>
+            card.id === id ? updatedFlashcard : card
+          ),
         }));
 
         showToast("Zaktualizowano fiszkę", "success", {
@@ -247,6 +250,7 @@ export const useFlashcards = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE): Us
           ...prev,
           flashcards: prev.flashcards.filter((card) => card.id !== id),
           candidates: prev.candidates.filter((card) => card.id !== id),
+          manuallyCreatedFlashcards: prev.manuallyCreatedFlashcards.filter((card) => card.id !== id),
           pagination: {
             ...prev.pagination,
             total: prev.pagination.total - 1,
