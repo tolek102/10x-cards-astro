@@ -73,7 +73,7 @@ export const AuthForms = ({ type, error, success, registered }: AuthFormsProps) 
                 <div className="ml-3">
                   <h3 className="text-sm font-medium text-green-800">Sukces</h3>
                   <div className="mt-2 text-sm text-green-700">
-                    <p>Konto zostało utworzone. Możesz się teraz zalogować.</p>
+                    <p>Aby się zalogować aktywuj konto klikając w link wysłany na email podany przy rejestracji</p>
                   </div>
                 </div>
               </div>
